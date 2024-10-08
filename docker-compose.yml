@@ -1,0 +1,32 @@
+# This file is explicitly made for a docker stack, you can use this stack
+# to deploy the bot and the database with ease without needing to manually
+# setting up the database, and purely supply a token
+version: "3"
+
+services:
+  ceraia-bot:
+    image: ghcr.io/ceraia/discord:main
+    depends_on:
+      - ceraia-mongo
+    environment:
+      TOKEN_BOT: ${CERAIA_BOT_TOKEN_DISCORD}
+      MONGO_URI: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@ceraia-mongo:27017/<BOT>?authSource=admin
+    labels:
+      traefik.enable: "false"
+    networks:
+      - ceraia-bot
+
+  ceraia-mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${CERAIA_MONGODB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${CERAIA_MONGODB_PASSWORD}
+    volumes:
+      - ./data/mongo-db:/app/backend/data
+      - ./data/mongo-configdb:/app/backend/data
+    networks:
+      - ceraia-bot
+
+networks:
+  ceraia-bot:
+    driver: bridge
