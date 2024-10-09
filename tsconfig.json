@@ -1,12 +1,22 @@
 {
-	"extends": ["@sapphire/ts-config", "@sapphire/ts-config/extra-strict", "@sapphire/ts-config/decorators"],
+	"extends": [
+		"@sapphire/ts-config",
+		"@sapphire/ts-config/extra-strict",
+		"@sapphire/ts-config/decorators"
+	],
 	"compilerOptions": {
+		"skipLibCheck": true,
 		"rootDir": "src",
 		"outDir": "dist",
+		"incremental": true,
 		"tsBuildInfoFile": "dist/.tsbuildinfo",
 		"paths": {
-			"@src/*": ["./src/*"]
+			"@src/*": [
+				"./src/*"
+			]
 		}
 	},
-	"include": ["src"]
+	"include": [
+		"src"
+	]
 }
