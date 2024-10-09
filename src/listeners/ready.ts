@@ -5,6 +5,7 @@ import type { StoreRegistryValue } from '@sapphire/pieces';
 import { blue, gray, green, yellow } from 'colorette';
 import gradient from 'gradient-string';
 import figlet from 'figlet';
+import { Server } from 'http';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -15,6 +16,7 @@ export class UserEvent extends Listener {
 	public override run() {
 		this.printBanner();
 		this.printStoreDebugInformation();
+		this.startHealthServer();
 	}
 
 	private printBanner() {
@@ -29,6 +31,16 @@ export class UserEvent extends Listener {
 				]
 			})
 		);
+	}
+
+	private startHealthServer() {
+		const server = new Server((req, res) => {
+			if (req.url == '/health') {
+				res.writeHead(200, { 'Content-Type': 'text/plain' });
+				res.end('OK');
+			}
+		});
+		server.listen(3000); // Start the server on port 3000
 	}
 
 	private printStoreDebugInformation() {
