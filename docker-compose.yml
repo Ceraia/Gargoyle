@@ -5,7 +5,7 @@ version: "3"
 
 services:
   ceraia-bot:
-    image: ghcr.io/ceraia/discord:main
+    image: ghcr.io/ceraia/gargoyle:main
     depends_on:
       - ceraia-mongo
     environment:
