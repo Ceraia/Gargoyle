@@ -37,6 +37,7 @@
   "scripts": {
     "start": "bun run .",
     "dev": "bun run --watch .",
+    "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "prettier": "@sapphire/prettier-config"
