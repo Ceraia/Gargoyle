@@ -2,6 +2,6 @@
   "name": "Ceraia Discord Bot",
   "dockerComposeFile": ["../docker-compose-dev.yml"],
   "service": "app",
-  "workspaceFolder": "/workspace/discord",
+  "workspaceFolder": "/workspace/gargoyle",
   "postCreateCommand": "bun install"
 }

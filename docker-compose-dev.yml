@@ -6,18 +6,18 @@ services:
       context: .
       dockerfile: ./docker/dev/Dockerfile
     volumes:
-      - .:/workspace/discord
+      - .:/workspace/gargoyle
     depends_on:
       - mongo
     environment:
-      TOKEN_BOT: ${CERAIA_BOT_TOKEN_DISCORD}
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
       MONGO_URI: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@mongo:27017/<BOT>?authSource=admin
       STATUS_CHANNEL: ${CERAIA_BOT_STATUS_CHANNEL}
       DEBUG: true
     labels:
-      traefik.enable: "false"
+      traefik.enable: 'false'
     networks:
-      - discord
+      - gargoyle
 
   mongo:
     hostname: mongo
@@ -29,8 +29,8 @@ services:
       - mongo-data:/data/db
       - mongo-config:/data/configdb
     networks:
-      - discord
-  
+      - gargoyle
+
   express:
     image: mongo-express:latest
     ports:
@@ -44,12 +44,12 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${CERAIA_MONGODB_PASSWORD}
       ME_CONFIG_MONGODB_URL: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@mongo:27017/
     networks:
-      - discord
+      - gargoyle
 
 volumes:
   mongo-data:
   mongo-config:
 
 networks:
-  discord:
+  gargoyle:
     driver: bridge

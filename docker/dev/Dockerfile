@@ -1,6 +1,6 @@
 FROM oven/bun:alpine
 
-WORKDIR /workspace/discord
+WORKDIR /workspace/gargoyle
 
 RUN apk add --no-cache git curl
 
