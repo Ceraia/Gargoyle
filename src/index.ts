@@ -1,15 +1,12 @@
-import "./lib/setup";
+import "./system/lib/setup.js";
 
-import { LogLevel, SapphireClient } from "@sapphire/framework";
 import { GatewayIntentBits, Partials } from "discord.js";
+import GargoyleClient from "./system/client.js";
 
-const client = new SapphireClient({
+const client = new GargoyleClient({
 	defaultPrefix: ",",
 	regexPrefix: /^(hey +)?ceraia[,! ]/i,
 	caseInsensitiveCommands: true,
-	logger: {
-		level: LogLevel.Debug,
-	},
 	shards: "auto",
 	intents: [
 		GatewayIntentBits.DirectMessageReactions,
