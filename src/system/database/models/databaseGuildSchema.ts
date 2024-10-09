@@ -3,6 +3,10 @@ import { Schema, model } from "mongoose";
 
 const guildSchema = new Schema({
 	guildId: String,
+	prefix: {
+		type: String,
+		default: ",",
+	},
 	dynvcs: {
 		prefix: {
 			type: String,

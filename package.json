@@ -47,7 +47,8 @@
     "dev": "bun run --watch .",
     "build": "tsc",
     "format": "prettier --write \"src/**\"",
-    "lint": "eslint src/**"
+    "lint": "eslint src/**",
+    "lint:fix": "eslint src/** --fix"
   },
   "prettier": {
     "endOfLine": "lf",
