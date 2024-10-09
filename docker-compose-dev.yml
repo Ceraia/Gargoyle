@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -15,7 +15,7 @@ services:
       STATUS_CHANNEL: ${CERAIA_BOT_STATUS_CHANNEL}
       DEBUG: true
     labels:
-      traefik.enable: 'false'
+      traefik.enable: "false"
     networks:
       - gargoyle
 

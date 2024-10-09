@@ -1,13 +1,13 @@
-import { ApplyOptions } from '@sapphire/decorators';
-import { Listener } from '@sapphire/framework';
-import { createBanner } from '@skyra/start-banner';
-import type { StoreRegistryValue } from '@sapphire/pieces';
-import { blue, gray, green, yellow } from 'colorette';
-import gradient from 'gradient-string';
-import figlet from 'figlet';
-import { Server } from 'http';
+import { ApplyOptions } from "@sapphire/decorators";
+import { Listener } from "@sapphire/framework";
+import { createBanner } from "@skyra/start-banner";
+import type { StoreRegistryValue } from "@sapphire/pieces";
+import { blue, gray, green, yellow } from "colorette";
+import gradient from "gradient-string";
+import figlet from "figlet";
+import { Server } from "http";
 
-const dev = process.env.NODE_ENV !== 'production';
+const dev = process.env.NODE_ENV !== "production";
 
 @ApplyOptions<Listener.Options>({ once: true })
 export class UserEvent extends Listener {
@@ -20,24 +20,26 @@ export class UserEvent extends Listener {
 	}
 
 	private printBanner() {
-		const success = green('+');
+		const success = green("+");
 
 		console.log(
 			createBanner({
-				name: [gradient.retro.multiline(figlet.textSync('Gargoyle'))],
+				name: [gradient.retro.multiline(figlet.textSync("Gargoyle"))],
 				extra: [
 					//
-					`[${success}] Gateway`
-				]
+					`[${success}] Gateway`,
+				],
 			})
 		);
 	}
 
 	private startHealthServer() {
 		const server = new Server((req, res) => {
-			if (req.url == '/health') {
-				res.writeHead(200, { 'Content-Type': 'text/plain' });
-				res.end('OK');
+			if (req.url == "/health") {
+				res.writeHead(200, {
+					"Content-Type": "text/plain",
+				});
+				res.end("OK");
 			}
 		});
 		server.listen(3000); // Start the server on port 3000
@@ -53,6 +55,6 @@ export class UserEvent extends Listener {
 	}
 
 	private styleStore(store: StoreRegistryValue, last: boolean) {
-		return gray(`${last ? '└─' : '├─'} Loaded ${this.style(store.size.toString().padEnd(3, ' '))} ${store.name}.`);
+		return gray(`${last ? "└─" : "├─"} Loaded ${this.style(store.size.toString().padEnd(3, " "))} ${store.name}.`);
 	}
 }

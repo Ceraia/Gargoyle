@@ -1,16 +1,16 @@
-import './lib/setup';
+import "./lib/setup";
 
-import { LogLevel, SapphireClient } from '@sapphire/framework';
-import { GatewayIntentBits, Partials } from 'discord.js';
+import { LogLevel, SapphireClient } from "@sapphire/framework";
+import { GatewayIntentBits, Partials } from "discord.js";
 
 const client = new SapphireClient({
-	defaultPrefix: ',',
+	defaultPrefix: ",",
 	regexPrefix: /^(hey +)?ceraia[,! ]/i,
 	caseInsensitiveCommands: true,
 	logger: {
-		level: LogLevel.Debug
+		level: LogLevel.Debug,
 	},
-	shards: 'auto',
+	shards: "auto",
 	intents: [
 		GatewayIntentBits.DirectMessageReactions,
 		GatewayIntentBits.DirectMessages,
@@ -21,17 +21,17 @@ const client = new SapphireClient({
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildVoiceStates,
-		GatewayIntentBits.MessageContent
+		GatewayIntentBits.MessageContent,
 	],
 	partials: [Partials.Channel],
-	loadMessageCommandListeners: true
+	loadMessageCommandListeners: true,
 });
 
 const main = async () => {
 	try {
-		client.logger.info('Logging in');
+		client.logger.info("Logging in");
 		await client.login();
-		client.logger.info('Logged in');
+		client.logger.info("Logged in");
 	} catch (error) {
 		client.logger.fatal(error);
 		await client.destroy();

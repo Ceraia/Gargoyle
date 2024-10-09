@@ -1,10 +1,10 @@
-import { ApplyOptions } from '@sapphire/decorators';
-import { Command } from '@sapphire/framework';
-import { send } from '@sapphire/plugin-editable-commands';
-import { type Message } from 'discord.js';
+import { ApplyOptions } from "@sapphire/decorators";
+import { Command } from "@sapphire/framework";
+import { send } from "@sapphire/plugin-editable-commands";
+import { type Message } from "discord.js";
 
 @ApplyOptions<Command.Options>({
-	description: 'ping pong'
+	description: "ping pong",
 })
 export class UserCommand extends Command {
 	// Register slash and context menu command
@@ -12,7 +12,7 @@ export class UserCommand extends Command {
 		// Register slash command
 		registry.registerChatInputCommand({
 			name: this.name,
-			description: this.description
+			description: this.description,
 		});
 
 		// Register context menu command available from any message
@@ -30,7 +30,7 @@ export class UserCommand extends Command {
 
 	// Message command
 	public override async messageRun(message: Message) {
-		const msg = await send(message, 'Ping?');
+		const msg = await send(message, "Ping?");
 
 		const content = `Pong! Bot Latency ${Math.round(this.container.client.ws.ping)}ms. API Latency ${
 			(msg.editedTimestamp || msg.createdTimestamp) - (message.editedTimestamp || message.createdTimestamp)
@@ -41,7 +41,10 @@ export class UserCommand extends Command {
 
 	// slash command
 	public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
-		const msg = await interaction.reply({ content: 'Ping?', fetchReply: true });
+		const msg = await interaction.reply({
+			content: "Ping?",
+			fetchReply: true,
+		});
 
 		const content = `Pong! Bot Latency ${Math.round(this.container.client.ws.ping)}ms. API Latency ${
 			msg.createdTimestamp - interaction.createdTimestamp
@@ -52,7 +55,10 @@ export class UserCommand extends Command {
 
 	// context menu command
 	public override async contextMenuRun(interaction: Command.ContextMenuCommandInteraction) {
-		const msg = await interaction.reply({ content: 'Ping?', fetchReply: true });
+		const msg = await interaction.reply({
+			content: "Ping?",
+			fetchReply: true,
+		});
 
 		const content = `Pong! Bot Latency ${Math.round(this.container.client.ws.ping)}ms. API Latency ${
 			msg.createdTimestamp - interaction.createdTimestamp
