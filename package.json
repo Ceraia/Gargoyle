@@ -45,8 +45,26 @@
 		"start": "bun run .",
 		"dev": "bun run --watch .",
 		"build": "tsc",
-		"format": "prettier --write \"src/**/*.ts\"",
+		"format": "prettier --write \"src/**\"",
 		"lint": "eslint src/**"
 	},
-	"prettier": "@sapphire/prettier-config"
+	"prettier": {
+		"endOfLine": "lf",
+		"printWidth": 150,
+		"bracketSpacing": true,
+		"trailingComma": "es5",
+		"tabWidth": 4,
+		"semi": true,
+		"singleQuote": false,
+		"useTabs": true,
+		"overrides": [
+			{
+				"files": "*.yml",
+				"options": {
+					"tabWidth": 2,
+					"useTabs": false
+				}
+			}
+		]
+	}
 }
