@@ -1,10 +1,7 @@
 import { ApplyOptions } from "@sapphire/decorators";
 import { Listener } from "@sapphire/framework";
-import { createBanner } from "@skyra/start-banner";
 import type { StoreRegistryValue } from "@sapphire/pieces";
-import { blue, gray, green, yellow } from "colorette";
-import gradient from "gradient-string";
-import figlet from "figlet";
+import { blue, gray,  yellow } from "colorette";
 import { Server } from "http";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -14,23 +11,8 @@ export class UserEvent extends Listener {
 	private readonly style = dev ? yellow : blue;
 
 	public override run() {
-		this.printBanner();
 		this.printStoreDebugInformation();
 		this.startHealthServer();
-	}
-
-	private printBanner() {
-		const success = green("+");
-
-		console.log(
-			createBanner({
-				name: [gradient.retro.multiline(figlet.textSync("Gargoyle"))],
-				extra: [
-					//
-					`[${success}] Gateway`,
-				],
-			})
-		);
 	}
 
 	private startHealthServer() {

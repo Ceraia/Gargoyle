@@ -3,7 +3,7 @@ import { container } from "@sapphire/framework";
 import { send } from "@sapphire/plugin-editable-commands";
 import { cyan } from "colorette";
 import { EmbedBuilder, type APIUser, type Guild, type Message, type User } from "discord.js";
-import { RandomLoadingMessage } from "@src/lib/constants.js";
+import { RandomLoadingMessage } from "@src/system/lib/constants.js";
 
 /**
  * Picks a random item from an array

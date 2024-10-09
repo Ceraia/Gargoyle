@@ -10,7 +10,7 @@ import { setup, type ArrayString } from "@skyra/env-utilities";
 import * as colorette from "colorette";
 import { join } from "path";
 import { inspect } from "util";
-import { srcDir } from "@src/lib/constants.js";
+import { srcDir } from "@src/system/lib/constants.js";
 
 // Set default behavior to bulk overwrite
 ApplicationCommandRegistries.setDefaultBehaviorWhenNotIdentical(RegisterBehavior.BulkOverwrite);

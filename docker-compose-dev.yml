@@ -11,7 +11,7 @@ services:
       - mongo
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
-      MONGO_URI: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@mongo:27017/<BOT>?authSource=admin
+      MONGO_URI: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@mongo:27017/gargoyle?authSource=admin
       STATUS_CHANNEL: ${CERAIA_BOT_STATUS_CHANNEL}
       DEBUG: true
     labels:
