@@ -1,30 +1,4 @@
-import { Client, ClientOptions, GatewayIntentBits, Partials } from "discord.js";
-
-class GargoyleClient extends Client {
-	constructor(options: ClientOptions) {
-		super(options);
-	}
-	public testExistance() {
-		console.log(`${Date.now()}`);
-	}
-}
-
-const client = new GargoyleClient({
-	shards: "auto",
-	intents: [
-		GatewayIntentBits.DirectMessageReactions,
-		GatewayIntentBits.DirectMessages,
-		GatewayIntentBits.GuildModeration,
-		GatewayIntentBits.GuildEmojisAndStickers,
-		GatewayIntentBits.GuildMembers,
-		GatewayIntentBits.GuildMessageReactions,
-		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildVoiceStates,
-		GatewayIntentBits.MessageContent,
-	],
-	partials: [Partials.Channel],
-});
+import { client } from "@src/system/botClient.js";
 
 client.once("ready", () => {
 	console.info("Ready");
