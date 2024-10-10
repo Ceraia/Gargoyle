@@ -1,12 +1,15 @@
-import "./system/lib/setup.js";
+import { Client, ClientOptions, GatewayIntentBits, Partials } from "discord.js";
 
-import { GatewayIntentBits, Partials } from "discord.js";
-import GargoyleClient from "./system/client.js";
+class GargoyleClient extends Client {
+	constructor(options: ClientOptions) {
+		super(options);
+	}
+	public testExistance() {
+		console.log(`${Date.now()}`);
+	}
+}
 
 const client = new GargoyleClient({
-	defaultPrefix: ",",
-	regexPrefix: /^(hey +)?ceraia[,! ]/i,
-	caseInsensitiveCommands: true,
 	shards: "auto",
 	intents: [
 		GatewayIntentBits.DirectMessageReactions,
@@ -21,16 +24,20 @@ const client = new GargoyleClient({
 		GatewayIntentBits.MessageContent,
 	],
 	partials: [Partials.Channel],
-	loadMessageCommandListeners: true,
+});
+
+client.once("ready", () => {
+	console.info("Ready");
+	client.testExistance();
 });
 
 const main = async () => {
 	try {
-		client.logger.info("Logging in");
+		console.info("Logging in");
 		await client.login();
-		client.logger.info("Logged in");
+		console.info("Logged in");
 	} catch (error) {
-		client.logger.fatal(error);
+		console.error(error);
 		await client.destroy();
 		process.exit(1);
 	}
