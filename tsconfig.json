@@ -40,7 +40,13 @@
 			],
 			"@database/*": [
 				"./src/system/database/*"
-			]
+			],
+			"@classes/*": [
+				"./src/system/classes/*"
+			],
+			"@initializers/*": [
+				"./src/system/initializers/*"
+			],
 		},
 	},
 	"include": [

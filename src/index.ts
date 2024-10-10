@@ -1,17 +1,11 @@
 import client from "@src/system/botClient.js";
 
-client.once("ready", () => {
-	console.info("Ready");
-	client.testExistance();
-});
-
 const main = async () => {
 	try {
-		console.info("Logging in");
-		await client.login();
-		console.info("Logged in");
+		await client.login(process.env.DISCORD_TOKEN);
+		client.log("Logged in!");
 	} catch (error) {
-		console.error(error);
+		client.error(error as string);
 		await client.destroy();
 		process.exit(1);
 	}

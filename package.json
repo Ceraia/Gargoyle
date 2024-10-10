@@ -6,9 +6,12 @@
     "colorette": "^2.0.20",
     "discord.js": "^14.14.1",
     "figlet": "^1.7.0",
+    "fs": "^0.0.1-security",
     "gradient-string": "^3.0.0",
     "http": "^0.0.1-security",
-    "mongoose": "^8.7.0"
+    "mongoose": "^8.7.0",
+    "path": "^0.12.7",
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.1.0",
