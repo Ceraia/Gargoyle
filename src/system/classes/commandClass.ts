@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, Message, SlashCommandBuilder } from "discord.js";
 import GargoyleClient from "./clientClass.js";
-import TextCommandBuilder from "@src/builders/textCommandBuilder.js";
+import TextCommandBuilder from "@src/system/builders/textCommandBuilder.js";
 
 abstract class GargoyleCommand {
 	public category: string;
