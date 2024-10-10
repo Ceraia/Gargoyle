@@ -1,4 +1,4 @@
-import { client } from "@src/system/botClient.js";
+import client from "@src/system/botClient.js";
 
 client.once("ready", () => {
 	console.info("Ready");

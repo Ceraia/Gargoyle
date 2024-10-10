@@ -18,6 +18,4 @@ const client = new GargoyleClient({
 	partials: [Partials.Channel],
 });
 
-export {
-    client,
-}
+export default client;

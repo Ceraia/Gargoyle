@@ -9,5 +9,4 @@ class GargoyleClient extends Client {
 	}
 }
 
-
-export default GargoyleClient
+export default GargoyleClient;
