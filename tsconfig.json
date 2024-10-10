@@ -9,11 +9,6 @@
 		"outDir": "dist",
 		"incremental": true,
 		"tsBuildInfoFile": "dist/.tsbuildinfo",
-		"paths": {
-			"@src/*": [
-				"./src/*"
-			]
-		},
 		"allowSyntheticDefaultImports": true,
 		"alwaysStrict": true,
 		"declaration": true,
@@ -38,7 +33,15 @@
 		"sourceMap": true,
 		"strict": true,
 		"target": "ES2020",
-		"useDefineForClassFields": true
+		"useDefineForClassFields": true,
+		"paths": {
+			"@src/*": [
+				"./src/*"
+			],
+			"@database/*": [
+				"./src/system/database/*"
+			]
+		},
 	},
 	"include": [
 		"src"
