@@ -7,6 +7,9 @@ class GargoyleClient extends Client {
 	public testExistance() {
 		console.log(`${Date.now()}`);
 	}
+	public log(message: string) {
+		console.log(message);
+	}
 }
 
 export default GargoyleClient;
