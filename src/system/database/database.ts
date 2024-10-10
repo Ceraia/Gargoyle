@@ -6,7 +6,7 @@ import { databaseGuildUsers, getGuildUser } from "@src/system/database/models/da
 class Database extends mongoose.Connection {
 	constructor(gargoyleClient: GargoyleClient) {
 		super();
-		const uri = process.env.MONGO_URI
+		const uri = process.env.MONGO_URI;
 		if (!uri) {
 			throw new Error("MONGO_URI is not defined");
 		}
