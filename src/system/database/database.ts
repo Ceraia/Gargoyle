@@ -5,18 +5,18 @@ import { databaseGuildUsers, getGuildUser } from "@src/system/database/models/da
 
 class Database extends mongoose.Connection {
 	constructor(gargoyleClient: GargoyleClient) {
+		gargoyleClient.log("Connecting to the database");
 		super();
 		const uri = process.env.MONGO_URI;
-		if (!uri) {
-			throw new Error("MONGO_URI is not defined");
-		}
+		if (!uri) { gargoyleClient.error("No MongoDB URI provided"); process.exit(1); }
+
 		mongoose
 			.connect(uri)
 			.then(() => {
 				gargoyleClient.log("Connected to the database");
 			})
 			.catch((err) => {
-				gargoyleClient.log(err);
+				gargoyleClient.error(err);
 			});
 	}
 	public databaseGuilds = databaseGuilds;
