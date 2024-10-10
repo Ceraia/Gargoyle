@@ -31,7 +31,7 @@
     "build": "tsc",
     "format": "prettier --write \"src/**\"",
     "lint": "eslint src/**",
-    "lint:fix": "eslint src/** --fix"
+    "pre": "bun run lint && bun run format && bun run build"
   },
   "prettier": {
     "endOfLine": "lf",
