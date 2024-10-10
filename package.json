@@ -68,5 +68,8 @@
         }
       }
     ]
-  }
+  },
+  "trustedDependencies": [
+    "@sapphire/type"
+  ]
 }
