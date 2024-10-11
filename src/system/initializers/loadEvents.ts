@@ -1,14 +1,13 @@
-import fs from "fs";
-import path from "path";
-import GargoyleEvent from "@classes/eventClass.js"; // Use path alias from tsconfig
-import GargoyleClient from "@classes/clientClass.js"; // Use path alias from tsconfig
+import fs from 'fs';
+import path from 'path';
+import GargoyleClient from '@classes/clientClass.js'; // Use path alias from tsconfig
 
 export default async function loadEvents(client: GargoyleClient) {
     // Use path alias for the events directory
-    const eventsDir = path.join(__dirname, "../../events");
+    const eventsDir = path.join(__dirname, '../../events');
     const eventFiles = getEventFilesRecursively(eventsDir);
 
-    loadEventsFromFiles(client, eventFiles);
+    await loadEventsFromFiles(client, eventFiles);
 }
 
 // Recursively get .ts files from the events directory and subdirectories
@@ -20,7 +19,7 @@ function getEventFilesRecursively(dir: string): string[] {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
             files = files.concat(getEventFilesRecursively(fullPath)); // Recursively search subdirectories
-        } else if (entry.isFile() && entry.name.endsWith(".ts")) {
+        } else if (entry.isFile() && entry.name.endsWith('.ts')) {
             files.push(fullPath);
         }
     }
@@ -30,6 +29,7 @@ function getEventFilesRecursively(dir: string): string[] {
 
 function loadEventsFromFiles(client: GargoyleClient, eventFiles: string[]) {
     for (const filePath of eventFiles) {
+
         const { default: EventClass } = require(filePath);
         const eventInstance = new EventClass(client); // No need for type assertion now
 
@@ -41,5 +41,3 @@ function loadEventsFromFiles(client: GargoyleClient, eventFiles: string[]) {
         });
     }
 }
-
-
