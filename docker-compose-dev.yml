@@ -26,8 +26,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${CERAIA_MONGODB_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${CERAIA_MONGODB_PASSWORD}
     volumes:
-      - mongo-data:/data/db
-      - mongo-config:/data/configdb
+      - ./.container/mongo-db:/app/backend/data
+      - ./.container/mongo-configdb:/app/backend/data
     networks:
       - gargoyle
 
@@ -45,10 +45,6 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@mongo:27017/
     networks:
       - gargoyle
-
-volumes:
-  mongo-data:
-  mongo-config:
 
 networks:
   gargoyle:
