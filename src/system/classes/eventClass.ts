@@ -1,16 +1,17 @@
+import GargoyleClient from "@src/system/classes/clientClass.js";
 import { ClientEvents } from "discord.js";
-import GargoyleClient from "./clientClass.js";
 
-abstract class GargoyleEvent {
-    public event: keyof ClientEvents;
+abstract class GargoyleEvent<T extends keyof ClientEvents> {
+    public event: T;
     protected client: GargoyleClient;
 
-    constructor(client: GargoyleClient, event: keyof ClientEvents) {
+    constructor(client: GargoyleClient, event: T) {
         this.client = client;
         this.event = event;
     }
 
-    abstract execute(...args: any[]): void;
+    // Abstract method to be implemented by subclasses
+    abstract execute(...args: ClientEvents[T]): void;
 }
 
 export default GargoyleEvent;

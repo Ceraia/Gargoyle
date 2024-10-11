@@ -31,14 +31,15 @@ function getEventFilesRecursively(dir: string): string[] {
 function loadEventsFromFiles(client: GargoyleClient, eventFiles: string[]) {
     for (const filePath of eventFiles) {
         const { default: EventClass } = require(filePath);
+        const eventInstance = new EventClass(client); // No need for type assertion now
 
-        // Instantiate the event, passing the client
-        const eventInstance = new EventClass(client) as GargoyleEvent;
+        client.debug(`Loading event: ${eventInstance.event}`);
 
-        // Register the event listener
         client.on(eventInstance.event, (...args: any[]) => {
-            eventInstance.execute(...args);
+            client.debug(`Executing event: ${eventInstance.event}`);
+            eventInstance.execute(...args); // Call the execute method with typed arguments
         });
     }
 }
+
 
