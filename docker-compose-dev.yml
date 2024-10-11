@@ -11,8 +11,7 @@ services:
       - mongo
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
-      MONGO_URI: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@mongo:27017/gargoyle?authSource=admin
-      STATUS_CHANNEL: ${CERAIA_BOT_STATUS_CHANNEL}
+      MONGO_URI: mongodb://${USERNAME}:${PASSWORD}@mongo:27017/gargoyle?authSource=admin
       DEBUG: true
     labels:
       traefik.enable: "false"
@@ -23,11 +22,11 @@ services:
     hostname: mongo
     image: mongo:latest
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${CERAIA_MONGODB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${CERAIA_MONGODB_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${PASSWORD}
     volumes:
-      - ./.container/mongo-db:/app/backend/data
-      - ./.container/mongo-configdb:/app/backend/data
+      - ./container/db:/data/db
+      - ./container/configdb:/data/configdb
     networks:
       - gargoyle
 
@@ -38,11 +37,11 @@ services:
     depends_on:
       - mongo
     environment:
-      ME_CONFIG_BASICAUTH_PASSWORD: ${CERAIA_MONGODB_PASSWORD}
-      ME_CONFIG_BASICAUTH_USERNAME: ${CERAIA_MONGODB_USERNAME}
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${CERAIA_MONGODB_USERNAME}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${CERAIA_MONGODB_PASSWORD}
-      ME_CONFIG_MONGODB_URL: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@mongo:27017/
+      ME_CONFIG_BASICAUTH_PASSWORD: ${PASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME: ${USERNAME}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${USERNAME}:${PASSWORD}@mongo:27017/
     networks:
       - gargoyle
 
