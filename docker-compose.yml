@@ -22,8 +22,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${CERAIA_MONGODB_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${CERAIA_MONGODB_PASSWORD}
     volumes:
-      - ./.container/mongo-db:/app/backend/data
-      - ./.container/mongo-configdb:/app/backend/data
+      - ./container/db:/data/db
+      - ./container/configdb:/data/configdb
     networks:
       - ceraia-bot
 
