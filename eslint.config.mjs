@@ -129,6 +129,7 @@ export default [
             "prefer-spread": "error",
             "prefer-template": "error",
             "symbol-description": "error",
+            "eol-last": "ignore",
         },
     },
 ];

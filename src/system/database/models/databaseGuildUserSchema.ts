@@ -6,13 +6,13 @@ const guildUserSchema = new Schema({
     economy: {
         balance: {
             type: Number,
-            default: 0
+            default: 0,
         },
         experience: {
             type: Number,
-            default: 0
-        }
-    }
+            default: 0,
+        },
+    },
 });
 
 const databaseGuildUsers = model('GuildUser', guildUserSchema);
@@ -20,12 +20,12 @@ const databaseGuildUsers = model('GuildUser', guildUserSchema);
 async function getGuildUser(userId: string, guildId: string) {
     let databaseGuildUser = await databaseGuildUsers.findOne({
         userId,
-        guildId
+        guildId,
     });
     if (!databaseGuildUser) {
         databaseGuildUser = new databaseGuildUsers({
             userId,
-            guildId
+            guildId,
         });
         await databaseGuildUser.save();
     }
