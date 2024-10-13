@@ -21,8 +21,8 @@ abstract class GargoyleCommand {
         }
     }
 
-	public abstract executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): void;
-	public abstract executeTextCommand(client: GargoyleClient, message: Message): void;
+    public abstract executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): void;
+    public abstract executeTextCommand(client: GargoyleClient, message: Message): void;
 }
 
 export default GargoyleCommand;

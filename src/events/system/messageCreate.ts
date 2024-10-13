@@ -1,17 +1,14 @@
-import GargoyleEvent from '@classes/eventClass.js';
 import GargoyleClient from '@src/system/classes/clientClass.js';
-import { ClientEvents } from 'discord.js';
+import GargoyleCommand from '@src/system/classes/commandClass.js';
+import GargoyleEvent from '@src/system/classes/eventClass.js';
+import { ChatInputCommandInteraction, Message, TextChannel } from 'discord.js'; // Test
 
-class MessageEvent extends GargoyleEvent<'messageCreate'> {
-    // Specify the event type only once
-    constructor(client: GargoyleClient) {
-        super(client, 'messageCreate');
+class MessageCreate extends GargoyleEvent
+
+export default async (client: GargoyleClient, message: Message): Promise<void> => {
+    if(message.author.bot) return;
+    if(message.content.startsWith("ping")) {
+        (message.channel as TextChannel).send("Pong!");
+        client.debug("Ponged!");
     }
-
-    execute(message: ClientEvents['messageCreate'][0]) {
-        // Handle the message event
-        this.client.debug(`Received message: ${message.content}`);
-    }
-}
-
-export default MessageEvent;
+};

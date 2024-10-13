@@ -13,9 +13,9 @@ const client = new GargoyleClient({
         IntentsBitField.Flags.GuildVoiceStates,
         IntentsBitField.Flags.MessageContent,
         IntentsBitField.Flags.DirectMessages,
-        IntentsBitField.Flags.DirectMessageReactions
+        IntentsBitField.Flags.DirectMessageReactions,
     ],
-    partials: [Partials.Channel]
+    partials: [Partials.Channel],
 });
 
 export default client;

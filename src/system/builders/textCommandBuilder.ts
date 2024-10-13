@@ -52,7 +52,7 @@ class TextCommandBuilder {
         return {
             name: this._name,
             description: this._description,
-            aliases: this._aliases
+            aliases: this._aliases,
         };
     }
 }
