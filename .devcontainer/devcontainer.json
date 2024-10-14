@@ -3,5 +3,15 @@
   "dockerComposeFile": ["../docker-compose-dev.yml"],
   "service": "app",
   "workspaceFolder": "/workspace/gargoyle",
-  "postCreateCommand": "bun install"
+  "postCreateCommand": "bun install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
 }
