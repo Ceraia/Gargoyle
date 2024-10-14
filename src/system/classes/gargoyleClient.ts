@@ -1,16 +1,16 @@
 import { Client, ClientOptions, Collection } from 'discord.js';
-// import Database from '@database/database.js';
+import Database from '@database/database.js';
 import { Logger } from '../tools/logger.js';
 import registerEvents from '../initializers/registerEvents.js';
 import GargoyleCommand from './commandClass.js';
 
 class GargoyleClient extends Client {
-    // db: Database;
+    db: Database;
     commands: Collection<string, GargoyleCommand>;
 
     constructor(options: ClientOptions) {
         super(options);
-        // this.db = new Database(this);
+        this.db = new Database(this);
         this.commands = new Collection();
         this.loadEvents();
     }
