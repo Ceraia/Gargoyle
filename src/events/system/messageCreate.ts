@@ -1,14 +1,13 @@
-import GargoyleClient from '@src/system/classes/clientClass.js';
-import GargoyleCommand from '@src/system/classes/commandClass.js';
-import GargoyleEvent from '@src/system/classes/eventClass.js';
-import { ChatInputCommandInteraction, Message, TextChannel } from 'discord.js'; // Test
+import GargoyleClient from '@src/system/classes/gargoyleClient.js';
+import GargoyleEvent from '@src/system/classes/gargoyleEvent.js';
+import { Message } from 'discord.js';
 
-class MessageCreate extends GargoyleEvent
+export default class MessageCreate extends GargoyleEvent {
+    public event = 'messageCreate' as const;
+    public once = false;
 
-export default async (client: GargoyleClient, message: Message): Promise<void> => {
-    if(message.author.bot) return;
-    if(message.content.startsWith("ping")) {
-        (message.channel as TextChannel).send("Pong!");
-        client.debug("Ponged!");
+    public execute(client: GargoyleClient, message: Message): void {
+        if (message.author.bot) return;
+        client.logger.debug(`Message received from ${message.author.tag} in ${message.guild?.name ?? 'DMs'}: ${message.content}`);
     }
-};
+}
