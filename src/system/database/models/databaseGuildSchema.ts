@@ -4,22 +4,22 @@ const guildSchema = new Schema({
     guildId: String,
     prefix: {
         type: String,
-        default: ',',
+        default: ','
     },
     dynamic_vcs: {
         prefix: {
             type: String,
-            default: '',
+            default: ''
         },
         overrides: {
             type: Array,
-            default: [],
-        },
+            default: []
+        }
     },
     autoroles: {
         type: Array,
-        default: [],
-    },
+        default: []
+    }
 });
 
 const databaseGuilds = model('Guild', guildSchema);

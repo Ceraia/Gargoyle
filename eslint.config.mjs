@@ -93,7 +93,6 @@ export default [
             "wrap-iife": "error",
             yoda: "error",
             "no-extra-semi": "error",
-            "eol-last": ["error", "never"],
             "comma-dangle": "error",
             "comma-spacing": "error",
             "new-parens": "error",
@@ -129,7 +128,6 @@ export default [
             "prefer-spread": "error",
             "prefer-template": "error",
             "symbol-description": "error",
-            "eol-last": "ignore",
         },
     },
 ];
