@@ -32,77 +32,90 @@ function writeToLogFile(logMessage: string): void {
 }
 
 // Logging functions with file writing capability
-function log(message: string): void {
+function log(...messages: string[]): void {
     if (currentLogLevel >= LOG_LEVELS.INFO) {
-        const logMessage = formatLogMessage('INFO', message);
-        console.log(`\x1b[32m${logMessage}\x1b[0m`);
-        writeToLogFile(logMessage);
+        messages.forEach(message => {
+            const logMessage = formatLogMessage('INFO', message);
+            console.log(`\x1b[32m${logMessage}\x1b[0m`);
+            writeToLogFile(logMessage);
+        });
     }
 }
 
-function debug(message: string): void {
+function debug(...messages: string[]): void {
     if (currentLogLevel >= LOG_LEVELS.DEBUG) {
-        const logMessage = formatLogMessage('DEBUG', message);
-        console.log(`\x1b[33m${logMessage}\x1b[0m`);
-        writeToLogFile(logMessage);
+        messages.forEach(message => {
+            const logMessage = formatLogMessage('DEBUG', message);
+            console.log(`\x1b[33m${logMessage}\x1b[0m`);
+            writeToLogFile(logMessage);
+        });
     }
 }
 
-function trace(message: string): void {
+function trace(...messages: string[]): void {
     if (currentLogLevel >= LOG_LEVELS.TRACE) {
-        const logMessage = formatLogMessage('TRACE', message);
-        console.log(`\x1b[36m${logMessage}\x1b[0m`);
-        writeToLogFile(logMessage);
+        messages.forEach(message => {
+            const logMessage = formatLogMessage('TRACE', message);
+            console.log(`\x1b[36m${logMessage}\x1b[0m`);
+            writeToLogFile(logMessage);
+        });
     }
 }
 
-function error(message: string): void {
+function error(...messages: string[]): void {
     if (currentLogLevel >= LOG_LEVELS.ERROR) {
-        const logMessage = formatLogMessage('ERROR', message);
-        console.log(`\x1b[31m${logMessage}\x1b[0m`);
-        writeToLogFile(logMessage);
+        messages.forEach(message => {
+            const logMessage = formatLogMessage('ERROR', message);
+            console.log(`\x1b[31m${logMessage}\x1b[0m`);
+            writeToLogFile(logMessage);
+        });
     }
 }
 
-function warning(message: string): void {
+function warning(...messages: string[]): void {
     if (currentLogLevel >= LOG_LEVELS.WARNING) {
-        const logMessage = formatLogMessage('WARNING', message);
-        console.log(`\x1b[33m${logMessage}\x1b[0m`);
-        writeToLogFile(logMessage);
+        messages.forEach(message => {
+            const logMessage = formatLogMessage('WARNING', message);
+            console.log(`\x1b[33m${logMessage}\x1b[0m`);
+            writeToLogFile(logMessage);
+        });
     }
 }
 
-function fatal(message: string): void {
+function fatal(...messages: string[]): void {
     if (currentLogLevel >= LOG_LEVELS.FATAL) {
-        const logMessage = formatLogMessage('FATAL', message);
-        console.log(`\x1b[35m${logMessage}\x1b[0m`);
-        writeToLogFile(logMessage);
+        messages.forEach(message => {
+            const logMessage = formatLogMessage('FATAL', message);
+            console.log(`\x1b[31m${logMessage}\x1b[0m`);
+            writeToLogFile(logMessage);
+        });
     }
 }
+
 
 class Logger {
-    public static log(message: string): void {
-        log(message);
+    public static log(...messages: string[]): void {
+        log(...messages);
     }
 
-    public static debug(message: string): void {
-        debug(message);
+    public static debug(...messages: string[]): void {
+        debug(...messages);
     }
 
-    public static trace(message: string): void {
-        trace(message);
+    public static trace(...messages: string[]): void {
+        trace(...messages);
     }
 
-    public static error(message: string): void {
-        error(message);
+    public static error(...messages: string[]): void {
+        error(...messages);
     }
 
-    public static warning(message: string): void {
-        warning(message);
+    public static warning(...messages: string[]): void {
+        warning(...messages);
     }
 
-    public static fatal(message: string): void {
-        fatal(message);
+    public static fatal(...messages: string[]): void {
+        fatal(...messages);
     }
 }
 
