@@ -5,7 +5,7 @@ import registerEvents from '../initializers/registerEvents.js';
 import GargoyleCommand from './commandClass.js';
 
 class GargoyleClient extends Client {
-    db: Database;
+    db?: Database;
     commands: Collection<string, GargoyleCommand>;
 
     constructor(options: ClientOptions) {
