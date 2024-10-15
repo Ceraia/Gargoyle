@@ -41,6 +41,9 @@
 			"@database/*": [
 				"./src/system/database/*"
 			],
+			"@dbmodels/*": [
+				"./src/system/database/models/*"
+			],
 			"@classes/*": [
 				"./src/system/classes/*"
 			],
