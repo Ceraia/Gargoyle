@@ -9,7 +9,7 @@ const LOG_LEVELS = {
     WARNING: 3,
     INFO: 4,
     DEBUG: 5,
-    TRACE: 6,
+    TRACE: 6
 };
 
 const currentLogLevel = parseInt(process.env.DEBUG_LEVEL || '4', 10); // Default to INFO (4)
@@ -17,7 +17,7 @@ const logToFile = process.env.LOG_TO_FILE === 'true';
 
 function getLogFilePath(): string {
     const date = new Date().toISOString().split('T')[0];
-    return path.resolve('./log',`${date}.log`); 
+    return path.resolve('./log', `${date}.log`);
 }
 
 function formatLogMessage(level: string, message: string): string {
@@ -27,8 +27,8 @@ function formatLogMessage(level: string, message: string): string {
 
 function writeToLogFile(logMessage: string): void {
     if (!logToFile) return;
-    const logFilePath = getLogFilePath(); 
-    fs.appendFileSync(logFilePath, logMessage + '\n', 'utf8');
+    const logFilePath = getLogFilePath();
+    fs.appendFileSync(logFilePath, `${logMessage}\n`, 'utf8');
 }
 
 // Logging functions with file writing capability
