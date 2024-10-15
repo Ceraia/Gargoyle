@@ -5,7 +5,7 @@ import registerEvents from '../initializers/registerEvents.js';
 import GargoyleCommand from './commandClass.js';
 
 class GargoyleClient extends Client {
-    db?: Database;
+    db: Database | null;
     commands: Collection<string, GargoyleCommand>;
 
     constructor(options: ClientOptions) {
@@ -22,9 +22,18 @@ class GargoyleClient extends Client {
         await registerEvents(this, '../../events');
     }
 
-    override login(token?: string) {
-        this.logger.log('Logging in...');
-        return super.login(token ?? process.env.DISCORD_TOKEN);
+    override async login(token?: string) {
+        this.logger.log('Waiting for database connection...');
+        try {
+            await this.db?.isConnected();
+            this.logger.trace('Database connection established', 'Logging in');
+            return super.login(token ?? process.env.DISCORD_TOKEN);
+        } catch {
+            this.logger.debug('Database connection failed, setting db to null');
+            this.db = null;
+            this.logger.trace('Logging in without database connection');
+            return super.login(token ?? process.env.DISCORD_TOKEN);
+        }
     }
 }
 
