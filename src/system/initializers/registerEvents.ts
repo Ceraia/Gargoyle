@@ -4,7 +4,7 @@ import GargoyleClient from '../classes/gargoyleClient.js';
 import GargoyleEvent from '../classes/gargoyleEvent.js';
 
 async function registerEvents(client: GargoyleClient, ...dirs: string[]) {
-    client.logger.debug('Beginning event registration...');
+    client.logger.trace('Running registerEvents...');
     for (const dir of dirs) {
         const files = await fs.readdir(path.join(__dirname, dir));
 

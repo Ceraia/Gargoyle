@@ -12,10 +12,16 @@ class GargoyleClient extends Client {
         super(options);
         this.db = new Database(this);
         this.commands = new Collection();
+        this.loadSystemEvents();
         this.loadEvents();
     }
 
     public logger = Logger;
+
+    public async loadSystemEvents() {
+        this.logger.log('Loading system events...');
+        await registerEvents(this, '../../system/events');
+    }
 
     public async loadEvents() {
         this.logger.log('Loading events...');
