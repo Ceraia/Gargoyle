@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import { databaseGuilds, getGuild } from '@src/system/database/models/databaseGuildSchema.js';
-import GargoyleClient from '@src/system/classes/gargoyleClient.js';
-import { databaseGuildUsers, getGuildUser } from '@src/system/database/models/databaseGuildUserSchema.js';
+import { databaseGuilds, getGuild } from '@dbmodels/databaseGuildSchema.js';
+import GargoyleClient from '@classes/gargoyleClient.js';
+import { databaseGuildUsers, getGuildUser } from '@dbmodels/databaseGuildUserSchema.js';
 
 class Database extends mongoose.Connection {
     constructor(client: GargoyleClient) {
@@ -9,8 +9,8 @@ class Database extends mongoose.Connection {
         super();
         const uri = process.env.MONGO_URI;
         if (!uri) {
-            client.logger.error('No MongoDB URI provided');
-            process.exit(1);
+            client.logger.warning('No MongoDB URI provided', 'No database connection will be established');
+            return;
         }
 
         mongoose
@@ -19,7 +19,7 @@ class Database extends mongoose.Connection {
                 client.logger.log('Connected to the database');
             })
             .catch((err) => {
-                client.logger.error(err);
+                client.logger.error(err, 'Error connecting to the database: No database connection will be established');
             });
     }
     public databaseGuilds = databaseGuilds;
