@@ -12,7 +12,7 @@ env:
 
 jobs:
   Build-and-Push:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
