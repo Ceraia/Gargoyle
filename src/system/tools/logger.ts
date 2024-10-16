@@ -31,67 +31,65 @@ function writeToLogFile(logMessage: string): void {
     fs.appendFileSync(logFilePath, `${logMessage}\n`, 'utf8');
 }
 
-// Logging functions with file writing capability
 function log(...messages: string[]): void {
-    if (currentLogLevel >= LOG_LEVELS.INFO) {
-        messages.forEach(message => {
-            const logMessage = formatLogMessage('INFO', message);
+    messages.forEach((message) => {
+        const logMessage = formatLogMessage('INFO', message);
+        writeToLogFile(logMessage);
+        if (currentLogLevel >= LOG_LEVELS.INFO) {
             console.log(`\x1b[32m${logMessage}\x1b[0m`);
-            writeToLogFile(logMessage);
-        });
-    }
+        }
+    });
 }
 
 function debug(...messages: string[]): void {
-    if (currentLogLevel >= LOG_LEVELS.DEBUG) {
-        messages.forEach(message => {
-            const logMessage = formatLogMessage('DEBUG', message);
+    messages.forEach((message) => {
+        const logMessage = formatLogMessage('DEBUG', message);
+        writeToLogFile(logMessage);
+        if (currentLogLevel >= LOG_LEVELS.DEBUG) {
             console.log(`\x1b[33m${logMessage}\x1b[0m`);
-            writeToLogFile(logMessage);
-        });
-    }
+        }
+    });
 }
 
 function trace(...messages: string[]): void {
-    if (currentLogLevel >= LOG_LEVELS.TRACE) {
-        messages.forEach(message => {
-            const logMessage = formatLogMessage('TRACE', message);
+    messages.forEach((message) => {
+        const logMessage = formatLogMessage('TRACE', message);
+        writeToLogFile(logMessage);
+        if (currentLogLevel >= LOG_LEVELS.TRACE) {
             console.log(`\x1b[36m${logMessage}\x1b[0m`);
-            writeToLogFile(logMessage);
-        });
-    }
+        }
+    });
 }
 
 function error(...messages: string[]): void {
-    if (currentLogLevel >= LOG_LEVELS.ERROR) {
-        messages.forEach(message => {
-            const logMessage = formatLogMessage('ERROR', message);
+    messages.forEach((message) => {
+        const logMessage = formatLogMessage('ERROR', message);
+        writeToLogFile(logMessage);
+        if (currentLogLevel >= LOG_LEVELS.ERROR) {
             console.log(`\x1b[31m${logMessage}\x1b[0m`);
-            writeToLogFile(logMessage);
-        });
-    }
+        }
+    });
 }
 
 function warning(...messages: string[]): void {
-    if (currentLogLevel >= LOG_LEVELS.WARNING) {
-        messages.forEach(message => {
-            const logMessage = formatLogMessage('WARNING', message);
+    messages.forEach((message) => {
+        const logMessage = formatLogMessage('WARNING', message);
+        writeToLogFile(logMessage);
+        if (currentLogLevel >= LOG_LEVELS.WARNING) {
             console.log(`\x1b[33m${logMessage}\x1b[0m`);
-            writeToLogFile(logMessage);
-        });
-    }
+        }
+    });
 }
 
 function fatal(...messages: string[]): void {
-    if (currentLogLevel >= LOG_LEVELS.FATAL) {
-        messages.forEach(message => {
-            const logMessage = formatLogMessage('FATAL', message);
+    messages.forEach((message) => {
+        const logMessage = formatLogMessage('FATAL', message);
+        writeToLogFile(logMessage);
+        if (currentLogLevel >= LOG_LEVELS.FATAL) {
             console.log(`\x1b[31m${logMessage}\x1b[0m`);
-            writeToLogFile(logMessage);
-        });
-    }
+        }
+    });
 }
-
 
 class Logger {
     public static log(...messages: string[]): void {
