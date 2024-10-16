@@ -20,9 +20,9 @@ function getLogFilePath(): string {
     return path.resolve('./log', `${date}.log`);
 }
 
-function formatLogMessage(level: string, message: string): string {
+function formatLogMessage(level: string, message: string | Error): string {
     const timestamp = new Date().toISOString();
-    return `[${timestamp}] [${level}] ${message}`;
+    return `[${timestamp}] [${level}] ${message.toString()}`;
 }
 
 function writeToLogFile(logMessage: string): void {
@@ -31,7 +31,7 @@ function writeToLogFile(logMessage: string): void {
     fs.appendFileSync(logFilePath, `${logMessage}\n`, 'utf8');
 }
 
-function log(...messages: string[]): void {
+function log(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
         const logMessage = formatLogMessage('INFO', message);
         writeToLogFile(logMessage);
@@ -41,7 +41,7 @@ function log(...messages: string[]): void {
     });
 }
 
-function debug(...messages: string[]): void {
+function debug(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
         const logMessage = formatLogMessage('DEBUG', message);
         writeToLogFile(logMessage);
@@ -51,7 +51,7 @@ function debug(...messages: string[]): void {
     });
 }
 
-function trace(...messages: string[]): void {
+function trace(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
         const logMessage = formatLogMessage('TRACE', message);
         writeToLogFile(logMessage);
@@ -61,7 +61,7 @@ function trace(...messages: string[]): void {
     });
 }
 
-function error(...messages: string[]): void {
+function error(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
         const logMessage = formatLogMessage('ERROR', message);
         writeToLogFile(logMessage);
@@ -71,7 +71,7 @@ function error(...messages: string[]): void {
     });
 }
 
-function warning(...messages: string[]): void {
+function warning(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
         const logMessage = formatLogMessage('WARNING', message);
         writeToLogFile(logMessage);
@@ -81,7 +81,7 @@ function warning(...messages: string[]): void {
     });
 }
 
-function fatal(...messages: string[]): void {
+function fatal(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
         const logMessage = formatLogMessage('FATAL', message);
         writeToLogFile(logMessage);
@@ -92,31 +92,31 @@ function fatal(...messages: string[]): void {
 }
 
 class Logger {
-    public static log(...messages: string[]): void {
+    public static log(...messages: string[] | Error[]): void {
         log(...messages);
     }
 
-    public static info(...messages: string[]): void {
+    public static info(...messages: string[] | Error[]): void {
         log(...messages);
     }
 
-    public static debug(...messages: string[]): void {
+    public static debug(...messages: string[] | Error[]): void {
         debug(...messages);
     }
 
-    public static trace(...messages: string[]): void {
+    public static trace(...messages: string[] | Error[]): void {
         trace(...messages);
     }
 
-    public static error(...messages: string[]): void {
+    public static error(...messages: string[] | Error[]): void {
         error(...messages);
     }
 
-    public static warning(...messages: string[]): void {
+    public static warning(...messages: string[] | Error[]): void {
         warning(...messages);
     }
 
-    public static fatal(...messages: string[]): void {
+    public static fatal(...messages: string[] | Error[]): void {
         fatal(...messages);
     }
 }
