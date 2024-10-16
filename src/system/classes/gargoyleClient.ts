@@ -29,14 +29,15 @@ class GargoyleClient extends Client {
     }
 
     override async login(token?: string) {
+        if (this.db?.willConnect) this.logger.log('Waiting for database connection...');
         try {
             await this.db?.isConnected();
-            this.logger.trace('Database connection established', 'Logging in');
+            this.logger.trace('Database connection established!', 'Logging in');
             return super.login(token ?? process.env.DISCORD_TOKEN);
         } catch {
             this.logger.debug('Database connection failed, setting db to null');
             this.db = null;
-            this.logger.trace('Logging in without database connection');
+            this.logger.trace('Logging in without database connection...');
             return super.login(token ?? process.env.DISCORD_TOKEN);
         }
     }

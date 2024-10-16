@@ -5,6 +5,7 @@ import { databaseGuildUsers, getGuildUser } from '@dbmodels/databaseGuildUserSch
 
 class Database extends mongoose.Connection {
     private connectionPromise: Promise<void>;
+    public willConnect: boolean = true;
 
     constructor(client: GargoyleClient) {
         client.logger.log('Connecting to the database');
@@ -12,6 +13,7 @@ class Database extends mongoose.Connection {
         const uri = process.env.MONGO_URI;
         if (!uri) {
             client.logger.warning('No MongoDB URI provided', 'No database connection will be established');
+            this.willConnect = false;
             this.connectionPromise = Promise.reject(new Error('No MongoDB URI provided'));
             return;
         }
