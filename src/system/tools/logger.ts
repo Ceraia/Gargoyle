@@ -96,6 +96,10 @@ class Logger {
         log(...messages);
     }
 
+    public static info(...messages: string[]): void {
+        log(...messages);
+    }
+
     public static debug(...messages: string[]): void {
         debug(...messages);
     }
