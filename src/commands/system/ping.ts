@@ -15,5 +15,4 @@ export default class Ping extends GargoyleCommand {
     public override executeTextCommand(client: GargoyleClient, message: Message) {
         message.reply('Pong!');
     }
-
 }
