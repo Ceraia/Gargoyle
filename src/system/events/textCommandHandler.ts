@@ -2,7 +2,7 @@ import GargoyleClient from '@src/system/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/classes/gargoyleEvent.js';
 import { Message } from 'discord.js';
 
-export default class MessageCreate extends GargoyleEvent {
+export default class TextCommandHandler extends GargoyleEvent {
     public event = 'messageCreate' as const;
     public once = false;
 

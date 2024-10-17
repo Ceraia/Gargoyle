@@ -2,7 +2,7 @@ import GargoyleClient from '@src/system/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/classes/gargoyleEvent.js';
 import { ChatInputCommandInteraction } from 'discord.js';
 
-export default class InteractionCreate extends GargoyleEvent {
+export default class SlashCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
     public once = false;
 
