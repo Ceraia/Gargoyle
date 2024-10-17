@@ -43,7 +43,7 @@ class GargoyleClient extends Client {
         this.logger.trace('Awaiting promises for system events and events...');
         await Promise.all([
             this.loadSystemEvents(), // comment for autoformat
-            this.loadEvents(), // comment for autoformat
+            this.loadEvents(), // -
             this.loadCommands()
         ]);
         this.logger.trace('Promises resolved...');
