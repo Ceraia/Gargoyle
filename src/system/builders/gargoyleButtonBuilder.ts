@@ -1,9 +1,13 @@
-import { ButtonBuilder } from 'discord.js';
+import { ButtonBuilder, ButtonStyle } from 'discord.js';
+import GargoyleCommand from '../classes/gargoyleCommand.js';
 
 class GargoyleButtonBuilder extends ButtonBuilder {
-    constructor() {
+    constructor(command: GargoyleCommand, argument: string) {
         super();
-        this.setCustomId(randomId()); // Automatically set a random customId if not provided
+        this.setCustomId((command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()) + '-' + argument.toLowerCase());
+        this.setStyle(ButtonStyle.Primary);
+        this.setDisabled(false);
+        this.setLabel(argument);
     }
 
     public override setCustomId(customId?: string): this {
