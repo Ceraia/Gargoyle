@@ -18,7 +18,7 @@ export default class ButtonCommandHandler extends GargoyleEvent {
         });
 
         if (!command) {
-            interaction.reply('Command not found!').then((msg) => {
+            interaction.reply('Button not found!').then((msg) => {
                 setTimeout(() => {
                     msg.delete();
                 }, 5000);
