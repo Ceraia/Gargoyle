@@ -3,7 +3,6 @@
   "dockerComposeFile": ["../docker-compose-dev.yml"],
   "service": "app",
   "workspaceFolder": "/workspace/gargoyle",
-  "postCreateCommand": "bun install",
   "customizations": {
     "vscode": {
       "extensions": [
