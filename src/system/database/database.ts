@@ -4,7 +4,6 @@ import GargoyleClient from '@classes/gargoyleClient.js';
 import { databaseGuildUsers, getGuildUser } from '@dbmodels/databaseGuildUserSchema.js';
 
 class Database extends mongoose.Connection {
-    private connectionPromise: Promise<void>;
     public willConnect: boolean = true;
 
     constructor(client: GargoyleClient) {
@@ -14,22 +13,17 @@ class Database extends mongoose.Connection {
         if (!uri) {
             client.logger.warning('No MongoDB URI provided', 'No database connection will be established');
             this.willConnect = false;
-            this.connectionPromise = Promise.reject(new Error('No MongoDB URI provided'));
             return;
         }
-        this.connectionPromise = mongoose
+        mongoose
             .connect(uri)
             .then(() => {
                 client.logger.log('Connected to the database');
             })
             .catch((err) => {
                 client.logger.error(err, 'Error connecting to the database: No database connection will be established');
-                throw err;
+                this.willConnect = false;
             });
-    }
-
-    public isConnected(): Promise<void> {
-        return this.connectionPromise;
     }
 
     public databaseGuilds = databaseGuilds;
