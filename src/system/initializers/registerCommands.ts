@@ -1,31 +1,21 @@
-import fs from 'fs/promises';
-import path from 'path';
 import GargoyleClient from '../classes/gargoyleClient.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
 
-async function registerCommands(client: GargoyleClient, ...dirs: string[]): Promise<void> {
-    for (const dir of dirs) {
-        const files = await fs.readdir(path.join(__dirname, dir));
-
-        for (const file of files) {
-            const stat = await fs.lstat(path.join(__dirname, dir, file));
-
-            if (stat.isDirectory()) {
-                await registerCommands(client, path.join(dir, file));
-            } else if (file.endsWith('.ts') || file.endsWith('.js')) {
-                try {
-                    const { default: Command } = await import(path.join(__dirname, dir, file));
-                    const command: GargoyleCommand = new Command();
-                    if (command.slashCommand || command.textCommand) {
-                        client.logger.trace(`Registering command: ${command.slashCommand?.name ?? command.textCommand?.name}`);
-                        client.commands.push(command);
-                    }
-                } catch (err) {
-                    client.logger.error(err as string, `Error registering command: ${file}`);
-                }
+async function registerCommands(client: GargoyleClient): Promise<void> {
+    await client.application?.commands.fetch().then((commands) => {
+        commands.forEach(async (command) => {
+            if (!client.commands.find((c) => c.slashCommand?.name === command.name)) {
+                client.logger.trace(`Deleting command: ${command.name}`);
+                await client.application?.commands.delete(command);
             }
+        });
+    });
+
+    await client.commands.forEach(async (command) => {
+        if (command.slashCommand) {
+            client.logger.trace(`Registering slash command: ${command.slashCommand.name}`);
+            await client.application?.commands.create(command.slashCommand);
         }
-    }
+    });
 }
 
 export default registerCommands;
