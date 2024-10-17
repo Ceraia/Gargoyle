@@ -44,17 +44,6 @@ class TextCommandBuilder {
     get aliases(): string[] {
         return this._aliases;
     }
-
-    build(): { name: string; description: string; aliases: string[] } {
-        if (!this._name || !this._description) {
-            throw new Error('Command must have a name and description.');
-        }
-        return {
-            name: this._name,
-            description: this._description,
-            aliases: this._aliases
-        };
-    }
 }
 
 export default TextCommandBuilder;
