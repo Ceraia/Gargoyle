@@ -3,8 +3,7 @@ import Database from '@database/database.js';
 import { Logger } from '../tools/logger.js';
 import registerEvents from '../initializers/registerEvents.js';
 import GargoyleCommand from './gargoyleCommand.js';
-import registerCommands from '../initializers/registerCommands.js';
-
+import loadCommands from '../initializers/loadCommands.js';
 class GargoyleClient extends Client {
     db: Database | null;
     prefix: string;
@@ -32,8 +31,10 @@ class GargoyleClient extends Client {
     }
 
     public async loadCommands() {
+        this.logger.log('Loading system commands...');
+        await loadCommands(this, '../commands');
         this.logger.log('Loading commands...');
-        await registerCommands(this, '../../commands');
+        await loadCommands(this, '../../commands');
         this.logger.log(`Loaded ${this.commands.length} commands!`);
     }
 
@@ -49,7 +50,6 @@ class GargoyleClient extends Client {
         this.logger.trace('Promises resolved...');
 
         try {
-            await this.db?.isConnected();
             this.logger.trace('Database connection established!', 'Logging in');
             return super.login(token ?? process.env.DISCORD_TOKEN);
         } catch {
