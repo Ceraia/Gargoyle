@@ -6,8 +6,9 @@ export default class Ready extends GargoyleEvent {
     public event = 'ready' as const;
     public once = false;
 
-    public execute(client: GargoyleClient): void {
+    public async execute(client: GargoyleClient): Promise<void> {
         client.logger.log('Beginning command registration...');
-        registerCommands(client);
+        await registerCommands(client);
+        client.logger.log('Command registration complete');
     }
 }

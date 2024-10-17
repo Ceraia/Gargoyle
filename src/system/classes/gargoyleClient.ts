@@ -41,21 +41,21 @@ class GargoyleClient extends Client {
     override async login(token?: string) {
         if (this.db?.willConnect) this.logger.log('Waiting for database connection...');
 
-        this.logger.trace('Awaiting promises for system events and events...');
+        this.logger.debug('Awaiting promises for system events and events...');
         await Promise.all([
             this.loadSystemEvents(), // comment for autoformat
             this.loadEvents(), // -
             this.loadCommands()
         ]);
-        this.logger.trace('Promises resolved...');
+        this.logger.debug('Promises resolved...');
 
         try {
-            this.logger.trace('Database connection established!', 'Logging in');
+            this.logger.debug('Database connection established!', 'Logging in');
             return super.login(token ?? process.env.DISCORD_TOKEN);
         } catch {
             this.logger.debug('Database connection failed, setting db to null');
             this.db = null;
-            this.logger.trace('Logging in without database connection...');
+            this.logger.debug('Logging in without database connection...');
             return super.login(token ?? process.env.DISCORD_TOKEN);
         }
     }

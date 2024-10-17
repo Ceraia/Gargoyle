@@ -3,13 +3,13 @@ import path from 'path';
 
 // Log levels mapping
 const LOG_LEVELS = {
-    NONE: 0,
-    FATAL: 1,
-    ERROR: 2,
-    WARNING: 3,
-    INFO: 4,
-    DEBUG: 5,
-    TRACE: 6
+    NONE: 0, // Should not trace any data
+    FATAL: 1, // Should trace fatal errors such as system crashes
+    ERROR: 2, // Should trace errors such as exceptions
+    WARNING: 3, // Should trace warnings such as deprecated commands or similar
+    INFO: 4, // Should trace general data such as startup information
+    DEBUG: 5, // Should trace system specific data, such as registration of commands or similar
+    TRACE: 6 // Should trace user specific data, such as using commands or events
 };
 
 const currentLogLevel = parseInt(process.env.DEBUG_LEVEL || '4', 10); // Default to INFO (4)
