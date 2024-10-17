@@ -4,7 +4,7 @@ import GargoyleCommand from '../classes/gargoyleCommand.js';
 class GargoyleButtonBuilder extends ButtonBuilder {
     constructor(command: GargoyleCommand, argument: string) {
         super();
-        this.setCustomId((command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()) + '-' + argument.toLowerCase());
+        this.setCustomId(`${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.toLowerCase()}`);
         this.setStyle(ButtonStyle.Primary);
         this.setDisabled(false);
         this.setLabel(argument);
