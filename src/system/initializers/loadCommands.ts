@@ -17,7 +17,7 @@ async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<
                     const { default: Command } = await import(path.join(__dirname, dir, file));
                     const command: GargoyleCommand = new Command();
                     if (command.slashCommand || command.textCommand) {
-                        client.logger.trace(`Registering command: ${command.slashCommand?.name ?? command.textCommand?.name}`);
+                        client.logger.debug(`Registering command: ${command.slashCommand?.name ?? command.textCommand?.name}`);
                         client.commands.push(command);
                     }
                 } catch (err) {
