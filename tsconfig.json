@@ -41,6 +41,9 @@
 			"@database/*": [
 				"./src/system/database/*"
 			],
+			"@builders/*": [
+				"./src/system/builders/*"
+			],
 			"@dbmodels/*": [
 				"./src/system/database/models/*"
 			],
