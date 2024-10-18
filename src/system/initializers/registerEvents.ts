@@ -4,6 +4,14 @@ import GargoyleClient from '../classes/gargoyleClient.js';
 import GargoyleEvent from '../classes/gargoyleEvent.js';
 
 async function registerEvents(client: GargoyleClient, ...dirs: string[]): Promise<void> {
+    if (
+        !(await fs
+            .access(path.join(__dirname, dirs[0]))
+            .then(() => true)
+            .catch(() => false))
+    )
+        return client.logger.error(`Directory not found: ${dirs[0]}`);
+
     for (const dir of dirs) {
         const files = await fs.readdir(path.join(__dirname, dir));
 
