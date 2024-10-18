@@ -4,16 +4,11 @@ import GargoyleClient from '../classes/gargoyleClient.js';
 import GargoyleCommand from '../classes/gargoyleCommand.js';
 
 async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<void> {
-    if (
-        !(await fs
-            .access(path.join(__dirname, dirs[0]))
-            .then(() => true)
-            .catch(() => false))
-    )
-        return client.logger.error(`Directory not found: ${dirs[0]}`);
-
     for (const dir of dirs) {
-        const files = await fs.readdir(path.join(__dirname, dir));
+        const files = await fs.readdir(path.join(__dirname, dir)).catch((err) => {
+            client.logger.error(`Error reading directory: ${dir}`, err as string);
+            return [];
+        });
 
         for (const file of files) {
             const stat = await fs.lstat(path.join(__dirname, dir, file));
