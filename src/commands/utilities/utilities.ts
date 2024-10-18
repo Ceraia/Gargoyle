@@ -1,47 +1,22 @@
-import TextCommandBuilder from '@builders/textCommandBuilder.js';
 import GargoyleClient from '@src/system/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/classes/gargoyleCommand.js';
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, Message, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
-
 export default class Help extends GargoyleCommand {
-    public override category: string = 'base';
-    public override slashCommand = new SlashCommandBuilder().setName('help').setDescription('Replies with bot information');
-    public override textCommand = new TextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
-    private readonly helpMessage = {
-        embeds: [
-            new EmbedBuilder()
-                .setTitle('Gargoyle')
-                .setColor(0x2b2d31)
-                .setDescription(
-                    'A bot made by [Axodouble](https://axodouble.com).\n' +
-                    'Distriobuted, hosted & developed by [Ceraia](https://ceraia.com).' +
-                    'This bot is built on the Gargoyle, a custom bot framework.\n\n' +
-                    'This bot is still in very early development and major changes are expected,\n' +
-                    'If you have any suggestions or issues, please contact Axodouble.'
-                )
-        ],
-        components: [new ActionRowBuilder<ButtonBuilder>().addComponents(new GargoyleButtonBuilder(this, 'Commands').setStyle(ButtonStyle.Secondary))]
-    };
+    public override category: string = 'utilities';
+    public override slashCommand = new SlashCommandBuilder().setName('utilities').setDescription('Replies with bot information');
+    public override textCommand = null;
 
     public override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        interaction.reply(this.helpMessage);
-    }
 
-    public override executeTextCommand(_client: GargoyleClient, message: Message) {
-        message.reply(this.helpMessage);
     }
 
     public override async executeButtonCommand(client: GargoyleClient, argument: string, interaction: ButtonInteraction): Promise<void> {
         if (argument === 'commands') {
             const message = await this.generateSlashHelpMessage(client);
             await interaction.update(message);
-        } else if (argument === 'text') {
-            const message = await this.generateTextHelpMessage(client);
-            await interaction.update(message);
         }
-
     }
 
     private async generateSlashHelpMessage(client: GargoyleClient): Promise<object> {

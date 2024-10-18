@@ -1,4 +1,4 @@
-import TextCommandBuilder from '@builders/textCommandBuilder.js';
+import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/classes/gargoyleCommand.js';
 import {
