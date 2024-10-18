@@ -12,8 +12,8 @@ export default class ButtonCommandHandler extends GargoyleEvent {
 
         const command = client.commands.find((command) => {
             return (
-                command.slashCommand?.name === interaction.customId.toLowerCase().split('-')[0] ||
-                command.textCommand?.name === interaction.customId.toLowerCase().split('-')[0]
+                command.slashCommand?.name === interaction.customId.toLowerCase().split('-')[1] ||
+                command.textCommand?.name === interaction.customId.toLowerCase().split('-')[1]
             );
         });
 
@@ -24,7 +24,7 @@ export default class ButtonCommandHandler extends GargoyleEvent {
                 }, 5000);
             });
         } else {
-            const argument = interaction.customId.toLowerCase().split('-')[1];
+            const argument = interaction.customId.toLowerCase().split('-')[2];
             command.executeButtonCommand(client, argument, interaction);
             return client.logger.trace(`${interaction.user} used the ${interaction.customId} button command.`);
         }
