@@ -4,22 +4,29 @@ import GargoyleCommand from '@src/system/classes/gargoyleCommand.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
-    ButtonBuilder,
     ButtonInteraction,
-    ButtonStyle,
     ChatInputCommandInteraction,
     EmbedBuilder,
     Message,
     SlashCommandBuilder,
-    StringSelectMenuBuilder
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder
 } from 'discord.js';
-import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
+import { GargoyleStringSelectMenuBuilder } from '../builders/gargoyleSelectMenuBuilders.js';
 
 export default class Help extends GargoyleCommand {
     override category: string = 'base';
     override slashCommand = new SlashCommandBuilder().setName('help').setDescription('Replies with bot information');
     override textCommand = new TextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
+    private readonly selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        new GargoyleStringSelectMenuBuilder(this, 'commands')
+            .addOptions(
+                new StringSelectMenuOptionBuilder().setLabel('Info Message').setValue('info'),
+                new StringSelectMenuOptionBuilder().setLabel('Slash Commands').setValue('commands'),
+                new StringSelectMenuOptionBuilder().setLabel('Text Commands').setValue('text')
+            )
+    );
     private readonly helpMessage = {
         embeds: [
             new EmbedBuilder()
@@ -33,22 +40,30 @@ export default class Help extends GargoyleCommand {
                         'If you have any suggestions or issues, please contact Axodouble.'
                 )
         ],
-        components: [
-            new ActionRowBuilder<ButtonBuilder>().addComponents(new GargoyleButtonBuilder(this, 'Commands').setStyle(ButtonStyle.Secondary)),
-            new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(new GargoyleButtonBuilder(this, 'Text').setStyle(ButtonStyle.Secondary))
-        ]
+        components: [this.selectMenu]
     };
 
-    override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        interaction.reply(this.helpMessage);
+    override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply({ephemeral: true});
+        interaction.followUp(this.helpMessage);
     }
 
     override executeTextCommand(_client: GargoyleClient, message: Message) {
         message.reply(this.helpMessage);
     }
 
-    override executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): void {
-        
+    override async executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): Promise<void> {
+        if (argument === 'commands') {
+            if(interaction.values[0] === 'commands') {
+                const message = await this.generateSlashHelpMessage(client);
+                await interaction.update(message);
+            } else if(interaction.values[0] === 'text') {
+                const message = await this.generateTextHelpMessage(client);
+                await interaction.update(message);
+            } else {
+                await interaction.update(this.helpMessage);
+            }
+        }
     }
 
     override async executeButtonCommand(client: GargoyleClient, argument: string, interaction: ButtonInteraction): Promise<void> {
@@ -70,10 +85,7 @@ export default class Help extends GargoyleCommand {
         return {
             embeds: [embed],
             components: [
-                new ActionRowBuilder<ButtonBuilder>().addComponents(
-                    new GargoyleButtonBuilder(this, 'commands').setStyle(ButtonStyle.Primary).setLabel('Slash Commands'),
-                    new GargoyleButtonBuilder(this, 'text').setStyle(ButtonStyle.Secondary).setLabel('Text Commands')
-                )
+                this.selectMenu
             ]
         };
     }
@@ -93,10 +105,7 @@ export default class Help extends GargoyleCommand {
         return {
             embeds: [embed],
             components: [
-                new ActionRowBuilder<ButtonBuilder>().addComponents(
-                    new GargoyleButtonBuilder(this, 'commands').setStyle(ButtonStyle.Secondary).setLabel('Slash Commands'),
-                    new GargoyleButtonBuilder(this, 'text').setStyle(ButtonStyle.Primary).setLabel('Text Commands')
-                )
+                this.selectMenu
             ]
         };
     }
