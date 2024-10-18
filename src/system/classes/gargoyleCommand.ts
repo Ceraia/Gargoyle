@@ -1,4 +1,4 @@
-import { ButtonInteraction, ChatInputCommandInteraction, Message, SlashCommandBuilder } from 'discord.js';
+import { AnySelectMenuInteraction, ButtonInteraction, ChatInputCommandInteraction, Message, SlashCommandBuilder } from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
 import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 
@@ -15,6 +15,9 @@ abstract class GargoyleCommand {
     }
     public executeButtonCommand(client: GargoyleClient, argument: string, interaction: ButtonInteraction): void {
         client.logger.error(`${interaction.customId} with argument ${argument} does not have a button command implementation.`);
+    }
+    public executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): void {
+        client.logger.error(`${interaction.customId} with argument ${argument} does not have a select menu command implementation.`);
     }
 }
 

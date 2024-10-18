@@ -13,7 +13,6 @@ export default class Ping extends GargoyleCommand {
         await interaction.reply('Pong!');
         const end = Date.now();
         await interaction.editReply(`Pong! Latency is ${end - start}ms.`);
-
     }
 
     public override executeTextCommand(_client: GargoyleClient, message: Message) {

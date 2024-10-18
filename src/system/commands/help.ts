@@ -3,21 +3,23 @@ import GargoyleClient from '@src/system/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/classes/gargoyleCommand.js';
 import {
     ActionRowBuilder,
+    AnySelectMenuInteraction,
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
     EmbedBuilder,
     Message,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    StringSelectMenuBuilder
 } from 'discord.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
 
 export default class Help extends GargoyleCommand {
-    public override category: string = 'base';
-    public override slashCommand = new SlashCommandBuilder().setName('help').setDescription('Replies with bot information');
-    public override textCommand = new TextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
+    override category: string = 'base';
+    override slashCommand = new SlashCommandBuilder().setName('help').setDescription('Replies with bot information');
+    override textCommand = new TextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
     private readonly helpMessage = {
         embeds: [
             new EmbedBuilder()
@@ -31,18 +33,25 @@ export default class Help extends GargoyleCommand {
                         'If you have any suggestions or issues, please contact Axodouble.'
                 )
         ],
-        components: [new ActionRowBuilder<ButtonBuilder>().addComponents(new GargoyleButtonBuilder(this, 'Commands').setStyle(ButtonStyle.Secondary))]
+        components: [
+            new ActionRowBuilder<ButtonBuilder>().addComponents(new GargoyleButtonBuilder(this, 'Commands').setStyle(ButtonStyle.Secondary)),
+            new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(new GargoyleButtonBuilder(this, 'Text').setStyle(ButtonStyle.Secondary))
+        ]
     };
 
-    public override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+    override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         interaction.reply(this.helpMessage);
     }
 
-    public override executeTextCommand(_client: GargoyleClient, message: Message) {
+    override executeTextCommand(_client: GargoyleClient, message: Message) {
         message.reply(this.helpMessage);
     }
 
-    public override async executeButtonCommand(client: GargoyleClient, argument: string, interaction: ButtonInteraction): Promise<void> {
+    override executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): void {
+        
+    }
+
+    override async executeButtonCommand(client: GargoyleClient, argument: string, interaction: ButtonInteraction): Promise<void> {
         if (argument === 'commands') {
             const message = await this.generateSlashHelpMessage(client);
             await interaction.update(message);
