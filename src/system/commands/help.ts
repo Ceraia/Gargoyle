@@ -13,19 +13,18 @@ import {
     StringSelectMenuOptionBuilder
 } from 'discord.js';
 import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
-import { GargoyleStringSelectMenuBuilder } from '../builders/gargoyleSelectMenuBuilders.js';
+import { GargoyleStringSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
 
 export default class Help extends GargoyleCommand {
     override category: string = 'base';
     override slashCommand = new SlashCommandBuilder().setName('help').setDescription('Replies with bot information');
     override textCommand = new TextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
     private readonly selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-        new GargoyleStringSelectMenuBuilder(this, 'commands')
-            .addOptions(
-                new StringSelectMenuOptionBuilder().setLabel('Info Message').setValue('info'),
-                new StringSelectMenuOptionBuilder().setLabel('Slash Commands').setValue('commands'),
-                new StringSelectMenuOptionBuilder().setLabel('Text Commands').setValue('text')
-            )
+        new GargoyleStringSelectMenuBuilder(this, 'commands').addOptions(
+            new StringSelectMenuOptionBuilder().setLabel('Info Message').setValue('info'),
+            new StringSelectMenuOptionBuilder().setLabel('Slash Commands').setValue('commands'),
+            new StringSelectMenuOptionBuilder().setLabel('Text Commands').setValue('text')
+        )
     );
     private readonly helpMessage = {
         embeds: [
@@ -44,7 +43,7 @@ export default class Help extends GargoyleCommand {
     };
 
     override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply({ephemeral: true});
+        await interaction.deferReply({ ephemeral: true });
         interaction.followUp(this.helpMessage);
     }
 
@@ -54,10 +53,10 @@ export default class Help extends GargoyleCommand {
 
     override async executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): Promise<void> {
         if (argument === 'commands') {
-            if(interaction.values[0] === 'commands') {
+            if (interaction.values[0] === 'commands') {
                 const message = await this.generateSlashHelpMessage(client);
                 await interaction.update(message);
-            } else if(interaction.values[0] === 'text') {
+            } else if (interaction.values[0] === 'text') {
                 const message = await this.generateTextHelpMessage(client);
                 await interaction.update(message);
             } else {
@@ -84,9 +83,7 @@ export default class Help extends GargoyleCommand {
 
         return {
             embeds: [embed],
-            components: [
-                this.selectMenu
-            ]
+            components: [this.selectMenu]
         };
     }
 
@@ -104,9 +101,7 @@ export default class Help extends GargoyleCommand {
 
         return {
             embeds: [embed],
-            components: [
-                this.selectMenu
-            ]
+            components: [this.selectMenu]
         };
     }
 }

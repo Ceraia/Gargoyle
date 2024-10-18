@@ -6,6 +6,7 @@ abstract class GargoyleCommand {
     public abstract category: string;
     public slashCommand: SlashCommandBuilder | null = null;
     public textCommand: TextCommandBuilder | null = null;
+    public guild: string | null = null;
 
     public executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): void {
         client.logger.error(`${interaction.commandName} does not have a slash command implementation.`);
