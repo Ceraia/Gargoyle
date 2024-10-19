@@ -31,6 +31,13 @@ class GargoyleStringSelectMenuBuilder extends StringSelectMenuBuilder {
         super();
         this.setCustomId(`cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.toLowerCase()}`);
     }
+
+    public addOption(label: string, value: string): this {
+        return super.addOptions({
+            label: label,
+            value: value
+        });
+    }
 }
 
 /**
