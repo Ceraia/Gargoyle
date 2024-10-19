@@ -16,7 +16,12 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
             if (!command.guild) {
                 await client.application?.commands.create(command.slashCommand);
             } else {
-                await client.guilds.cache.get(command.guild)?.commands.create(command.slashCommand).catch(() => { client.logger.error(`Failed to register slash command: ${command.slashCommand?.name} in guild: ${command.guild}`); });
+                await client.guilds.cache
+                    .get(command.guild)
+                    ?.commands.create(command.slashCommand)
+                    .catch(() => {
+                        client.logger.error(`Failed to register slash command: ${command.slashCommand?.name} in guild: ${command.guild}`);
+                    });
             }
         }
     });

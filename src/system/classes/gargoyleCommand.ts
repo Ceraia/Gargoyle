@@ -1,4 +1,11 @@
-import { AnySelectMenuInteraction, ButtonInteraction, ChatInputCommandInteraction, Message, ModalSubmitInteraction, SlashCommandBuilder } from 'discord.js';
+import {
+    AnySelectMenuInteraction,
+    ButtonInteraction,
+    ChatInputCommandInteraction,
+    Message,
+    ModalSubmitInteraction,
+    SlashCommandBuilder
+} from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
 import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 
