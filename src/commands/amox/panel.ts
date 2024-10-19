@@ -1,4 +1,5 @@
 import GargoyleEmbedBuilder from '@src/system/builders/gargoyleEmbedBuilder.js';
+import GargoyleModalBuilder from '@src/system/builders/gargoyleModalBuilder.js';
 import { GargoyleChannelSelectMenuBuilder, GargoyleStringSelectMenuBuilder } from '@src/system/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleClient from '@src/system/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/classes/gargoyleCommand.js';
@@ -10,7 +11,9 @@ import {
     ChatInputCommandInteraction,
     SlashCommandBuilder,
     StringSelectMenuBuilder,
-    TextChannel
+    TextChannel,
+    TextInputBuilder,
+    TextInputStyle
 } from 'discord.js';
 
 export default class Amox extends GargoyleCommand {
@@ -52,7 +55,7 @@ export default class Amox extends GargoyleCommand {
     public override async executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): Promise<void> {
         if (argument === 'panelcreate') {
             await interaction.deferUpdate();
-            const categories = new GargoyleStringSelectMenuBuilder(this, 'commission').setMinValues(1).setMaxValues(1);
+            const categories = new GargoyleStringSelectMenuBuilder(this, 'category').setMinValues(1).setMaxValues(1);
             const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(categories);
 
             client.logger.info(interaction.values.join(', '));
@@ -72,16 +75,68 @@ export default class Amox extends GargoyleCommand {
                 components: [row]
             });
         }
-        if (argument === 'commission') {
-            await interaction.deferUpdate();
+        if (argument === 'category') {
+            await interaction.deferReply({ ephemeral: true });
             const category = interaction.values[0];
             const channel = interaction.guild?.channels.cache.get(category);
-            if (!channel) return;
-            await (interaction.channel as TextChannel).send({
-                embeds: [
-                    new GargoyleEmbedBuilder().setTitle('AMOX Commission Panel').setDescription(`You have selected ${channel.name} as a category.`)
-                ]
+
+            const children = interaction.guild?.channels.cache.filter((ch) => ch.parentId === channel?.id && ch.type === ChannelType.GuildText);
+
+            if (!children) return;
+
+            const subCategories = new GargoyleStringSelectMenuBuilder(this, 'subcategory').setMinValues(1).setMaxValues(1);
+            const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(subCategories);
+
+            for (const child of children.values()) {
+                subCategories.addOptions({
+                    label: child.name,
+                    value: child.id
+                });
+            }
+
+            await interaction.editReply({
+                embeds: [new GargoyleEmbedBuilder().setTitle('Select what sub-category you want to create a commission for.')],
+                components: [row]
             });
+        }
+        if (argument === 'subcategory') {
+            const modal = new GargoyleModalBuilder(this, 'createcommission').setTitle('Create a new commission');
+            modal.addComponents(
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                    new TextInputBuilder()
+                        .setStyle(TextInputStyle.Short)
+                        .setLabel('Service')
+                        .setPlaceholder('What service are you specifically looking for?')
+                        .setCustomId('service')
+                        .setRequired(true)
+                ),
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                    new TextInputBuilder()
+                        .setStyle(TextInputStyle.Paragraph)
+                        .setLabel('Description')
+                        .setPlaceholder('Describe what you want done, the more details the better.')
+                        .setCustomId('description')
+                        .setRequired(true)
+                ),
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                    new TextInputBuilder()
+                        .setStyle(TextInputStyle.Short)
+                        .setLabel('Other Requirements')
+                        .setPlaceholder('What other requirements do you have? e.g. Must be able to make everything understandable in Spanish')
+                        .setCustomId('requirements')
+                        .setRequired(true)
+                ),
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                    new TextInputBuilder()
+                        .setStyle(TextInputStyle.Short)
+                        .setLabel('Budget')
+                        .setPlaceholder('What is your budget?')
+                        .setCustomId('budget')
+                        .setRequired(true)
+                )
+            );
+
+            await interaction.showModal(modal);
         }
     }
 
