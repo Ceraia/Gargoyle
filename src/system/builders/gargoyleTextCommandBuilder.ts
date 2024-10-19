@@ -1,3 +1,40 @@
+/**
+ * A builder class for creating text commands with a name, description, and aliases.
+ *
+ * @class TextCommandBuilder
+ *
+ * @example
+ * ```typescript
+ * const command = new TextCommandBuilder()
+ *     .setName('example')
+ *     .setDescription('This is an example command')
+ *     .addAlias('ex')
+ *     .addAlias('sample');
+ *
+ * console.log(command.name); // 'example'
+ * console.log(command.description); // 'This is an example command'
+ * console.log(command.aliases); // ['ex', 'sample']
+ * ```
+ *
+ * @method setName
+ * @param {string} name - The name of the command. Must be a non-empty string.
+ * @returns {this} The instance of the builder for chaining.
+ * @throws {Error} If the name is not a non-empty string.
+ *
+ * @method setDescription
+ * @param {string} description - The description of the command. Must be a non-empty string.
+ * @returns {this} The instance of the builder for chaining.
+ * @throws {Error} If the description is not a non-empty string.
+ *
+ * @method addAlias
+ * @param {string} alias - An alias for the command. Must be a non-empty string.
+ * @returns {this} The instance of the builder for chaining.
+ * @throws {Error} If the alias is not a non-empty string.
+ *
+ * @property {string} name - The name of the command. Throws an error if not set.
+ * @property {string} description - The description of the command. Throws an error if not set.
+ * @property {string[]} aliases - The list of aliases for the command.
+ */
 class TextCommandBuilder {
     private _name: string | undefined;
     private _description: string | undefined;
