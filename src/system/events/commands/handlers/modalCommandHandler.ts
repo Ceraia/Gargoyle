@@ -1,12 +1,12 @@
 import GargoyleClient from '@src/system/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/classes/gargoyleEvent.js';
-import { ButtonInteraction } from 'discord.js';
+import { ModalSubmitInteraction } from 'discord.js';
 
-export default class ButtonCommandHandler extends GargoyleEvent {
+export default class ModalCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
 
-    public execute(client: GargoyleClient, interaction: ButtonInteraction): void {
-        if (!interaction.isButton()) return;
+    public execute(client: GargoyleClient, interaction: ModalSubmitInteraction): void {
+        if (!interaction.isModalSubmit()) return;
         if (interaction.user.bot) return;
 
         const command = client.commands.find((command) => {
@@ -17,14 +17,14 @@ export default class ButtonCommandHandler extends GargoyleEvent {
         });
 
         if (!command) {
-            interaction.reply('Button not found!').then((msg) => {
+            interaction.reply('Modal not found!').then((msg) => {
                 setTimeout(() => {
                     msg.delete();
                 }, 5000);
             });
         } else {
             const args = interaction.customId.toLowerCase().split('-').slice(2);
-            command.executeButtonCommand(client, interaction, ...args);
+            command.executeModalCommand(client, interaction, ...args);
             return client.logger.trace(`${interaction.user} used the ${interaction.customId} button command.`);
         }
     }

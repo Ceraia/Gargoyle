@@ -4,7 +4,7 @@ import { ActivityType } from 'discord.js';
 
 export default class Ready extends GargoyleEvent {
     public event = 'ready' as const;
-    public once = false;
+    override once = true;
 
     public execute(client: GargoyleClient): void {
         setInterval(() => {

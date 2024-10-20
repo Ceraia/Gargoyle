@@ -1,13 +1,12 @@
 import GargoyleClient from '@src/system/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/classes/gargoyleEvent.js';
-import { ButtonInteraction } from 'discord.js';
+import { AnySelectMenuInteraction } from 'discord.js';
 
-export default class ButtonCommandHandler extends GargoyleEvent {
+export default class SelectCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
 
-    public execute(client: GargoyleClient, interaction: ButtonInteraction): void {
-        if (!interaction.isButton()) return;
-        if (interaction.user.bot) return;
+    public execute(client: GargoyleClient, interaction: AnySelectMenuInteraction): void {
+        if (!interaction.isAnySelectMenu()) return;
 
         const command = client.commands.find((command) => {
             return (
@@ -17,15 +16,15 @@ export default class ButtonCommandHandler extends GargoyleEvent {
         });
 
         if (!command) {
-            interaction.reply('Button not found!').then((msg) => {
+            interaction.reply('Select menu not found!').then((msg) => {
                 setTimeout(() => {
                     msg.delete();
                 }, 5000);
             });
         } else {
             const args = interaction.customId.toLowerCase().split('-').slice(2);
-            command.executeButtonCommand(client, interaction, ...args);
-            return client.logger.trace(`${interaction.user} used the ${interaction.customId} button command.`);
+            command.executeSelectMenuCommand(client, interaction, ...args);
+            return client.logger.trace(`${interaction.user} used the ${interaction.customId} select menu command.`);
         }
     }
 }

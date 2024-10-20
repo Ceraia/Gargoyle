@@ -5,7 +5,10 @@ import GargoyleEvent from '../classes/gargoyleEvent.js';
 
 async function registerEvents(client: GargoyleClient, ...dirs: string[]): Promise<void> {
     for (const dir of dirs) {
-        const files = await fs.readdir(path.join(__dirname, dir));
+        const files = await fs.readdir(path.join(__dirname, dir)).catch((err) => {
+            client.logger.error(`Error reading directory: ${dir}`, err as string);
+            return [];
+        });
 
         for (const file of files) {
             const stat = await fs.lstat(path.join(__dirname, dir, file));
