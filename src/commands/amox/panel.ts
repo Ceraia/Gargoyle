@@ -9,11 +9,13 @@ import {
     ChannelSelectMenuBuilder,
     ChannelType,
     ChatInputCommandInteraction,
+    ModalSubmitInteraction,
     SlashCommandBuilder,
     StringSelectMenuBuilder,
     TextChannel,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    ThreadAutoArchiveDuration
 } from 'discord.js';
 
 export default class Amox extends GargoyleCommand {
@@ -58,10 +60,7 @@ export default class Amox extends GargoyleCommand {
             const categories = new GargoyleStringSelectMenuBuilder(this, 'category').setMinValues(1).setMaxValues(1);
             const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(categories);
 
-            client.logger.info(interaction.values.join(', '));
-
             for (const category of interaction.values) {
-                client.logger.info(category);
                 const channel = interaction.guild?.channels.cache.get(category);
                 if (!channel) return;
                 categories.addOptions({
@@ -124,7 +123,7 @@ export default class Amox extends GargoyleCommand {
                         .setLabel('Other Requirements')
                         .setPlaceholder('What other requirements do you have? e.g. Must be able to make everything understandable in Spanish')
                         .setCustomId('requirements')
-                        .setRequired(true)
+                        .setRequired(false)
                 ),
                 new ActionRowBuilder<TextInputBuilder>().addComponents(
                     new TextInputBuilder()
@@ -140,5 +139,31 @@ export default class Amox extends GargoyleCommand {
         }
     }
 
-    // cmd-amox-argument
+    public override async executeModalCommand(client: GargoyleClient, argument: string, interaction: ModalSubmitInteraction): Promise<void> {
+        if (argument === 'createcommission') {
+            await interaction.deferReply({ ephemeral: true });
+            const service = interaction.fields.getField('service')?.value;
+            const description = interaction.fields.getField('description')?.value;
+            const requirements = interaction.fields.getField('requirements')?.value;
+            const budget = interaction.fields.getField('budget')?.value;
+            client.logger.info(interaction.customId);
+
+            const channel = await interaction.channel?.fetch();
+            if (!(channel instanceof TextChannel)) {
+                return client.logger.error('Channel is not a TextChannel');
+            }
+
+            channel.threads
+                .create({
+                    name: service,
+                    autoArchiveDuration: ThreadAutoArchiveDuration.ThreeDays,
+                    type: ChannelType.PrivateThread,
+                    invitable: true
+                })
+                .then((thread) => {
+                    thread.send(`**Service:** ${service}\n**Description:** ${description}\n**Requirements:** ${requirements}\n**Budget:** ${budget}`);
+                    thread.members.add(interaction.user.id);
+                });
+        }
+    }
 }
