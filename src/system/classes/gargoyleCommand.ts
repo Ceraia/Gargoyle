@@ -27,16 +27,16 @@ abstract class GargoyleCommand {
             }, 5000);
         });
     }
-    public executeButtonCommand(client: GargoyleClient, argument: string, interaction: ButtonInteraction): void {
-        client.logger.error(`${interaction.customId} with argument ${argument} does not have a button command implementation.`);
+    public executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): void {
+        client.logger.error(`${interaction.customId} with argument ${args} does not have a button command implementation.`);
         interaction.reply({ content: 'This command does not have a button command implementation.', ephemeral: true });
     }
-    public executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): void {
-        client.logger.error(`${interaction.customId} with argument ${argument} does not have a select menu command implementation.`);
+    public executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): void {
+        client.logger.error(`${interaction.customId} with argument ${args} does not have a select menu command implementation.`);
         interaction.reply({ content: 'This command does not have a select menu command implementation.', ephemeral: true });
     }
-    public executeModalCommand(client: GargoyleClient, argument: string, interaction: ModalSubmitInteraction): void {
-        client.logger.error(`${interaction.customId} with argument ${argument} does not have a modal command implementation.`);
+    public executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
+        client.logger.error(`${interaction.customId} with argument ${args} does not have a modal command implementation.`);
         interaction.reply({ content: 'This command does not have a modal command implementation.', ephemeral: true });
     }
 }

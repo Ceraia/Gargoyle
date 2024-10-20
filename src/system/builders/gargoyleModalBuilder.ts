@@ -16,9 +16,11 @@ class GargoyleModalBuilder extends ModalBuilder {
      * @param {GargoyleCommand} command - The command associated with the modal.
      * @param {string} argument - The argument to be used and referenced for execution in the command.
      */
-    constructor(command: GargoyleCommand, argument: string) {
+    constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(`cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.toLowerCase()}`);
+        this.setCustomId(
+            `cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.join('-').toLowerCase()}`
+        );
     }
 }
 
