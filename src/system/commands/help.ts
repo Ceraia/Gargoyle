@@ -51,8 +51,8 @@ export default class Help extends GargoyleCommand {
         message.reply(this.helpMessage);
     }
 
-    override async executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): Promise<void> {
-        if (argument === 'commands') {
+    override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...argument: string[]): Promise<void> {
+        if (argument[0] === 'commands') {
             if (interaction.values[0] === 'commands') {
                 const message = await this.generateSlashHelpMessage(client);
                 await interaction.update(message);
@@ -65,11 +65,11 @@ export default class Help extends GargoyleCommand {
         }
     }
 
-    override async executeButtonCommand(client: GargoyleClient, argument: string, interaction: ButtonInteraction): Promise<void> {
-        if (argument === 'commands') {
+    override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...argument: string[]): Promise<void> {
+        if (argument[0] === 'commands') {
             const message = await this.generateSlashHelpMessage(client);
             await interaction.update(message);
-        } else if (argument === 'text') {
+        } else if (argument[0] === 'text') {
             const message = await this.generateTextHelpMessage(client);
             await interaction.update(message);
         }

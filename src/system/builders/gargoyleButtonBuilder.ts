@@ -16,12 +16,14 @@ class GargoyleButtonBuilder extends ButtonBuilder {
      * @param {GargoyleCommand} command - The command associated with the button.
      * @param {string} argument - The argument to be used for the button label and custom ID.
      */
-    constructor(command: GargoyleCommand, argument: string) {
+    constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(`cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.toLowerCase()}`);
+        this.setCustomId(
+            `cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.join('-').toLowerCase()}`
+        );
         this.setStyle(ButtonStyle.Primary);
         this.setDisabled(false);
-        this.setLabel(argument);
+        this.setLabel(argument[0]);
     }
 }
 
