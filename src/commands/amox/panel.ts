@@ -32,14 +32,6 @@ export default class Amox extends GargoyleCommand {
         ) as SlashCommandBuilder;
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        // Guild categories would be the main categories
-        // Each channel below the category would be a sub-category
-        // For example, for all modding commissions and requests
-        // The category would be called Modding
-        // The sub categories would be games that are officially supported
-
-        // When making the panel the user should be able to select a list of categories
-
         const row = new ActionRowBuilder<ChannelSelectMenuBuilder>().addComponents(
             new GargoyleChannelSelectMenuBuilder(this, 'panelcreate')
                 .setChannelTypes(ChannelType.GuildCategory)
@@ -54,8 +46,8 @@ export default class Amox extends GargoyleCommand {
         await interaction.reply({ content: 'Select the main categories for commissions.', components: [row], ephemeral: true });
     }
 
-    public override async executeSelectMenuCommand(client: GargoyleClient, argument: string, interaction: AnySelectMenuInteraction): Promise<void> {
-        if (argument === 'panelcreate') {
+    public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'panelcreate') {
             await interaction.deferUpdate();
             const categories = new GargoyleStringSelectMenuBuilder(this, 'category').setMinValues(1).setMaxValues(1);
             const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(categories);
@@ -74,7 +66,7 @@ export default class Amox extends GargoyleCommand {
                 components: [row]
             });
         }
-        if (argument === 'category') {
+        if (args[0] === 'category') {
             await interaction.deferReply({ ephemeral: true });
             const category = interaction.values[0];
             const channel = interaction.guild?.channels.cache.get(category);
@@ -98,7 +90,7 @@ export default class Amox extends GargoyleCommand {
                 components: [row]
             });
         }
-        if (argument === 'subcategory') {
+        if (args[0] === 'subcategory') {
             const modal = new GargoyleModalBuilder(this, 'createcommission').setTitle('Create a new commission');
             modal.addComponents(
                 new ActionRowBuilder<TextInputBuilder>().addComponents(
@@ -139,8 +131,8 @@ export default class Amox extends GargoyleCommand {
         }
     }
 
-    public override async executeModalCommand(client: GargoyleClient, argument: string, interaction: ModalSubmitInteraction): Promise<void> {
-        if (argument === 'createcommission') {
+    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'createcommission') {
             await interaction.deferReply({ ephemeral: true });
             const service = interaction.fields.getField('service')?.value;
             const description = interaction.fields.getField('description')?.value;
