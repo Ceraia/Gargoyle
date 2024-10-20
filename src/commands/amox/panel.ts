@@ -10,6 +10,7 @@ import {
     ChannelType,
     ChatInputCommandInteraction,
     ModalSubmitInteraction,
+    PrivateThreadChannel,
     SlashCommandBuilder,
     StringSelectMenuBuilder,
     TextChannel,
@@ -47,6 +48,7 @@ export default class Amox extends GargoyleCommand {
     }
 
     public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
+        // Only used when the panel is being created
         if (args[0] === 'panelcreate') {
             await interaction.deferUpdate();
             const categories = new GargoyleStringSelectMenuBuilder(this, 'category').setMinValues(1).setMaxValues(1);
@@ -66,10 +68,14 @@ export default class Amox extends GargoyleCommand {
                 components: [row]
             });
         }
+        // Called whenever a user has interacted with a category on the panel
+        // And then allows the user to select a sub-category
         if (args[0] === 'category') {
             await interaction.deferReply({ ephemeral: true });
             const category = interaction.values[0];
             const channel = interaction.guild?.channels.cache.get(category);
+
+            if (!channel) return;
 
             const children = interaction.guild?.channels.cache.filter((ch) => ch.parentId === channel?.id && ch.type === ChannelType.GuildText);
 
@@ -90,8 +96,15 @@ export default class Amox extends GargoyleCommand {
                 components: [row]
             });
         }
+        // Called whenever a user has interacted with a sub-category on the panel
+        // And then allows the user to create a commission
         if (args[0] === 'subcategory') {
-            const modal = new GargoyleModalBuilder(this, 'createcommission').setTitle('Create a new commission');
+            const subCategory = interaction.values[0];
+            const channel = interaction.guild?.channels.cache.get(subCategory);
+
+            if (!channel) return;
+
+            const modal = new GargoyleModalBuilder(this, 'createcommission', channel.id).setTitle('Create a new commission');
             modal.addComponents(
                 new ActionRowBuilder<TextInputBuilder>().addComponents(
                     new TextInputBuilder()
@@ -145,17 +158,35 @@ export default class Amox extends GargoyleCommand {
                 return client.logger.error('Channel is not a TextChannel');
             }
 
-            channel.threads
+            const subCategory = await interaction.guild?.channels.fetch(args[1]);
+            if (!subCategory) return;
+            const parentId = subCategory.parentId;
+            if (!parentId) return;
+            const category = await interaction.guild?.channels.fetch(parentId);
+            if (!category) return;
+
+            const thread = (await channel.threads
                 .create({
-                    name: service,
+                    name: `${category.name}/${subCategory.name} - ${interaction.user.displayName}`,
                     autoArchiveDuration: ThreadAutoArchiveDuration.ThreeDays,
                     type: ChannelType.PrivateThread,
                     invitable: true
                 })
-                .then((thread) => {
-                    thread.send(`**Service:** ${service}\n**Description:** ${description}\n**Requirements:** ${requirements}\n**Budget:** ${budget}`);
-                    thread.members.add(interaction.user.id);
+                .catch((error) => {
+                    client.logger.error(error);
+                    return interaction.editReply({ content: 'An error occurred while creating the thread.' });
+                })) as PrivateThreadChannel;
+
+            if (!thread) return;
+
+            await thread
+                .send(`**Service:** ${service}\n**Description:** ${description}\n**Requirements:** ${requirements}\n**Budget:** ${budget}`)
+                .then((msg) => {
+                    msg.pin();
                 });
+            thread.members.add(interaction.user.id);
+
+            await interaction.editReply({ content: `The commission has been created, you can view it here ${thread}!` });
         }
     }
 }
