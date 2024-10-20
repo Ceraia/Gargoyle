@@ -23,8 +23,8 @@ export default class ButtonCommandHandler extends GargoyleEvent {
                 }, 5000);
             });
         } else {
-            const argument = interaction.customId.toLowerCase().split('-')[2];
-            command.executeButtonCommand(client, argument, interaction);
+            const args = interaction.customId.toLowerCase().split('-').slice(2);
+            command.executeButtonCommand(client, interaction, ...args);
             return client.logger.trace(`${interaction.user} used the ${interaction.customId} button command.`);
         }
     }

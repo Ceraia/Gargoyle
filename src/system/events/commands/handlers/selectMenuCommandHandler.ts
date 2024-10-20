@@ -22,8 +22,8 @@ export default class SelectCommandHandler extends GargoyleEvent {
                 }, 5000);
             });
         } else {
-            const argument = interaction.customId.toLowerCase().split('-')[2];
-            command.executeSelectMenuCommand(client, argument, interaction);
+            const args = interaction.customId.toLowerCase().split('-').slice(2);
+            command.executeSelectMenuCommand(client, interaction, ...args);
             return client.logger.trace(`${interaction.user} used the ${interaction.customId} select menu command.`);
         }
     }
