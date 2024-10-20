@@ -4,7 +4,6 @@ import { Message } from 'discord.js';
 
 export default class TextCommandHandler extends GargoyleEvent {
     public event = 'messageCreate' as const;
-    public once = false;
 
     public execute(client: GargoyleClient, message: Message): void {
         if (message.author.bot) return;

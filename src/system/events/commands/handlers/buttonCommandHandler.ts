@@ -4,7 +4,6 @@ import { ButtonInteraction } from 'discord.js';
 
 export default class ButtonCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
-    public once = false;
 
     public execute(client: GargoyleClient, interaction: ButtonInteraction): void {
         if (!interaction.isButton()) return;

@@ -4,7 +4,6 @@ import { AnySelectMenuInteraction } from 'discord.js';
 
 export default class SelectCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
-    public once = false;
 
     public execute(client: GargoyleClient, interaction: AnySelectMenuInteraction): void {
         if (!interaction.isAnySelectMenu()) return;

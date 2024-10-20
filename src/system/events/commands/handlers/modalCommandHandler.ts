@@ -4,7 +4,6 @@ import { ModalSubmitInteraction } from 'discord.js';
 
 export default class ModalCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
-    public once = false;
 
     public execute(client: GargoyleClient, interaction: ModalSubmitInteraction): void {
         if (!interaction.isModalSubmit()) return;
