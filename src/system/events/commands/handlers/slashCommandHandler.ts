@@ -4,7 +4,6 @@ import { ChatInputCommandInteraction } from 'discord.js';
 
 export default class SlashCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
-    public once = false;
 
     public execute(client: GargoyleClient, interaction: ChatInputCommandInteraction): void {
         if (!interaction.isCommand()) return;
