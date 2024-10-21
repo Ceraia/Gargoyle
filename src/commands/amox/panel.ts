@@ -1,3 +1,4 @@
+import GargoyleButtonBuilder from '@src/system/builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@src/system/builders/gargoyleEmbedBuilder.js';
 import GargoyleModalBuilder from '@src/system/builders/gargoyleModalBuilder.js';
 import { GargoyleChannelSelectMenuBuilder, GargoyleStringSelectMenuBuilder } from '@src/system/builders/gargoyleSelectMenuBuilders.js';
@@ -6,6 +7,9 @@ import GargoyleCommand from '@src/system/classes/gargoyleCommand.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
+    ButtonBuilder,
+    ButtonInteraction,
+    ButtonStyle,
     ChannelSelectMenuBuilder,
     ChannelType,
     ChatInputCommandInteraction,
@@ -95,6 +99,8 @@ export default class Amox extends GargoyleCommand {
                 embeds: [new GargoyleEmbedBuilder().setTitle('Select what sub-category you want to create a commission for.')],
                 components: [row]
             });
+
+            await interaction.message.edit({ components: [...interaction.message.components] }); // Workaround to set the selection menu to nothing selected again
         }
         // Called whenever a user has interacted with a sub-category on the panel
         // And then allows the user to create a commission
@@ -141,6 +147,7 @@ export default class Amox extends GargoyleCommand {
             );
 
             await interaction.showModal(modal);
+            await interaction.deleteReply(); // Deletes the ephemeral reply to keep things clean for users
         }
     }
 
@@ -149,7 +156,7 @@ export default class Amox extends GargoyleCommand {
             await interaction.deferReply({ ephemeral: true });
             const service = interaction.fields.getField('service')?.value;
             const description = interaction.fields.getField('description')?.value;
-            const requirements = interaction.fields.getField('requirements')?.value;
+            const requirements = interaction.fields.getField('requirements')?.value || 'None';
             const budget = interaction.fields.getField('budget')?.value;
             client.logger.info(interaction.customId);
 
@@ -173,12 +180,13 @@ export default class Amox extends GargoyleCommand {
                     invitable: true
                 })
                 .catch((error) => {
-                    client.logger.error(error);
+                    client.logger.error(error as Error);
                     return interaction.editReply({ content: 'An error occurred while creating the thread.' });
                 })) as PrivateThreadChannel;
 
             if (!thread) return;
 
+            // Create the user's commission thread with the information provided
             await thread
                 .send(`**Service:** ${service}\n**Description:** ${description}\n**Requirements:** ${requirements}\n**Budget:** ${budget}`)
                 .then((msg) => {
@@ -186,7 +194,115 @@ export default class Amox extends GargoyleCommand {
                 });
             thread.members.add(interaction.user.id);
 
+            // Create the commission request in the sub-category channel
+            (subCategory as TextChannel).send({
+                content: `A new commission request has been created by ${interaction.user}!`,
+                embeds: [
+                    new GargoyleEmbedBuilder()
+                        .setTitle('New Commission Request')
+                        .setDescription(
+                            `**Service:** ${service}\n**Description:** ${description}\n**Requirements:** ${requirements}\n**Budget:** ${budget}`
+                        )
+                ],
+                components: [
+                    new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new GargoyleButtonBuilder(this, 'acceptcom', thread.id, interaction.user.id).setStyle(ButtonStyle.Success).setLabel('Accept'),
+                        new GargoyleButtonBuilder(this, 'negotiatecom', thread.id, interaction.user.id)
+                            .setStyle(ButtonStyle.Secondary)
+                            .setLabel('Negotiate'),
+                        new GargoyleButtonBuilder(this, 'denycom', thread.id, interaction.user.id).setStyle(ButtonStyle.Danger).setLabel('Deny')
+                    )
+                ]
+            });
+
+            // Edit the original message to let the user know the commission has been created
             await interaction.editReply({ content: `The commission has been created, you can view it here ${thread}!` });
+        }
+    }
+
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'acceptcom') {
+            // Accept the commission button
+            const thread = interaction.guild?.channels.cache.get(args[1]);
+            if (!thread) {
+                await interaction.update({ components: [] });
+                interaction.followUp({
+                    content: 'This commission no longer exists!',
+                    ephemeral: true
+                });
+                return;
+            }
+            const user = interaction.user;
+            if (!user) return;
+
+            (thread as PrivateThreadChannel).send({
+                content: `${user} is willing to accept your commission!\n### If you accept it means that the money is now "locked in" so to say, the developer will start work, and only if agreed upon by both parties and according to the TOS will the money be fully refunded.\n-# Note, when accepting the developer no other developers can accept it anymore.`,
+                components: [
+                    new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new GargoyleButtonBuilder(this, 'acceptdev', interaction.channelId, interaction.message.id) // Accept the developer button
+                            .setStyle(ButtonStyle.Success)
+                            .setLabel('Accept'),
+                        new GargoyleButtonBuilder(this, 'denydev', interaction.channelId, interaction.message.id) // Deny the developer button
+                            .setStyle(ButtonStyle.Danger)
+                            .setLabel('Deny')
+                    )
+                ]
+            });
+
+            interaction.reply({ content: 'You have accepted the commission, wait for the commission owner to agree.', ephemeral: true });
+        }
+        if (args[0] === 'negotiatecom') {
+            // Negotiate the commission button
+            // Make a new thread with the user and the developer to negotiate the commission
+            const thread = interaction.guild?.channels.cache.get(args[1]);
+            if (!thread) {
+                await interaction.update({ components: [] });
+                interaction.followUp({
+                    content: 'This commission no longer exists!',
+                    ephemeral: true
+                });
+                return;
+            }
+
+            const user = interaction.user;
+            if (!user) return;
+            // return;
+            if (!thread.parent) {
+                interaction.followUp({
+                    content: 'The parent channel no longer exists!',
+                    ephemeral: true
+                });
+                return;
+            }
+            const negotiationThread = (await (thread.parent as TextChannel).threads
+                .create({
+                    name: `Negotiation - ${user.username}`,
+                    autoArchiveDuration: ThreadAutoArchiveDuration.ThreeDays,
+                    type: ChannelType.PrivateThread,
+                    invitable: true
+                })
+                .catch((error: string | Error) => {
+                    client.logger.error(error as string);
+                    return interaction.editReply({ content: 'An error occurred while creating the thread.' });
+                })) as PrivateThreadChannel;
+
+            if (!negotiationThread) return;
+
+            await negotiationThread.send({
+                content: `Negotiation thread for the commission between ${user} and the developer.`,
+                components: [
+                    new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new GargoyleButtonBuilder(this, 'closethread').setStyle(ButtonStyle.Danger).setLabel('Close Thread')
+                    )
+                ]
+            });
+            await negotiationThread.members.add(interaction.user.id);
+            await negotiationThread.members.add(args[2]);
+
+            await interaction.reply({
+                content: `The negotiation thread has been created, you can view it here ${negotiationThread}!`,
+                ephemeral: true
+            });
         }
     }
 }
