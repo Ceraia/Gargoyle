@@ -1,5 +1,5 @@
 import { Client, ClientOptions } from 'discord.js';
-import Database from '@database/database.js';
+import Database from '@src/system/backend/database/database.js';
 import { Logger } from '../tools/logger.js';
 import registerEvents from '../initializers/registerEvents.js';
 import GargoyleCommand from './gargoyleCommand.js';

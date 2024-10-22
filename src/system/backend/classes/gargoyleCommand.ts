@@ -7,7 +7,7 @@ import {
     SlashCommandBuilder
 } from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
-import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import TextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 
 abstract class GargoyleCommand {
     public abstract category: string;

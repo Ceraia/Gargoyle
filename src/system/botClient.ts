@@ -1,4 +1,4 @@
-import GargoyleClient from '@src/system/classes/gargoyleClient.js';
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import { IntentsBitField, Partials } from 'discord.js';
 
 const client = new GargoyleClient({
