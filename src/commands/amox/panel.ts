@@ -209,8 +209,7 @@ export default class Amox extends GargoyleCommand {
                         new GargoyleButtonBuilder(this, 'acceptcom', thread.id, interaction.user.id).setStyle(ButtonStyle.Success).setLabel('Accept'),
                         new GargoyleButtonBuilder(this, 'negotiatecom', thread.id, interaction.user.id)
                             .setStyle(ButtonStyle.Secondary)
-                            .setLabel('Negotiate'),
-                        new GargoyleButtonBuilder(this, 'denycom', thread.id, interaction.user.id).setStyle(ButtonStyle.Danger).setLabel('Deny')
+                            .setLabel('Negotiate')
                     )
                 ]
             });
@@ -253,7 +252,6 @@ export default class Amox extends GargoyleCommand {
         }
         if (args[0] === 'negotiatecom') {
             // Negotiate the commission button
-            // Make a new thread with the user and the developer to negotiate the commission
             const thread = interaction.guild?.channels.cache.get(args[1]);
             if (!thread) {
                 await interaction.update({ components: [] });
@@ -263,45 +261,21 @@ export default class Amox extends GargoyleCommand {
                 });
                 return;
             }
-
             const user = interaction.user;
             if (!user) return;
-            // return;
-            if (!thread.parent) {
-                interaction.followUp({
-                    content: 'The parent channel no longer exists!',
-                    ephemeral: true
-                });
-                return;
-            }
-            const negotiationThread = (await (thread.parent as TextChannel).threads
-                .create({
-                    name: `Negotiation - ${user.username}`,
-                    autoArchiveDuration: ThreadAutoArchiveDuration.ThreeDays,
-                    type: ChannelType.PrivateThread,
-                    invitable: true
-                })
-                .catch((error: string | Error) => {
-                    client.logger.error(error as string);
-                    return interaction.editReply({ content: 'An error occurred while creating the thread.' });
-                })) as PrivateThreadChannel;
 
-            if (!negotiationThread) return;
-
-            await negotiationThread.send({
-                content: `Negotiation thread for the commission between ${user} and the developer.`,
+            (thread as PrivateThreadChannel).send({
+                content: `${user} is willing to negotiate the commission!`,
                 components: [
                     new ActionRowBuilder<ButtonBuilder>().addComponents(
-                        new GargoyleButtonBuilder(this, 'closethread').setStyle(ButtonStyle.Danger).setLabel('Close Thread')
+                        new GargoyleButtonBuilder(this, 'acceptnegdev', interaction.channelId, interaction.message.id) // Accept the developer button
+                            .setStyle(ButtonStyle.Success)
+                            .setLabel('Accept'),
+                        new GargoyleButtonBuilder(this, 'denynegdev', interaction.channelId, interaction.message.id) // Deny the developer button
+                            .setStyle(ButtonStyle.Danger)
+                            .setLabel('Deny')
                     )
                 ]
-            });
-            await negotiationThread.members.add(interaction.user.id);
-            await negotiationThread.members.add(args[2]);
-
-            await interaction.reply({
-                content: `The negotiation thread has been created, you can view it here ${negotiationThread}!`,
-                ephemeral: true
             });
         }
     }
