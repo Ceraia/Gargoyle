@@ -51,7 +51,7 @@ export default class Amox extends GargoyleCommand {
         await interaction.reply({ content: 'Select the main categories for commissions.', components: [row], ephemeral: true });
     }
 
-    public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
+    public override async executeSelectMenuCommand(_client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
         // Only used when the panel is being created
         if (args[0] === 'panelcreate') {
             await interaction.deferUpdate();
@@ -219,7 +219,7 @@ export default class Amox extends GargoyleCommand {
         }
     }
 
-    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+    public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'acceptcom') {
             // Accept the commission button
             const thread = interaction.guild?.channels.cache.get(args[1]);
