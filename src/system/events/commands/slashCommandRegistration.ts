@@ -1,6 +1,6 @@
-import GargoyleClient from '@src/system/classes/gargoyleClient.js';
-import GargoyleEvent from '@src/system/classes/gargoyleEvent.js';
-import registerCommands from '@src/system/initializers/registerCommands.js';
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import registerCommands from '@src/system/backend/initializers/registerCommands.js';
 
 export default class Ready extends GargoyleEvent {
     public event = 'ready' as const;
