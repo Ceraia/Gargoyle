@@ -9,7 +9,8 @@
         "ms-azuretools.vscode-docker",
         "dbaeumer.vscode-eslint",
         "eamodio.gitlens",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "GitHub.vscode-pull-request-github"
       ]
     }
   }
