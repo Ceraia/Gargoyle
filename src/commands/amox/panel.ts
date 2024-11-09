@@ -1,9 +1,9 @@
-import GargoyleButtonBuilder from '@src/system/builders/gargoyleButtonBuilder.js';
-import GargoyleEmbedBuilder from '@src/system/builders/gargoyleEmbedBuilder.js';
-import GargoyleModalBuilder from '@src/system/builders/gargoyleModalBuilder.js';
-import { GargoyleChannelSelectMenuBuilder, GargoyleStringSelectMenuBuilder } from '@src/system/builders/gargoyleSelectMenuBuilders.js';
-import GargoyleClient from '@src/system/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/classes/gargoyleCommand.js';
+import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
+import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
+import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
+import { GargoyleChannelSelectMenuBuilder, GargoyleStringSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
+import GargoyleClient from '@classes/gargoyleClient.js';
+import GargoyleCommand from '@classes/gargoyleCommand.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
