@@ -115,7 +115,6 @@ class GargoyleClient extends Client {
         }
     }
 
-
     /**
      * Health check server for the bot.
      * Responds with 'OK' if the client is ready.
