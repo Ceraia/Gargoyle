@@ -32,3 +32,6 @@ package-lock.json
 
 # Container data
 container
+
+# Git data
+.git

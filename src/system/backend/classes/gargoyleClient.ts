@@ -1,9 +1,10 @@
 import { Client, ClientOptions } from 'discord.js';
-import Database from '@database/database.js';
+import Database from '@src/system/backend/database/database.js';
 import { Logger } from '../tools/logger.js';
 import registerEvents from '../initializers/registerEvents.js';
 import GargoyleCommand from './gargoyleCommand.js';
 import loadCommands from '../initializers/loadCommands.js';
+import http from 'http';
 
 /**
  * Represents a client for the Gargoyle system, extending the base Client class.
@@ -55,8 +56,7 @@ class GargoyleClient extends Client {
      */
     public async loadSystemEvents() {
         this.logger.log('Loading system events...');
-        await registerEvents(this, '../../system/events');
-        this.logger.log('System events loaded!');
+        await registerEvents(this, '../events');
     }
 
     /**
@@ -67,8 +67,7 @@ class GargoyleClient extends Client {
      */
     public async loadEvents() {
         this.logger.log('Loading events...');
-        await registerEvents(this, '../../events');
-        this.logger.log('Events loaded!');
+        await registerEvents(this, '../../../events');
     }
 
     /**
@@ -79,9 +78,9 @@ class GargoyleClient extends Client {
      */
     public async loadCommands() {
         this.logger.log('Loading system commands...');
-        await loadCommands(this, '../commands');
-        this.logger.log('Loading commands...');
         await loadCommands(this, '../../commands');
+        this.logger.log('Loading commands...');
+        await loadCommands(this, '../../../commands');
         this.logger.log(`Loaded ${this.commands.length} commands!`);
     }
 
@@ -94,6 +93,7 @@ class GargoyleClient extends Client {
      * @returns {Promise<string>}
      */
     override async login(token?: string) {
+        this.startHealthCheckServer();
         if (this.db?.willConnect) this.logger.log('Waiting for database connection...');
 
         this.logger.debug('Awaiting promises for system events and events...');
@@ -113,6 +113,28 @@ class GargoyleClient extends Client {
             this.logger.debug('Logging in without database connection...');
             return super.login(token ?? process.env.DISCORD_TOKEN);
         }
+    }
+
+
+    /**
+     * Health check server for the bot.
+     * Responds with 'OK' if the client is ready.
+     * Responds with 'Not Found' otherwise.
+     */
+    private startHealthCheckServer() {
+        const server = http.createServer((req, res) => {
+            if (req.url === '/health' && this.isReady()) {
+                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.end('OK');
+            } else {
+                res.writeHead(404, { 'Content-Type': 'text/plain' });
+                res.end('Not Found');
+            }
+        });
+
+        server.listen(3000, () => {
+            this.logger.log('Health check server is running on port 3000');
+        });
     }
 }
 

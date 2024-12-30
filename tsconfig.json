@@ -39,19 +39,19 @@
 				"./src/*"
 			],
 			"@database/*": [
-				"./src/system/database/*"
+				"./src/system/backend/database/*"
 			],
 			"@builders/*": [
-				"./src/system/builders/*"
+				"./src/system/backend/builders/*"
 			],
 			"@dbmodels/*": [
-				"./src/system/database/models/*"
+				"./src/system/backend/database/models/*"
 			],
 			"@classes/*": [
-				"./src/system/classes/*"
+				"./src/system/backend/classes/*"
 			],
 			"@initializers/*": [
-				"./src/system/initializers/*"
+				"./src/system/backend/initializers/*"
 			],
 		},
 	},

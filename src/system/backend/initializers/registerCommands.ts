@@ -3,9 +3,11 @@ import GargoyleClient from '../classes/gargoyleClient.js';
 async function registerCommands(client: GargoyleClient): Promise<void> {
     await client.application?.commands.fetch().then((commands) => {
         commands.forEach(async (command) => {
-            if (!client.commands.find((c) => c.slashCommand?.name === command.name)) {
-                client.logger.debug(`Deleting command: ${command.name}`);
-                await client.application?.commands.delete(command);
+            // Find if a command with the same name exists
+            const existingCommand = client.commands.find((cmd) => cmd.slashCommand?.name === command.name);
+            if (!existingCommand || existingCommand.guild) {
+                client.logger.debug(`Deleting unknown slash command: ${command.name}`);
+                await command.delete();
             }
         });
     });

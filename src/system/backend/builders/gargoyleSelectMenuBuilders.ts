@@ -33,6 +33,13 @@ class GargoyleStringSelectMenuBuilder extends StringSelectMenuBuilder {
             `cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.join('-').toLowerCase()}`
         );
     }
+
+    public addOption(label: string, value: string): this {
+        return super.addOptions({
+            label: label,
+            value: value
+        });
+    }
 }
 
 /**

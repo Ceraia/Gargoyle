@@ -1,5 +1,5 @@
-import GargoyleClient from '@src/system/classes/gargoyleClient.js';
-import GargoyleEvent from '@src/system/classes/gargoyleEvent.js';
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { ButtonInteraction } from 'discord.js';
 
 export default class ButtonCommandHandler extends GargoyleEvent {

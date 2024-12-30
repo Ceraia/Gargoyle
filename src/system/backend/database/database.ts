@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import { databaseGuilds, getGuild } from '@dbmodels/databaseGuildSchema.js';
-import GargoyleClient from '@classes/gargoyleClient.js';
-import { databaseGuildUsers, getGuildUser } from '@dbmodels/databaseGuildUserSchema.js';
+import { databaseGuilds, getGuild } from '@src/system/backend/database/models/databaseGuildSchema.js';
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import { databaseGuildUsers, getGuildUser } from '@src/system/backend/database/models/databaseGuildUserSchema.js';
 
 class Database extends mongoose.Connection {
     public willConnect: boolean = true;

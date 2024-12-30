@@ -1,3 +1,5 @@
+import { InteractionContextType } from 'discord.js';
+
 /**
  * A builder class for creating text commands with a name, description, and aliases.
  *
@@ -39,6 +41,7 @@ class TextCommandBuilder {
     private _name: string | undefined;
     private _description: string | undefined;
     private _aliases: string[] = [];
+    private _contexts: InteractionContextType[] = [];
 
     setName(name: string): this {
         if (!name || typeof name !== 'string') {
@@ -64,6 +67,11 @@ class TextCommandBuilder {
         return this;
     }
 
+    setContexts(contexts: InteractionContextType[]): this {
+        this._contexts = contexts;
+        return this;
+    }
+
     get name(): string {
         if (!this._name) {
             throw new Error('Command name has not been set.');
@@ -80,6 +88,10 @@ class TextCommandBuilder {
 
     get aliases(): string[] {
         return this._aliases;
+    }
+
+    get contexts(): InteractionContextType[] {
+        return this._contexts;
     }
 }
 
