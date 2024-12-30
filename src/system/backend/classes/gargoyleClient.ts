@@ -56,7 +56,6 @@ class GargoyleClient extends Client {
     public async loadSystemEvents() {
         this.logger.log('Loading system events...');
         await registerEvents(this, '../events');
-        this.logger.log('System events loaded!');
     }
 
     /**
@@ -68,7 +67,6 @@ class GargoyleClient extends Client {
     public async loadEvents() {
         this.logger.log('Loading events...');
         await registerEvents(this, '../../../events');
-        this.logger.log('Events loaded!');
     }
 
     /**
