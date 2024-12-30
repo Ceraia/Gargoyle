@@ -31,7 +31,8 @@
     "scripts": {
         "start": "bun run .",
         "dev": "bun run --watch .",
-        "docker": "docker compose -f ./docker-compose-dev.yml up",
+        "docker-start": "docker compose -f ./docker-compose-dev.yml up -d",
+        "docker-stop": "docker compose -f ./docker-compose-dev.yml down",
         "build": "tsc",
         "format": "prettier --write \"src/**\"",
         "lint": "eslint src/** ",
