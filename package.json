@@ -6,7 +6,7 @@
         "colorette": "^2.0.20",
         "discord.js": "^14.16.3",
         "figlet": "^1.8.0",
-        "fs": "^0.0.1-security",
+        "fs": "^0.0.2",
         "gradient-string": "^3.0.0",
         "http": "^0.0.1-security",
         "mongoose": "^8.7.1",
@@ -22,10 +22,10 @@
         "eslint": "^9.12.0",
         "globals": "^15.11.0",
         "lint": "^0.8.19",
-        "npm-run-all2": "^6.2.3",
+        "npm-run-all2": "^7.0.1",
         "prettier": "^3.3.3",
         "tsc-watch": "^6.2.0",
-        "typescript": "~5.6.3",
+        "typescript": "~5.7.2",
         "typescript-eslint": "^8.9.0"
     },
     "scripts": {
