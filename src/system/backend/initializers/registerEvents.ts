@@ -20,10 +20,10 @@ async function registerEvents(client: GargoyleClient, ...dirs: string[]): Promis
                     const { default: Event } = await import(path.join(__dirname, dir, file));
                     const event: GargoyleEvent = new Event();
                     if (event.once) {
-                        client.logger.debug(`Registering event as once: ${file}`);
+                        client.logger.debug(`Registering event as ${event.event} once: ${file}`);
                         client.once(event.event, (...args) => event.execute(client, ...args));
                     } else {
-                        client.logger.debug(`Registering event as on: ${file}`);
+                        client.logger.debug(`Registering event as ${event.event} on: ${file}`);
                         client.on(event.event, (...args) => event.execute(client, ...args));
                     }
                 } catch (err) {
