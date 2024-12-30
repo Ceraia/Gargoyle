@@ -122,7 +122,7 @@ class GargoyleClient extends Client {
      */
     private startHealthCheckServer() {
         const server = http.createServer((req, res) => {
-            if (req.url === '/health' && this.isReady()) {
+            if (req.url === '/health' && this.isReady() && this.ws.status === 0) {
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
                 res.end('OK');
             } else {
