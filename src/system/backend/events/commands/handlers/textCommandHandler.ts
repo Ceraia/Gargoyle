@@ -1,6 +1,6 @@
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
-import { Message } from 'discord.js';
+import { ChannelType, InteractionContextType, Message } from 'discord.js';
 
 export default class TextCommandHandler extends GargoyleEvent {
     public event = 'messageCreate' as const;
@@ -23,8 +23,27 @@ export default class TextCommandHandler extends GargoyleEvent {
                 }, 5000);
             });
         } else {
+            client.logger.trace(`${message.author.tag} used the ${command.textCommand?.name} command.`);
+
+            if (message.guild && !command.textCommand?.contexts.includes(InteractionContextType.Guild)) {
+                message.reply('This command cannot be used in Guilds!').then((msg) => {
+                    setTimeout(() => {
+                        msg.delete();
+                    }, 5000);
+                });
+                return;
+            }
+
+            if (message.channel.type === ChannelType.DM && !command.textCommand?.contexts.includes(InteractionContextType.PrivateChannel)) {
+                message.reply('This command cannot be used in DMs!').then((msg) => {
+                    setTimeout(() => {
+                        msg.delete();
+                    }, 5000);
+                });
+                return;
+            }
+
             command.executeTextCommand(client, message);
-            return client.logger.trace(`${message.author.tag} used the ${command.textCommand?.name} command.`);
         }
     }
 }
