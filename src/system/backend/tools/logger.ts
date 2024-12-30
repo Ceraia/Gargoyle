@@ -16,6 +16,9 @@ const currentLogLevel = parseInt(process.env.DEBUG_LEVEL || '4', 10); // Default
 const logToFile = process.env.LOG_TO_FILE === 'true';
 
 function getLogFilePath(): string {
+    if (!fs.existsSync('./log')) {
+        fs.mkdirSync('./log');
+    }
     const date = new Date().toISOString().split('T')[0];
     return path.resolve('./log', `${date}.log`);
 }
