@@ -85,7 +85,17 @@ export default class Ping extends GargoyleCommand {
                         )
                     )
             );
+        } else if (args[0] === 'recruit') {
+            let inviteLink = (interaction.channel as TextChannel).createInvite({
+                temporary: true,
+                maxAge: 1 * 60 * 60 * 24 * 7,
+                maxUses: 1,
+                unique: true,
+                reason: `Recruited by ${interaction.user.username}`,
+            }).catch((err) => { interaction.reply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\``, ephemeral: true }) });
+            interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, ephemeral: true });
         }
+
     }
 
     public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
