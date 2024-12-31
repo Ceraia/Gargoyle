@@ -36,7 +36,7 @@ export default class Ping extends GargoyleCommand {
         });
     }
 
-    public override executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): void {
+    public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'apply') {
             interaction.showModal(
                 new GargoyleModalBuilder(this, 'application')
@@ -86,7 +86,7 @@ export default class Ping extends GargoyleCommand {
                     )
             );
         } else if (args[0] === 'recruit') {
-            const inviteLink = (interaction.channel as TextChannel)
+            const inviteLink = await (interaction.channel as TextChannel)
                 .createInvite({
                     temporary: true,
                     maxAge: 1 * 60 * 60 * 24 * 7,
@@ -112,10 +112,10 @@ export default class Ping extends GargoyleCommand {
                             .setTitle(`Application by ${interaction.user.username}`)
                             .setDescription(
                                 `**Steam Account Link:** ${interaction.fields.getTextInputValue('steam') || ''}\n` +
-                                    `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
-                                    `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
-                                    `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
-                                    `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
+                                `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
+                                `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
+                                `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
+                                `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
                             )
                     ],
                     components: [
