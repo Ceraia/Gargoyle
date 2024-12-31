@@ -9,7 +9,6 @@ import {
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
-    ComponentBuilder,
     InteractionContextType,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
@@ -37,7 +36,7 @@ export default class Ping extends GargoyleCommand {
         });
     }
 
-    public override executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): void {
+    public override executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): void {
         if (args[0] === 'apply') {
             interaction.showModal(
                 new GargoyleModalBuilder(this, 'application')
@@ -82,15 +81,39 @@ export default class Ping extends GargoyleCommand {
                                 .setCustomId('friends')
                                 .setLabel('Do you have any friends in Entropy?')
                                 .setStyle(TextInputStyle.Short)
-                                .setRequired(true)
-                        ),
+                                .setRequired(false)
+                        )
                     )
             );
         }
     }
 
     public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
-        client.logger.log("Received")
-        client.logger.log(JSON.stringify(interaction.toJSON()))
+        if (args[0] === 'application') {
+            (client.channels.cache.get('1323518160678424647') as TextChannel)
+                .send({
+                    content: `New application by ${interaction.user.username}`,
+                    embeds: [
+                        new GargoyleEmbedBuilder()
+                            .setThumbnail(interaction.user.avatarURL())
+                            .setTitle(`Application by ${interaction.user.username}`)
+                            .addFields(
+                                { name: 'Steam Account Link', value: interaction.fields.getTextInputValue('steam'), inline: true },
+                                { name: 'Motivation', value: interaction.fields.getTextInputValue('motivation'), inline: false },
+                                { name: 'Desired / Expected Position', value: interaction.fields.getTextInputValue('position'), inline: true },
+                                { name: 'Skills', value: interaction.fields.getTextInputValue('skills'), inline: true },
+                                { name: 'Friends in Entropy', value: interaction.fields.getTextInputValue('friends'), inline: true }
+                            )
+                    ],
+                    components: [
+                        new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new GargoyleButtonBuilder(this, "recruit", interaction.user.id).setLabel("Recruit").setStyle(ButtonStyle.Secondary)
+                        )
+                    ]
+                })
+                .then(() => {
+                    interaction.reply({ content: 'Application submitted, you will hear back from us.', ephemeral: true });
+                });
+        }
     }
 }
