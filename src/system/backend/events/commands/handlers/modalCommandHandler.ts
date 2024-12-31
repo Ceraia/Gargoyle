@@ -17,6 +17,7 @@ export default class ModalCommandHandler extends GargoyleEvent {
         });
 
         if (!command) {
+            client.logger.warning(`${interaction.user} used the ${interaction.customId} not found`);
             interaction.reply('Modal not found!').then((msg) => {
                 setTimeout(() => {
                     msg.delete();
@@ -25,7 +26,7 @@ export default class ModalCommandHandler extends GargoyleEvent {
         } else {
             const args = interaction.customId.toLowerCase().split('-').slice(2);
             command.executeModalCommand(client, interaction, ...args);
-            return client.logger.trace(`${interaction.user} used the ${interaction.customId} button command.`);
+            return client.logger.trace(`${interaction.user} used the ${interaction.customId} modal command.`);
         }
     }
 }
