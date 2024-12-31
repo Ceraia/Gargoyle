@@ -98,16 +98,20 @@ export default class Ping extends GargoyleCommand {
                             .setThumbnail(interaction.user.avatarURL())
                             .setTitle(`Application by ${interaction.user.username}`)
                             .addFields(
-                                { name: 'Steam Account Link', value: interaction.fields.getTextInputValue('steam'), inline: true },
-                                { name: 'Motivation', value: interaction.fields.getTextInputValue('motivation'), inline: false },
-                                { name: 'Desired / Expected Position', value: interaction.fields.getTextInputValue('position'), inline: true },
-                                { name: 'Skills', value: interaction.fields.getTextInputValue('skills'), inline: true },
-                                { name: 'Friends in Entropy', value: interaction.fields.getTextInputValue('friends'), inline: true }
+                                { name: 'Steam Account Link', value: interaction.fields.getTextInputValue('steam') || 'Blank', inline: true },
+                                { name: 'Motivation', value: interaction.fields.getTextInputValue('motivation') || 'Blank', inline: false },
+                                {
+                                    name: 'Desired / Expected Position',
+                                    value: interaction.fields.getTextInputValue('position') || 'Blank',
+                                    inline: true
+                                },
+                                { name: 'Skills', value: interaction.fields.getTextInputValue('skills') || 'Blank', inline: true },
+                                { name: 'Friends in Entropy', value: interaction.fields.getTextInputValue('friends') || 'Blank', inline: true }
                             )
                     ],
                     components: [
                         new ActionRowBuilder<ButtonBuilder>().addComponents(
-                            new GargoyleButtonBuilder(this, "recruit", interaction.user.id).setLabel("Recruit").setStyle(ButtonStyle.Secondary)
+                            new GargoyleButtonBuilder(this, 'recruit', interaction.user.id).setLabel('Recruit').setStyle(ButtonStyle.Secondary)
                         )
                     ]
                 })
