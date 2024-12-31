@@ -97,16 +97,12 @@ export default class Ping extends GargoyleCommand {
                         new GargoyleEmbedBuilder()
                             .setThumbnail(interaction.user.avatarURL())
                             .setTitle(`Application by ${interaction.user.username}`)
-                            .addFields(
-                                { name: 'Steam Account Link', value: interaction.fields.getTextInputValue('steam') || 'Blank', inline: true },
-                                { name: 'Motivation', value: interaction.fields.getTextInputValue('motivation') || 'Blank', inline: false },
-                                {
-                                    name: 'Desired / Expected Position',
-                                    value: interaction.fields.getTextInputValue('position') || 'Blank',
-                                    inline: true
-                                },
-                                { name: 'Skills', value: interaction.fields.getTextInputValue('skills') || 'Blank', inline: true },
-                                { name: 'Friends in Entropy', value: interaction.fields.getTextInputValue('friends') || 'Blank', inline: true }
+                            .setDescription(
+                                `**Steam Account Link:** ${interaction.fields.getTextInputValue('steam') || 'Blank'}\n` +
+                                `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || 'Blank'}\n` +
+                                `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || 'Blank'}\n` +
+                                `**Skills:** ${interaction.fields.getTextInputValue('skills') || 'Blank'}\n` +
+                                `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || 'Blank'}`
                             )
                     ],
                     components: [
