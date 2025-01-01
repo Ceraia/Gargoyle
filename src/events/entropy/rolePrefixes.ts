@@ -20,6 +20,6 @@ export default class RolePrefix extends GargoyleEvent {
 
         namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
 
-        updatedMember.setNickname(namePrefix).catch(() => { });
+        updatedMember.setNickname(namePrefix).catch(() => {});
     }
 }
