@@ -2,7 +2,7 @@ import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { Events, GuildMember } from 'discord.js';
 
-export default class Ready extends GargoyleEvent {
+export default class RolePrefix extends GargoyleEvent {
     public event = Events.GuildMemberUpdate as const;
 
     public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
@@ -20,6 +20,6 @@ export default class Ready extends GargoyleEvent {
 
         namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
 
-        updatedMember.setNickname(namePrefix).catch(() => {});
+        updatedMember.setNickname(namePrefix).catch(() => { });
     }
 }
