@@ -112,10 +112,10 @@ export default class Ping extends GargoyleCommand {
                             .setTitle(`Application by ${interaction.user.username}`)
                             .setDescription(
                                 `**Steam Account Link:** ${interaction.fields.getTextInputValue('steam') || ''}\n` +
-                                `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
-                                `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
-                                `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
-                                `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
+                                    `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
+                                    `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
+                                    `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
+                                    `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
                             )
                     ],
                     components: [
