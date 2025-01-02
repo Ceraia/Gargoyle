@@ -16,7 +16,6 @@ import {
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     SlashCommandBuilder,
-    Status,
     TextChannel,
     TextInputBuilder,
     TextInputStyle
@@ -116,10 +115,10 @@ export default class Ping extends GargoyleCommand {
                             .setTitle(`Application by ${interaction.user.username}`)
                             .setDescription(
                                 `**Steam Account Link:** ${interaction.fields.getTextInputValue('steam') || ''}\n` +
-                                `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
-                                `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
-                                `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
-                                `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
+                                    `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
+                                    `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
+                                    `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
+                                    `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
                             )
                     ],
                     components: [
@@ -134,9 +133,7 @@ export default class Ping extends GargoyleCommand {
         }
     }
 
-    public override events = [
-        new RolePrefix()
-    ];
+    public override events = [new RolePrefix()];
 }
 
 class RolePrefix extends GargoyleEvent {
@@ -159,6 +156,6 @@ class RolePrefix extends GargoyleEvent {
 
         namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
 
-        updatedMember.setNickname(namePrefix).catch(() => { });
+        updatedMember.setNickname(namePrefix).catch(() => {});
     }
 }

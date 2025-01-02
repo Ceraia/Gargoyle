@@ -19,7 +19,6 @@ class GargoyleClient extends Client {
      */
     startTime: Date;
 
-
     /**
      * The database instance associated with the client.
      * @type {Database | null}
