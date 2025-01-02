@@ -150,7 +150,9 @@ class RolePrefix extends GargoyleEvent {
         const updatedMember = await member.fetch(true);
         let namePrefix = '[';
 
-        updatedMember.roles.cache.forEach((role) => {
+        const roles = updatedMember.roles.cache.sort((a, b) => b.position - a.position);
+
+        roles.forEach((role) => {
             if (role.name === '@everyone') return;
             namePrefix += role.name.split('')[0].toUpperCase();
         });
