@@ -14,6 +14,13 @@ import http from 'http';
  */
 class GargoyleClient extends Client {
     /**
+     * The start time of the client.
+     * @type {number}
+     */
+    startTime: Date;
+
+
+    /**
      * The database instance associated with the client.
      * @type {Database | null}
      */
@@ -37,6 +44,7 @@ class GargoyleClient extends Client {
      */
     constructor(options: ClientOptions) {
         super(options);
+        this.startTime = new Date();
         this.db = new Database(this);
         this.prefix = process.env.PREFIX ?? ',';
         this.commands = [];
@@ -95,6 +103,10 @@ class GargoyleClient extends Client {
     override async login(token?: string) {
         this.startHealthCheckServer();
         if (this.db?.willConnect) this.logger.log('Waiting for database connection...');
+        if (!this.db?.willConnect) {
+            this.db = null;
+            this.logger.warning('Database connection won\'t be established, setting db to null');
+        }
 
         this.logger.debug('Awaiting promises for system events and events...');
         await Promise.all([
