@@ -3,6 +3,7 @@ import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -13,6 +14,7 @@ import {
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     SlashCommandBuilder,
+    Status,
     TextChannel,
     TextInputBuilder,
     TextInputStyle
@@ -112,10 +114,10 @@ export default class Ping extends GargoyleCommand {
                             .setTitle(`Application by ${interaction.user.username}`)
                             .setDescription(
                                 `**Steam Account Link:** ${interaction.fields.getTextInputValue('steam') || ''}\n` +
-                                    `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
-                                    `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
-                                    `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
-                                    `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
+                                `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
+                                `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
+                                `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
+                                `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
                             )
                     ],
                     components: [
@@ -128,5 +130,20 @@ export default class Ping extends GargoyleCommand {
                     interaction.reply({ content: 'Application submitted, you will hear back from us.', ephemeral: true });
                 });
         }
+    }
+
+    public override events = [
+        new GargoyleApplyCommandTest(),
+    ];
+}
+
+class GargoyleApplyCommandTest extends GargoyleEvent {
+    public event = 'ready' as const;
+    override once = true;
+
+    public execute(client: GargoyleClient): void {
+        const statusName = Status[client.ws.status];
+        client.logger.warning(`Discord WS Status is ${statusName}`);
+        // Whatever you want to do when the bot is ready goes here.
     }
 }

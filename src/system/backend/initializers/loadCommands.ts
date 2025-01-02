@@ -23,6 +23,15 @@ async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<
                         client.logger.debug(`Registering command: ${command.slashCommand?.name ?? command.textCommand?.name}`);
                         client.commands.push(command);
                     }
+                    command.events.forEach((event) => {
+                        if (event.once) {
+                            client.logger.debug(`Registering command event as ${event.event} once: ${file}`);
+                            client.once(event.event, (...args) => event.execute(client, ...args));
+                        } else {
+                            client.logger.debug(`Registering command event as ${event.event} on: ${file}`);
+                            client.on(event.event, (...args) => event.execute(client, ...args));
+                        }
+                    });
                 } catch (err) {
                     client.logger.error(err as string, `Error registering command: ${file}`);
                 }
