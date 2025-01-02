@@ -6,12 +6,48 @@ export default class VoiceActivity extends GargoyleEvent {
     public event = Events.VoiceStateUpdate as const;
 
     public execute(client: GargoyleClient, oldState: VoiceState, newState: VoiceState): void {
-        if (oldState.guild.id !== '1009048008857493624') return;
-
         const member = oldState.member;
         if (!member || member.user.bot) return;
 
-        client.logger.trace(`Updating voice activity for ${newState.member?.user.tag}`);
+        const guildId = oldState.guild.id;
+        const userId = member.id;
+
+        if (client.db === null) return;
+
+        if (newState.channelId && !oldState.channelId) {
+            // User joined a voice channel
+            getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
+                voiceTime.activity.push({
+                    dateJoined: new Date(),
+                    dateLastChecked: new Date(),
+                    hasLeft: false
+                });
+                await voiceTime.save();
+            }
+            );
+        } else {
+            getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
+                const lastActivity = voiceTime.activity.pop();
+                if (lastActivity) {
+                    if (lastActivity.hasLeft) return;
+                    lastActivity.dateLastChecked = new Date();
+                    if (newState.channelId === null) {
+                        lastActivity.hasLeft = true;
+                    }
+                    voiceTime.activity.push(lastActivity);
+                    await voiceTime.save();
+                }
+
+                if (voiceTime.activity.length > 999) {
+                    voiceTime.activity.shift();
+                    await voiceTime.save();
+                }
+
+                const totalVoiceTime = await getUserVoiceActivity(userId, guildId, 1440);
+                client.logger.info(`User has been in voice channels for ${totalVoiceTime}ms in the past 24 hours`);
+            }
+            );
+        }
     }
 }
 
@@ -22,13 +58,19 @@ const guildUserVoiceActivitySchema = new Schema({
     guildId: String,
     activity: [
         {
-            date: {
+            dateJoined: {
                 type: Date,
                 default: Date.now
             },
-            time: {
-                type: Number,
-                default: 0 // Time in minutes
+            dateLastChecked: {
+                // The last time the user's voice activity was checked, will be checked on leave but will also periodically be checked to handle edge cases
+                type: Date,
+                default: Date.now
+            },
+            hasLeft:
+            {
+                type: Boolean,
+                default: false
             }
         }
     ]
@@ -58,13 +100,15 @@ async function getUserVoiceActivity(
 ) {
     const databaseGuildUser = await getGuildUserVoiceActivity(userId, guildId);
 
-    const currentTime = Date.now();
-    const timeAgo = currentTime - time * 60000;
+    const currentTime = new Date();
+    const timeAgo = new Date(currentTime.getTime() - time * 60000);
 
     let totalVoiceTime = 0;
     for (const activity of databaseGuildUser.activity) {
-        if (activity.date.getTime() >= timeAgo) {
-            totalVoiceTime += activity.time;
+        if (activity.dateJoined.getTime() < timeAgo.getTime()) {
+            if (!activity.hasLeft) {
+                totalVoiceTime += currentTime.getTime() - activity.dateJoined.getTime();
+            }
         }
     }
 
