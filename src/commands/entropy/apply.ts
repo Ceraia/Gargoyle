@@ -3,16 +3,20 @@ import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
+    Events,
+    GuildMember,
     InteractionContextType,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     SlashCommandBuilder,
+    Status,
     TextChannel,
     TextInputBuilder,
     TextInputStyle
@@ -112,10 +116,10 @@ export default class Ping extends GargoyleCommand {
                             .setTitle(`Application by ${interaction.user.username}`)
                             .setDescription(
                                 `**Steam Account Link:** ${interaction.fields.getTextInputValue('steam') || ''}\n` +
-                                    `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
-                                    `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
-                                    `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
-                                    `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
+                                `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
+                                `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
+                                `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
+                                `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
                             )
                     ],
                     components: [
@@ -128,5 +132,33 @@ export default class Ping extends GargoyleCommand {
                     interaction.reply({ content: 'Application submitted, you will hear back from us.', ephemeral: true });
                 });
         }
+    }
+
+    public override events = [
+        new RolePrefix()
+    ];
+}
+
+class RolePrefix extends GargoyleEvent {
+    public event = Events.GuildMemberUpdate as const;
+
+    public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
+        if (member.guild.id !== '1009048008857493624') return;
+
+        client.logger.debug(`Updating nickname for ${member.user.tag}`);
+
+        const updatedMember = await member.fetch(true);
+        let namePrefix = '[';
+
+        const roles = updatedMember.roles.cache.sort((a, b) => b.position - a.position);
+
+        roles.forEach((role) => {
+            if (role.name === '@everyone') return;
+            namePrefix += role.name.split('')[0].toUpperCase();
+        });
+
+        namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
+
+        updatedMember.setNickname(namePrefix).catch(() => { });
     }
 }

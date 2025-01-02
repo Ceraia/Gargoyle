@@ -8,11 +8,13 @@ import {
 } from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
 import TextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
+import GargoyleEvent from './gargoyleEvent.js';
 
 abstract class GargoyleCommand {
     public abstract category: string;
     public slashCommand: SlashCommandBuilder | null = null;
     public textCommand: TextCommandBuilder | null = null;
+    public events: GargoyleEvent[] = [];
     public guild: string | null = null;
 
     public executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): void {
