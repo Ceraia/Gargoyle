@@ -4,7 +4,14 @@ import { Events, VoiceState } from 'discord.js';
 
 export default class VoiceActivity extends GargoyleEvent {
     public event = Events.VoiceStateUpdate as const;
-
+    /**
+     * Handles the voice state update event for a Discord guild member.
+     * Tracks when a user joins or leaves a voice channel and updates their voice activity in the database.
+     * 
+     * @param client - The GargoyleClient instance.
+     * @param oldState - The previous voice state of the member.
+     * @param newState - The new voice state of the member.
+     */
     public execute(client: GargoyleClient, oldState: VoiceState, newState: VoiceState): void {
         const member = oldState.member;
         if (!member || member.user.bot) return;
@@ -42,9 +49,6 @@ export default class VoiceActivity extends GargoyleEvent {
                     voiceTime.activity.shift();
                     await voiceTime.save();
                 }
-
-                const totalVoiceTime = await getUserVoiceActivity(userId, guildId, 1440);
-                client.logger.info(`User has been in voice channels for ${totalVoiceTime}ms in the past 24 hours`);
             }
             );
         }
@@ -78,6 +82,14 @@ const guildUserVoiceActivitySchema = new Schema({
 
 const databaseGuildUserVoiceActivity = model('GuildUserVoiceActivity', guildUserVoiceActivitySchema);
 
+/**
+ * Retrieves the voice activity document for a specific user in a specific guild.
+ * If the document does not exist, it creates a new one.
+ * 
+ * @param userId - The Discord user ID.
+ * @param guildId - The Discord guild ID.
+ * @returns The voice activity document for the user in the guild.
+ */
 async function getGuildUserVoiceActivity(userId: string, guildId: string) {
     let databaseGuildUser = await databaseGuildUserVoiceActivity.findOne({
         userId,
@@ -93,6 +105,15 @@ async function getGuildUserVoiceActivity(userId: string, guildId: string) {
     return databaseGuildUser;
 }
 
+
+/**
+ * Returns the users voice activity within a guild within the last `x` minutes
+ * @param userId The Discord user ID
+ * @param guildId The Discord guild ID
+ * @param time The amount of time to look back in minutes
+ * @returns The amount of time the user has spent in voice channels in the last `time` minutes
+ */
+
 async function getUserVoiceActivity(
     userId: string,
     guildId: string,
@@ -106,13 +127,16 @@ async function getUserVoiceActivity(
     let totalVoiceTime = 0;
     for (const activity of databaseGuildUser.activity) {
         if (activity.dateJoined.getTime() < timeAgo.getTime()) {
-            if (!activity.hasLeft) {
-                totalVoiceTime += currentTime.getTime() - activity.dateJoined.getTime();
-            }
+            continue;
         }
+
+        const joinedTime = activity.dateJoined.getTime();
+        const lastCheckedTime = activity.dateLastChecked.getTime();
+
+        totalVoiceTime += lastCheckedTime - joinedTime;
     }
 
-    return totalVoiceTime;
+    return Math.floor(totalVoiceTime / 60 / 1000);
 }
 
 export { databaseGuildUserVoiceActivity, getGuildUserVoiceActivity, getUserVoiceActivity };
