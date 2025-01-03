@@ -51,7 +51,7 @@ export default class Ping extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ ephemeral: true });
 
         if (!interaction.guildId || !interaction.user.id) return;
         if (client.user === null) return;
@@ -59,31 +59,23 @@ export default class Ping extends GargoyleCommand {
         const vc = (await (await client.guilds.fetch(interaction.guildId)).members.fetch(interaction.user.id)).voice.channel;
 
         if (!vc) {
-            await interaction
-                .editReply({ content: 'You need to be in a voice channel to use this button!' })
-                .catch(() =>
-                    interaction
-                        .editReply({ content: 'You need to be in a voice channel to use this button!' })
-                        .catch(() => interaction.reply({ content: 'You need to be in a voice channel to use this button!' }))
-                );
+            client.logger.trace(`User ${interaction.user.username} tried to use a vc button without being in a vc.`);
+            await interaction.editReply({ content: 'You need to be in a voice channel to use this button!' });
             return;
         }
 
         if (
             !vc.permissionOverwrites.resolve(client.user.id) ||
-            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AttachFiles)
+            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
         ) {
-            interaction.editReply({ content: 'This is not a dynamic vc!' }).catch(() =>
-                interaction.reply({
-                    content: 'This is not a dynamic vc!',
-                    ephemeral: true
-                })
-            );
+            client.logger.trace(`User ${interaction.user.username} tried to use a vc button without having the correct permissions.`);
+            interaction.editReply({ content: 'This is not a dynamic vc!' });
             return;
         }
 
         switch (args[0]) {
         case 'lock': {
+            client.logger.trace(`User ${interaction.user.username} locked/unlocked their vc.`);
             // Lock  / Unlock the vc
             if (
                 vc.permissionOverwrites.resolve(interaction.guildId) &&
@@ -105,6 +97,7 @@ export default class Ping extends GargoyleCommand {
             break;
         }
         case 'hide': {
+            client.logger.trace(`User ${interaction.user.username} hid/unhid their vc.`);
             // Hide  / Unlock the vc
             if (
                 vc.permissionOverwrites.resolve(interaction.guildId) &&
@@ -126,12 +119,14 @@ export default class Ping extends GargoyleCommand {
             break;
         }
         case 'increase': {
+            client.logger.trace(`User ${interaction.user.username} increased the user limit of their vc.`);
             // Increase the user limit
             vc.edit({ userLimit: vc.userLimit + 1 });
             interaction.editReply({ content: `Increased the user limit to ${vc.userLimit + 1}!` });
             break;
         }
         case 'decrease': {
+            client.logger.trace(`User ${interaction.user.username} decreased the user limit of their vc.`);
             // Decrease the user limit
 
             vc.edit({ userLimit: vc.userLimit - 1 }).catch(() => {});
@@ -145,6 +140,7 @@ export default class Ping extends GargoyleCommand {
             break;
         }
         case 'ban': {
+            client.logger.trace(`User ${interaction.user.username} banned a user from their vc.`);
             // Send a select menu with all the members
             interaction.editReply({
                 components: [
@@ -156,6 +152,7 @@ export default class Ping extends GargoyleCommand {
             break;
         }
         case 'invite': {
+            client.logger.trace(`User ${interaction.user.username} invited a user to their vc.`);
             // Send a select menu with all the members
             interaction.editReply({
                 components: [
@@ -170,6 +167,7 @@ export default class Ping extends GargoyleCommand {
             break;
         }
         case 'rename': {
+            client.logger.trace(`User ${interaction.user.username} tried to rename their vc.`);
             // Send a modal with a text input to choose the name.
             const maxLength = 25; // - client.db.guilds.get(interaction.guild.id).dynvcs.prefix.length;
             interaction.showModal(
@@ -191,6 +189,7 @@ export default class Ping extends GargoyleCommand {
             break;
         }
         case 'claim': {
+            client.logger.trace(`User ${interaction.user.username} claimed a vc.`);
             // Claim the vc
             // Check if any of the members in the vc are the owner
             let owner;
@@ -234,7 +233,7 @@ export default class Ping extends GargoyleCommand {
 
         if (
             !vc.permissionOverwrites.resolve(client.user.id) ||
-            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AttachFiles)
+            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
         ) {
             interaction.reply({ content: 'This is not a dynamic vc!' });
             return;
@@ -269,7 +268,7 @@ export default class Ping extends GargoyleCommand {
 
         if (
             !vc.permissionOverwrites.resolve(client.user.id) ||
-            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AttachFiles)
+            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
         ) {
             interaction.reply({ content: 'This is not a dynamic vc!' });
             return;
