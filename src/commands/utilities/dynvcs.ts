@@ -61,9 +61,9 @@ export default class VoicechatCommand extends GargoyleCommand {
         } else if (interaction.options.getSubcommand() === 'create') {
             if (!interaction.guild) return;
             if (!client.user) return;
-            interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels)
-                ? null
-                : interaction.reply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!', ephemeral: true });
+            if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels)) {
+                interaction.reply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!', ephemeral: true });
+            }
 
             let vc = interaction.options.getChannel('vc');
 
