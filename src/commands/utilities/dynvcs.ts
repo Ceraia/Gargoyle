@@ -7,6 +7,7 @@ import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuil
 import { GargoyleUserSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import {
     ActionRowBuilder,
+    AnySelectMenuInteraction,
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
@@ -17,6 +18,7 @@ import {
     MessageEditOptions,
     MessagePayload,
     ModalActionRowComponentBuilder,
+    ModalSubmitInteraction,
     PermissionFlagsBits,
     SlashCommandBuilder,
     TextChannel,
@@ -147,11 +149,7 @@ export default class Ping extends GargoyleCommand {
             interaction.editReply({
                 components: [
                     new ActionRowBuilder<GargoyleUserSelectMenuBuilder>().addComponents(
-                        new GargoyleUserSelectMenuBuilder(this, 'ban')
-                            .setCustomId('dynvc-ban')
-                            .setPlaceholder('Select member(s) to ban.')
-                            .setMaxValues(25)
-                            .setMinValues(1)
+                        new GargoyleUserSelectMenuBuilder(this, 'ban').setPlaceholder('Select member(s) to ban.').setMaxValues(25).setMinValues(1)
                     )
                 ]
             });
@@ -163,7 +161,6 @@ export default class Ping extends GargoyleCommand {
                 components: [
                     new ActionRowBuilder<GargoyleUserSelectMenuBuilder>().addComponents(
                         new GargoyleUserSelectMenuBuilder(this, 'invite')
-                            .setCustomId('dynvc-invite')
                             .setPlaceholder('Select member(s) to invite.')
                             .setMaxValues(25)
                             .setMinValues(1)
@@ -178,7 +175,6 @@ export default class Ping extends GargoyleCommand {
             interaction.showModal(
                 new GargoyleModalBuilder(this, 'rename')
                     .setTitle('Rename the VC')
-                    .setCustomId(`dynvc-rename-${vc.id}`)
                     .setComponents(
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
                             new TextInputBuilder()
@@ -223,6 +219,89 @@ export default class Ping extends GargoyleCommand {
         }
         }
         interaction.update(this.panelMessage as MessageEditOptions);
+    }
+
+    public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
+        if (!interaction.guildId || !interaction.user.id) return;
+        if (client.user === null) return;
+
+        const vc = client.guilds.cache.get(interaction.guildId)?.members.cache.get(interaction.user.id)?.voice.channel;
+
+        if (!vc) {
+            interaction.reply({ content: 'You need to be in a voice channel to use this button!' });
+            return;
+        }
+
+        if (
+            !vc.permissionOverwrites.resolve(client.user.id) ||
+            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AttachFiles)
+        ) {
+            interaction.reply({ content: 'This is not a dynamic vc!' });
+            return;
+        }
+
+        switch (args[0]) {
+        case 'rename': {
+            vc.edit({ name: interaction.fields.getTextInputValue('name') })
+                .catch(() => {
+                    interaction.reply({ content: 'Failed to rename the vc!' });
+                })
+                .then(() => {
+                    interaction.reply({ content: `Renamed the vc to ${interaction.fields.getTextInputValue('name')}` });
+                });
+
+            break;
+        }
+        }
+    }
+
+    public override executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): void {
+        if (!interaction.guildId) return;
+        if (!interaction.user.id) return;
+        if (client.user === null) return;
+
+        const vc = client.guilds.cache.get(interaction.guildId)?.members.cache.get(interaction.user.id)?.voice.channel;
+
+        if (!vc) {
+            interaction.reply({ content: 'You need to be in a voice channel to use this button!' });
+            return;
+        }
+
+        if (
+            !vc.permissionOverwrites.resolve(client.user.id) ||
+            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AttachFiles)
+        ) {
+            interaction.reply({ content: 'This is not a dynamic vc!' });
+            return;
+        }
+
+        switch (args[0]) {
+        case 'ban': {
+            interaction.values.forEach((value) => {
+                if (!interaction.guildId) return;
+
+                const member = client.guilds.cache.get(interaction.guildId)?.members.cache.get(value);
+                if (member) {
+                    vc.permissionOverwrites.edit(member.id, { Connect: false });
+                    interaction.reply({ content: `Banned ${member.user.tag} from the vc!` });
+                    vc.members.get(member.id)?.voice.setChannel(null);
+                }
+            });
+            break;
+        }
+        case 'invite': {
+            interaction.values.forEach((value) => {
+                if (!interaction.guildId) return;
+
+                const member = client.guilds.cache.get(interaction.guildId)?.members.cache.get(value);
+                if (member) {
+                    vc.permissionOverwrites.edit(member.id, { Connect: true });
+                    interaction.reply({ content: `Invited ${member.user.tag} to the vc!` });
+                }
+            });
+            break;
+        }
+        }
     }
 
     private panelMessage: string | InteractionReplyOptions | MessageEditOptions | MessageCreateOptions | MessagePayload = {
