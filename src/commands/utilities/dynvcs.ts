@@ -53,7 +53,7 @@ export default class VoicechatCommand extends GargoyleCommand {
 
     public override textCommand = new TextCommandBuilder()
         .setName('voice')
-        .setDescription('Replies with Pong!')
+        .setDescription('Get voicechat interaction panel')
         .addAlias('vc')
         .addAlias('voicechat')
         .setContexts([InteractionContextType.Guild]);
@@ -93,7 +93,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                     (channel as VoiceChannel).permissionOverwrites.edit(interaction.guild.id, { Connect: true, PrioritySpeaker: true });
                 });
 
-            interaction.reply({ content: 'Created the dynamic vc!', ephemeral: true });
+            interaction.reply({ content: `Created the dynamic vc, use \`/vc panel\` or \`${client.prefix}vc\` to get the vc panel!`, ephemeral: true });
         }
     }
 
