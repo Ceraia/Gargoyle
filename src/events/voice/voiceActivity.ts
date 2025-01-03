@@ -7,19 +7,19 @@ export default class VoiceActivity extends GargoyleEvent {
     /**
      * Handles the voice state update event for a Discord guild member.
      * Tracks when a user joins or leaves a voice channel and updates their voice activity in the database.
-     * 
+     *
      * @param client - The GargoyleClient instance.
      * @param oldState - The previous voice state of the member.
      * @param newState - The new voice state of the member.
      */
     public execute(client: GargoyleClient, oldState: VoiceState, newState: VoiceState): void {
+        if (client.db === null) return;
+
         const member = oldState.member;
         if (!member || member.user.bot) return;
 
         const guildId = oldState.guild.id;
         const userId = member.id;
-
-        if (client.db === null) return;
 
         if (newState.channelId && !oldState.channelId) {
             // User joined a voice channel
@@ -30,8 +30,7 @@ export default class VoiceActivity extends GargoyleEvent {
                     hasLeft: false
                 });
                 await voiceTime.save();
-            }
-            );
+            });
         } else {
             getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
                 const lastActivity = voiceTime.activity.pop();
@@ -49,8 +48,7 @@ export default class VoiceActivity extends GargoyleEvent {
                     voiceTime.activity.shift();
                     await voiceTime.save();
                 }
-            }
-            );
+            });
         }
     }
 }
@@ -71,8 +69,7 @@ const guildUserVoiceActivitySchema = new Schema({
                 type: Date,
                 default: Date.now
             },
-            hasLeft:
-            {
+            hasLeft: {
                 type: Boolean,
                 default: false
             }
@@ -85,7 +82,7 @@ const databaseGuildUserVoiceActivity = model('GuildUserVoiceActivity', guildUser
 /**
  * Retrieves the voice activity document for a specific user in a specific guild.
  * If the document does not exist, it creates a new one.
- * 
+ *
  * @param userId - The Discord user ID.
  * @param guildId - The Discord guild ID.
  * @returns The voice activity document for the user in the guild.
@@ -104,7 +101,6 @@ async function getGuildUserVoiceActivity(userId: string, guildId: string) {
     }
     return databaseGuildUser;
 }
-
 
 /**
  * Returns the users voice activity within a guild within the last `x` minutes
