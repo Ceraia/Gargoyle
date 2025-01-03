@@ -5,12 +5,16 @@ import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBu
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import {
     ActionRowBuilder,
+    ButtonInteraction,
+    ButtonStyle,
     ChatInputCommandInteraction,
     InteractionContextType,
+    InteractionReplyOptions,
     Message,
     MessageCreateOptions,
     MessageEditOptions,
     MessagePayload,
+    PermissionFlagsBits,
     SlashCommandBuilder,
     TextChannel
 } from 'discord.js';
@@ -36,16 +40,58 @@ export default class Ping extends GargoyleCommand {
     }
 
     public override executeTextCommand(_client: GargoyleClient, message: Message) {
-        (message.channel as TextChannel).send('Pong!').then((sentMessage) => {
-            const start = message.createdTimestamp;
-            const end = sentMessage.createdTimestamp;
-            sentMessage.edit(`Pong! Latency is ${end - start}ms.`);
-        });
+        (message.channel as TextChannel).send(this.panelMessage as MessageCreateOptions);
     }
 
-    private panelMessage: string | MessageEditOptions | MessageCreateOptions | MessagePayload = {
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        interaction.deferReply({ ephemeral: true });
+
+        if (!interaction.guildId || !interaction.user.id) return;
+        if (client.user === null) return;
+
+        const vc = (await (await client.guilds.fetch(interaction.guildId)).members.fetch(interaction.user.id)).voice.channel;
+
+        if (!vc) {
+            await interaction
+                .editReply({ content: 'You need to be in a voice channel to use this button!' })
+                .catch(() =>
+                    interaction
+                        .editReply({ content: 'You need to be in a voice channel to use this button!' })
+                        .catch(() => interaction.reply({ content: 'You need to be in a voice channel to use this button!' }))
+                );
+            return;
+        }
+
+        if (
+            !vc.permissionOverwrites.resolve(client.user.id) ||
+            !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AttachFiles)
+        ) {
+            interaction
+                .editReply({ content: 'This is not a dynamic vc!' })
+                .catch(() =>
+                    interaction.reply({
+                        content: 'This is not a dynamic vc!',
+                        ephemeral: true
+                    })
+                );
+            return;
+        }
+
+        switch (args[0]) {
+            case 'lock':
+
+                break;
+        }
+        interaction.update(this.panelMessage as MessageEditOptions);
+    }
+
+    private panelMessage: string | InteractionReplyOptions | MessageEditOptions | MessageCreateOptions | MessagePayload = {
         content: null,
         embeds: [new GargoyleEmbedBuilder().setTitle('Voicechat Commands')],
-        components: [new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([new GargoyleButtonBuilder(this, 'lock')])]
+        components: [
+            new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
+                new GargoyleButtonBuilder(this, 'lock').setLabel('Lock').setStyle(ButtonStyle.Secondary)
+            ])
+        ]
     };
 }
