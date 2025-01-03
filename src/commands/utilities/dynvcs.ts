@@ -79,8 +79,89 @@ export default class Ping extends GargoyleCommand {
 
         switch (args[0]) {
             case 'lock':
+                // Lock  / Unlock the vc
+                if (
+                    vc.permissionOverwrites.resolve(interaction.guildId) &&
+                    vc.permissionOverwrites
+                        .resolve(interaction.guildId)?.deny.has(PermissionFlagsBits.Connect)
+                ) {
+                    if (
+                        vc.parent &&
+                        vc.parent.permissionOverwrites.resolve(interaction.guildId)
+                    ) {
+                        if (
+                            vc.parent.permissionOverwrites
+                                .resolve(interaction.guildId)?.allow.has(PermissionFlagsBits.Connect)
+                        ) {
+                            vc.permissionOverwrites.edit(interaction.guildId, {
+                                Connect: true,
+                            });
+                        } else {
+                            vc.permissionOverwrites.edit(interaction.guildId, {
+                                Connect: null,
+                            });
+                        }
+                    } else
+                        vc.permissionOverwrites.edit(interaction.guildId, {
+                            Connect: null,
+                        });
 
+                    interaction.editReply({
+                        content: "Unlocked your vc!",
+                    });
+                } else {
+                    vc.permissionOverwrites.edit(interaction.guildId, {
+                        Connect: false,
+                    });
+                    interaction.editReply({
+                        content: "Locked your vc!",
+                    });
+                }
                 break;
+            case 'hide':
+                // Hide  / Unlock the vc
+                if (
+                    vc.permissionOverwrites.resolve(interaction.guildId) &&
+                    vc.permissionOverwrites
+                        .resolve(interaction.guildId)
+                        ?.deny.has(PermissionFlagsBits.ViewChannel)
+                ) {
+                    if (
+                        vc.parent &&
+                        vc.parent.permissionOverwrites.resolve(interaction.guildId)
+                    ) {
+                        if (
+                            vc.parent.permissionOverwrites
+                                .resolve(interaction.guildId)
+                                ?.allow.has(PermissionFlagsBits.ViewChannel)
+                        ) {
+                            vc.permissionOverwrites.edit(interaction.guildId, {
+                                ViewChannel: true,
+                            });
+                        } else {
+                            vc.permissionOverwrites.edit(interaction.guildId, {
+                                ViewChannel: null,
+                            });
+                        }
+                    } else
+                        vc.permissionOverwrites.edit(interaction.guildId, {
+                            ViewChannel: null,
+                        });
+
+                    interaction.editReply({
+                        content: "Unhid your vc!",
+                    });
+                } else {
+                    vc.permissionOverwrites.edit(interaction.guildId, {
+                        ViewChannel: false,
+                    });
+                    interaction.editReply({
+                        content: "Hid your vc!",
+                    });
+                }
+                break;
+
+
         }
         interaction.update(this.panelMessage as MessageEditOptions);
     }
