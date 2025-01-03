@@ -13,13 +13,13 @@ export default class VoiceActivity extends GargoyleEvent {
      * @param newState - The new voice state of the member.
      */
     public execute(client: GargoyleClient, oldState: VoiceState, newState: VoiceState): void {
+        if (client.db === null) return;
+
         const member = oldState.member;
         if (!member || member.user.bot) return;
 
         const guildId = oldState.guild.id;
         const userId = member.id;
-
-        if (client.db === null) return;
 
         if (newState.channelId && !oldState.channelId) {
             // User joined a voice channel
