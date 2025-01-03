@@ -10,6 +10,7 @@ import {
     AnySelectMenuInteraction,
     ButtonInteraction,
     ButtonStyle,
+    ChannelType,
     ChatInputCommandInteraction,
     InteractionContextType,
     InteractionReplyOptions,
@@ -23,14 +24,29 @@ import {
     SlashCommandBuilder,
     TextChannel,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    VoiceChannel
 } from 'discord.js';
-export default class Ping extends GargoyleCommand {
+
+export default class VoicechatCommand extends GargoyleCommand {
     public override category: string = 'utilities';
     public override slashCommand = new SlashCommandBuilder()
         .setName('vc')
         .setDescription('Voicechat related commands.')
-        .setContexts([InteractionContextType.Guild]);
+        .setContexts([InteractionContextType.Guild])
+        .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Get the voicechat panel'))
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName('create')
+                .setDescription('Create dynamic vc\'s')
+                .addChannelOption((option) =>
+                    option
+                        .setName('vc')
+                        .setRequired(false)
+                        .setDescription('The VC that will create the dynamic vcs')
+                        .addChannelTypes(ChannelType.GuildVoice)
+                )
+        ) as SlashCommandBuilder;
 
     public override textCommand = new TextCommandBuilder()
         .setName('voice')
@@ -39,11 +55,43 @@ export default class Ping extends GargoyleCommand {
         .addAlias('voicechat')
         .setContexts([InteractionContextType.Guild]);
 
-    public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        const start = Date.now();
-        await interaction.reply('Pong!');
-        const end = Date.now();
-        await interaction.editReply(`Pong! Latency is ${end - start}ms.`);
+    public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+        if (interaction.options.getSubcommand() === 'panel') {
+            interaction.reply(this.panelMessage as InteractionReplyOptions);
+        } else if (interaction.options.getSubcommand() === 'create') {
+            if (!interaction.guild) return;
+            if (!client.user) return;
+            interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels)
+                ? null
+                : interaction.reply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!', ephemeral: true });
+
+            let vc = interaction.options.getChannel('vc');
+
+            if (!vc)
+                vc = await interaction.guild.channels.create({
+                    name: 'Join to Create',
+                    type: ChannelType.GuildVoice,
+                    permissionOverwrites: [
+                        {
+                            id: interaction.guild.id,
+                            allow: [PermissionFlagsBits.Connect]
+                        },
+                        {
+                            id: client.user.id,
+                            allow: [PermissionFlagsBits.PrioritySpeaker]
+                        }
+                    ]
+                });
+            else
+                client.channels.fetch(vc.id).then((channel) => {
+                    if (!channel) return;
+                    if (!interaction.guild) return;
+
+                    (channel as VoiceChannel).permissionOverwrites.edit(interaction.guild.id, { Connect: true, PrioritySpeaker: true });
+                });
+
+            interaction.reply({ content: 'Created the dynamic vc!', ephemeral: true });
+        }
     }
 
     public override executeTextCommand(_client: GargoyleClient, message: Message) {
