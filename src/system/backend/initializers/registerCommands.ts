@@ -14,10 +14,13 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
 
     client.commands.forEach(async (command) => {
         if (command.slashCommand) {
-            client.logger.debug(`Registering slash command: ${command.slashCommand.name}`);
+            client.logger.trace(`Command has slash command: ${command.slashCommand.name}`);
             if (!command.guild) {
+                client.logger.debug(`Registering slash command: ${command.slashCommand.name}`);
                 await client.application?.commands.create(command.slashCommand);
             } else {
+                client.logger.trace(`Command has guild: ${command.guild}`);
+                client.logger.debug(`Registering slash command: ${command.slashCommand.name} in guild: ${command.guild}`);
                 await client.guilds.cache
                     .get(command.guild)
                     ?.commands.create(command.slashCommand)

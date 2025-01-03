@@ -104,7 +104,7 @@ class GargoyleClient extends Client {
         if (this.db?.willConnect) this.logger.log('Waiting for database connection...');
         if (!this.db?.willConnect) {
             this.db = null;
-            this.logger.warning('Database connection won\'t be established, setting db to null');
+            this.logger.warning("Database connection won't be established, setting db to null");
         }
 
         this.logger.debug('Awaiting promises for system events and events...');

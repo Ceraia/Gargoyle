@@ -14,6 +14,7 @@ async function registerEvents(client: GargoyleClient, ...dirs: string[]): Promis
             const stat = await fs.lstat(path.join(__dirname, dir, file));
 
             if (stat.isDirectory()) {
+                client.logger.trace(`Loading events from directory: ${file}`);
                 await registerEvents(client, path.join(dir, file));
             } else if (file.endsWith('.ts') || file.endsWith('.js')) {
                 try {
