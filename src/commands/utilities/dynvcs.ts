@@ -81,7 +81,7 @@ export default class Ping extends GargoyleCommand {
         }
 
         switch (args[0]) {
-        case 'lock':
+        case 'lock': {
             // Lock  / Unlock the vc
             if (
                 vc.permissionOverwrites.resolve(interaction.guildId) &&
@@ -93,8 +93,7 @@ export default class Ping extends GargoyleCommand {
                     } else {
                         vc.permissionOverwrites.edit(interaction.guildId, { Connect: null });
                     }
-                } else
-                    vc.permissionOverwrites.edit(interaction.guildId, { Connect: null });
+                } else vc.permissionOverwrites.edit(interaction.guildId, { Connect: null });
 
                 interaction.editReply({ content: 'Unlocked your vc!' });
             } else {
@@ -102,6 +101,7 @@ export default class Ping extends GargoyleCommand {
                 interaction.editReply({ content: 'Locked your vc!' });
             }
             break;
+        }
         case 'hide': {
             // Hide  / Unlock the vc
             if (
@@ -114,8 +114,7 @@ export default class Ping extends GargoyleCommand {
                     } else {
                         vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: null });
                     }
-                } else
-                    vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: null });
+                } else vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: null });
 
                 interaction.editReply({ content: 'Unhid your vc!' });
             } else {
@@ -130,7 +129,6 @@ export default class Ping extends GargoyleCommand {
             interaction.editReply({ content: `Increased the user limit to ${vc.userLimit + 1}!` });
             break;
         }
-
         case 'decrease': {
             // Decrease the user limit
 
@@ -144,7 +142,6 @@ export default class Ping extends GargoyleCommand {
             }
             break;
         }
-
         case 'ban': {
             // Send a select menu with all the members
             interaction.editReply({
@@ -160,7 +157,6 @@ export default class Ping extends GargoyleCommand {
             });
             break;
         }
-
         case 'invite': {
             // Send a select menu with all the members
             interaction.editReply({
@@ -176,7 +172,6 @@ export default class Ping extends GargoyleCommand {
             });
             break;
         }
-
         case 'rename': {
             // Send a modal with a text input to choose the name.
             const maxLength = 25; // - client.db.guilds.get(interaction.guild.id).dynvcs.prefix.length;
@@ -199,6 +194,33 @@ export default class Ping extends GargoyleCommand {
             );
             break;
         }
+        case 'claim': {
+            // Claim the vc
+            // Check if any of the members in the vc are the owner
+            let owner;
+
+            vc.members.forEach((member) => {
+                if (
+                    vc.permissionOverwrites.resolve(member.id) &&
+                        vc.permissionOverwrites.resolve(member.id)?.allow.has(PermissionFlagsBits.AddReactions)
+                )
+                    owner = member;
+            });
+
+            if (owner) {
+                interaction.editReply({ content: 'The owner is still in the vc!' });
+                return;
+            }
+
+            // Claim the vc
+            vc.permissionOverwrites.edit(interaction.user.id, {
+                AddReactions: true,
+                Connect: true
+            });
+
+            interaction.editReply({ content: 'You have claimed the vc!' });
+            break;
+        }
         }
         interaction.update(this.panelMessage as MessageEditOptions);
     }
@@ -209,7 +231,15 @@ export default class Ping extends GargoyleCommand {
         components: [
             new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
                 new GargoyleButtonBuilder(this, 'lock').setLabel('Lock').setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, 'hide').setLabel('Hide').setStyle(ButtonStyle.Secondary)
+                new GargoyleButtonBuilder(this, 'hide').setLabel('Hide').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'increase').setLabel('Increase').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'decrease').setLabel('Decrease').setStyle(ButtonStyle.Secondary)
+            ]),
+            new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
+                new GargoyleButtonBuilder(this, 'ban').setLabel('Ban').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'invite').setLabel('Invite').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'rename').setLabel('Rename').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'claim').setLabel('Claim').setStyle(ButtonStyle.Secondary)
             ])
         ]
     };
