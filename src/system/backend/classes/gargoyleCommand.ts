@@ -2,9 +2,13 @@ import {
     AnySelectMenuInteraction,
     ButtonInteraction,
     ChatInputCommandInteraction,
+    ContextMenuCommandBuilder,
+    ContextMenuCommandInteraction,
     Message,
+    MessageContextMenuCommandInteraction,
     ModalSubmitInteraction,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    UserContextMenuCommandInteraction
 } from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
 import TextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
@@ -14,6 +18,7 @@ abstract class GargoyleCommand {
     public abstract category: string;
     public slashCommand: SlashCommandBuilder | null = null;
     public textCommand: TextCommandBuilder | null = null;
+    public contextCommands: ContextMenuCommandBuilder | null = null;
     public events: GargoyleEvent[] = [];
     public guild: string | null = null;
 
@@ -28,6 +33,10 @@ abstract class GargoyleCommand {
                 message.delete();
             }, 5000);
         });
+    }
+    public executeContextMenuCommand(client: GargoyleClient, interaction: ContextMenuCommandInteraction | UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction) {
+        client.logger.error(`${interaction.commandName} does not have a context menu command implementation.`);
+        interaction.reply({ content: 'This command does not have a context menu command implementation.', ephemeral: true });
     }
     public executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): void {
         client.logger.error(`${interaction.customId} with argument ${args} does not have a button command implementation.`);
