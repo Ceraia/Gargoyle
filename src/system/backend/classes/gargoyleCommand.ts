@@ -18,7 +18,7 @@ abstract class GargoyleCommand {
     public abstract category: string;
     public slashCommand: SlashCommandBuilder | null = null;
     public textCommand: TextCommandBuilder | null = null;
-    public contextCommands: ContextMenuCommandBuilder | null = null;
+    public contextCommands: ContextMenuCommandBuilder[] | null = null;
     public events: GargoyleEvent[] = [];
     public guild: string | null = null;
 
