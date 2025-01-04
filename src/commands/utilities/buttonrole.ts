@@ -3,6 +3,7 @@ import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import { GargoyleRoleSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
@@ -84,11 +85,14 @@ export default class ButtonRole extends GargoyleCommand {
                     const role = await interaction.guild?.roles.fetch(roleId);
                     if (!role) continue;
 
-                    if (role.position >= member?.roles.highest.position) {
+                    if (role.position >= member?.roles.highest.position && member.guild.ownerId !== member.id
+
+                    ) {
                         interaction.reply({
                             content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
                             flags: MessageFlags.Ephemeral
-                        });
+                        }).catch(() => { });
+
                         return;
                     }
 
@@ -105,21 +109,7 @@ export default class ButtonRole extends GargoyleCommand {
                     componentCollection.push(actionRow);
                 }
 
-                channel.fetchWebhooks().then(async (webhooks) => {
-                    let webhook;
-
-                    if (webhooks.size === 0) {
-                        webhook = await channel.createWebhook({ name: 'Role Button', reason: 'Role Button webhook' });
-                    } else {
-                        webhook = webhooks.first();
-                    }
-
-                    webhook?.send({
-                        avatarURL: interaction.guild?.iconURL() || undefined,
-                        username: interaction.guild?.name || 'Role Button',
-                        components: componentCollection
-                    });
-                });
+                sendAsServer({ components: componentCollection }, channel);
             }
         }
     }
