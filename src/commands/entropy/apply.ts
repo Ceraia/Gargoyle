@@ -13,6 +13,7 @@ import {
     Events,
     GuildMember,
     InteractionContextType,
+    MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     SlashCommandBuilder,
@@ -28,7 +29,7 @@ export default class Ping extends GargoyleCommand {
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]);
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        await interaction.reply({ content: 'Sending entropy application panel', ephemeral: true });
+        await interaction.reply({ content: 'Sending entropy application panel', flags: MessageFlags.Ephemeral });
         await (interaction.channel as TextChannel).send({
             embeds: [new GargoyleEmbedBuilder().setTitle('Entropy Application').setDescription('Gen.4 Entropy. Apply now, you will be notified.')],
             components: [
@@ -98,9 +99,9 @@ export default class Ping extends GargoyleCommand {
                     reason: `Recruited by ${interaction.user.username}`
                 })
                 .catch((err) => {
-                    interaction.reply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\``, ephemeral: true });
+                    interaction.reply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\``, flags: MessageFlags.Ephemeral });
                 });
-            interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, ephemeral: true });
+            interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, flags: MessageFlags.Ephemeral });
         }
     }
 
@@ -128,7 +129,7 @@ export default class Ping extends GargoyleCommand {
                     ]
                 })
                 .then(() => {
-                    interaction.reply({ content: 'Application submitted, you will hear back from us.', ephemeral: true });
+                    interaction.reply({ content: 'Application submitted, you will hear back from us.', flags: MessageFlags.Ephemeral });
                 });
         }
     }

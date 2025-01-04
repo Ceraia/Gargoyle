@@ -76,7 +76,6 @@ export default [
             'no-script-url': 'error',
             'no-self-compare': 'error',
             'no-throw-literal': 'error',
-            'no-undefined': 'error',
             'no-unmodified-loop-condition': 'error',
             'no-unused-expressions': 'error',
             'no-useless-call': 'error',

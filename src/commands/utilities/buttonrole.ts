@@ -3,6 +3,7 @@ import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import { GargoyleRoleSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
@@ -11,11 +12,12 @@ import {
     ChatInputCommandInteraction,
     InteractionContextType,
     Message,
+    MessageFlags,
     SlashCommandBuilder,
     TextChannel
 } from 'discord.js';
 
-export default class Ping extends GargoyleCommand {
+export default class ButtonRole extends GargoyleCommand {
     public override category: string = 'utilities';
     public override slashCommand = new SlashCommandBuilder()
         .setName('rolebutton')
@@ -31,12 +33,12 @@ export default class Ping extends GargoyleCommand {
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (!interaction.memberPermissions?.has('ManageRoles')) {
-            await interaction.reply({ content: 'You do not have the required permissions to use this command.', ephemeral: true });
+            await interaction.reply({ content: 'You do not have the required permissions to use this command.', flags: MessageFlags.Ephemeral });
             return;
         }
         await interaction.reply({
             content: 'What role(s) would you like to give?',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
             components: [
                 new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
                     new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
@@ -83,11 +85,14 @@ export default class Ping extends GargoyleCommand {
                     const role = await interaction.guild?.roles.fetch(roleId);
                     if (!role) continue;
 
-                    if (role.position >= member?.roles.highest.position) {
-                        interaction.reply({
-                            content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
-                            ephemeral: true
-                        });
+                    if (role.position >= member?.roles.highest.position && member.guild.ownerId !== member.id) {
+                        interaction
+                            .reply({
+                                content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
+                                flags: MessageFlags.Ephemeral
+                            })
+                            .catch(() => {});
+
                         return;
                     }
 
@@ -104,21 +109,7 @@ export default class Ping extends GargoyleCommand {
                     componentCollection.push(actionRow);
                 }
 
-                channel.fetchWebhooks().then(async (webhooks) => {
-                    let webhook;
-
-                    if (webhooks.size === 0) {
-                        webhook = await channel.createWebhook({ name: 'Role Button', reason: 'Role Button webhook' });
-                    } else {
-                        webhook = webhooks.first();
-                    }
-
-                    webhook?.send({
-                        avatarURL: interaction.guild?.iconURL() || undefined,
-                        username: interaction.guild?.name || 'Role Button',
-                        components: componentCollection
-                    });
-                });
+                sendAsServer({ components: componentCollection }, channel);
             }
         }
     }
@@ -136,11 +127,11 @@ export default class Ping extends GargoyleCommand {
                     .catch(() => {
                         interaction.reply({
                             content: `Failed to remove role ${role.name}, I may not have the correct permissions to take it away from you.`,
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                     })
                     .then(() => {
-                        interaction.reply({ content: `Removed role ${role.name}`, ephemeral: true });
+                        interaction.reply({ content: `Removed role ${role.name}`, flags: MessageFlags.Ephemeral });
                     });
             } else {
                 await member?.roles
@@ -148,11 +139,11 @@ export default class Ping extends GargoyleCommand {
                     .catch(() => {
                         interaction.reply({
                             content: `Failed to add role ${role.name}, I may not have the correct permissions to give it to you.`,
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                     })
                     .then(() => {
-                        interaction.reply({ content: `Added role ${role.name}`, ephemeral: true });
+                        interaction.reply({ content: `Added role ${role.name}`, flags: MessageFlags.Ephemeral });
                     });
             }
         }

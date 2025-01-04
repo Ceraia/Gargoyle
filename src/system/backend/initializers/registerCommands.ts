@@ -4,7 +4,10 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
     await client.application?.commands.fetch().then((commands) => {
         commands.forEach(async (command) => {
             // Find if a command with the same name exists
-            const existingCommand = client.commands.find((cmd) => cmd.slashCommand?.name === command.name);
+            const existingCommand = client.commands.find(
+                (cmd) =>
+                    cmd.slashCommand?.name === command.name || cmd.contextCommands?.find((contextCommand) => contextCommand.name === command.name)
+            );
             if (!existingCommand || existingCommand.guild) {
                 client.logger.debug(`Deleting unknown slash command: ${command.name}`);
                 await command.delete();
@@ -28,6 +31,22 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
                         client.logger.error(`Failed to register slash command: ${command.slashCommand?.name} in guild: ${command.guild}`);
                     });
             }
+        }
+        if (command.contextCommands) {
+            command.contextCommands.forEach(async (contextCommand) => {
+                if (!command.guild) {
+                    client.logger.debug(`Registering context command: ${contextCommand.name}`);
+                    await client.application?.commands.create(contextCommand);
+                } else {
+                    client.logger.debug(`Registering context command: ${contextCommand.name} in guild: ${command.guild}`);
+                    await client.guilds.cache
+                        .get(command.guild)
+                        ?.commands.create(contextCommand)
+                        .catch(() => {
+                            client.logger.error(`Failed to register context command: ${contextCommand.name} in guild: ${command.guild}`);
+                        });
+                }
+            });
         }
     });
 }

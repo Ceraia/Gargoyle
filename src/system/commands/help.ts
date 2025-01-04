@@ -8,6 +8,7 @@ import {
     ChatInputCommandInteraction,
     EmbedBuilder,
     Message,
+    MessageFlags,
     SlashCommandBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder
@@ -43,7 +44,7 @@ export default class Help extends GargoyleCommand {
     };
 
     override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         interaction.followUp(this.helpMessage);
     }
 

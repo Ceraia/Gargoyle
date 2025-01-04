@@ -1,0 +1,95 @@
+import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
+import {
+    ActionRowBuilder,
+    ApplicationCommandType,
+    ChatInputCommandInteraction,
+    ContextMenuCommandBuilder,
+    InteractionContextType,
+    MessageContextMenuCommandInteraction,
+    MessageFlags,
+    ModalActionRowComponentBuilder,
+    ModalSubmitInteraction,
+    PermissionFlagsBits,
+    SlashCommandBuilder,
+    TextChannel,
+    TextInputBuilder,
+    TextInputStyle
+} from 'discord.js';
+
+export default class Server extends GargoyleCommand {
+    public override category: string = 'utilities';
+    public override slashCommand = new SlashCommandBuilder()
+        .setName('server')
+        .setDescription('Server / community commands')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+        .addSubcommand((subcommand) => subcommand.setName('message').setDescription('Send a message as the server'))
+        .setContexts([InteractionContextType.Guild]) as SlashCommandBuilder;
+    public override contextCommands = [
+        new ContextMenuCommandBuilder()
+            .setContexts(InteractionContextType.Guild)
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+            .setType(ApplicationCommandType.Message)
+            .setName('Edit Server Message')
+    ];
+
+    public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+        if (interaction.options.getSubcommand() === 'message') {
+            await interaction.showModal(
+                new GargoyleModalBuilder(this, 'message')
+                    .setTitle('Send a message as the server')
+                    .setComponents(
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('message')
+                                .setLabel('Message')
+                                .setPlaceholder('Enter your message here')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                        )
+                    )
+            );
+        }
+    }
+
+    public override executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
+        if (args[0] === 'message') {
+            interaction.reply({ content: 'Sending message, one moment...', flags: MessageFlags.Ephemeral });
+            sendAsServer({ content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel);
+        } else if (args[0] === 'edit') {
+            if (!interaction.channel) return;
+            (interaction.channel as TextChannel).messages.fetch(args[1]).then((message) => {
+                message.edit(interaction.fields.getTextInputValue('message')).catch(() => {
+                    editAsServer({ content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel, message.id).catch(() => {
+                        interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => { })
+                    })
+                }).then(() => {
+                    interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => { })
+                })
+            });
+        }
+    }
+
+    public override executeContextMenuCommand(_client: GargoyleClient, interaction: MessageContextMenuCommandInteraction): void {
+        if (interaction instanceof MessageContextMenuCommandInteraction) {
+            interaction.showModal(
+                new GargoyleModalBuilder(this, 'edit', interaction.targetMessage.id)
+                    .setTitle('Edit Server Message')
+                    .setComponents(
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('message')
+                                .setLabel('Message')
+                                .setPlaceholder('Enter your message here')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                                .setValue(interaction.targetMessage.content)
+                        )
+                    )
+            );
+
+        }
+    }
+}

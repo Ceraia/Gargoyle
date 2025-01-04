@@ -19,6 +19,7 @@ import {
     Message,
     MessageCreateOptions,
     MessageEditOptions,
+    MessageFlags,
     MessagePayload,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
@@ -65,7 +66,7 @@ export default class VoicechatCommand extends GargoyleCommand {
             if (!interaction.guild) return;
             if (!client.user) return;
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels)) {
-                interaction.reply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!', ephemeral: true });
+                interaction.reply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!', flags: MessageFlags.Ephemeral });
             }
 
             let vc = interaction.options.getChannel('vc');
@@ -95,7 +96,7 @@ export default class VoicechatCommand extends GargoyleCommand {
 
             interaction.reply({
                 content: `Created the dynamic vc, use \`/vc panel\` or \`${client.prefix}vc\` to get the vc panel!`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -105,7 +106,7 @@ export default class VoicechatCommand extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        if (args[0] !== 'rename') await interaction.deferReply({ ephemeral: true });
+        if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;
         if (client.user === null) return;
 
@@ -280,7 +281,7 @@ export default class VoicechatCommand extends GargoyleCommand {
         const vc = client.guilds.cache.get(interaction.guildId)?.members.cache.get(interaction.user.id)?.voice.channel;
 
         if (!vc) {
-            interaction.reply({ content: 'You need to be in a voice channel to use this button!', ephemeral: true });
+            interaction.reply({ content: 'You need to be in a voice channel to use this button!', flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -288,7 +289,7 @@ export default class VoicechatCommand extends GargoyleCommand {
             !vc.permissionOverwrites.resolve(client.user.id) ||
             !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
         ) {
-            interaction.reply({ content: 'This is not a dynamic vc!', ephemeral: true });
+            interaction.reply({ content: 'This is not a dynamic vc!', flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -296,10 +297,13 @@ export default class VoicechatCommand extends GargoyleCommand {
         case 'rename': {
             vc.edit({ name: interaction.fields.getTextInputValue('name') })
                 .catch(() => {
-                    interaction.reply({ content: 'Failed to rename the vc!', ephemeral: true });
+                    interaction.reply({ content: 'Failed to rename the vc!', flags: MessageFlags.Ephemeral });
                 })
                 .then(() => {
-                    interaction.reply({ content: `Renamed the vc to ${interaction.fields.getTextInputValue('name')}`, ephemeral: true });
+                    interaction.reply({
+                        content: `Renamed the vc to ${interaction.fields.getTextInputValue('name')}`,
+                        flags: MessageFlags.Ephemeral
+                    });
                 });
 
             break;
@@ -315,7 +319,7 @@ export default class VoicechatCommand extends GargoyleCommand {
         const vc = client.guilds.cache.get(interaction.guildId)?.members.cache.get(interaction.user.id)?.voice.channel;
 
         if (!vc) {
-            interaction.reply({ content: 'You need to be in a voice channel to use this button!', ephemeral: true });
+            interaction.reply({ content: 'You need to be in a voice channel to use this button!', flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -323,7 +327,7 @@ export default class VoicechatCommand extends GargoyleCommand {
             !vc.permissionOverwrites.resolve(client.user.id) ||
             !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
         ) {
-            interaction.reply({ content: 'This is not a dynamic vc!', ephemeral: true });
+            interaction.reply({ content: 'This is not a dynamic vc!', flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -335,7 +339,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                 const member = client.guilds.cache.get(interaction.guildId)?.members.cache.get(value);
                 if (member) {
                     vc.permissionOverwrites.edit(member.id, { Connect: false });
-                    interaction.reply({ content: `Banned ${member.user.tag} from the vc!`, ephemeral: true });
+                    interaction.reply({ content: `Banned ${member.user.tag} from the vc!`, flags: MessageFlags.Ephemeral });
                     vc.members.get(member.id)?.voice.setChannel(null);
                 }
             });
@@ -348,7 +352,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                 const member = client.guilds.cache.get(interaction.guildId)?.members.cache.get(value);
                 if (member) {
                     vc.permissionOverwrites.edit(member.id, { Connect: true });
-                    interaction.reply({ content: `Invited ${member.user.tag} to the vc!`, ephemeral: true });
+                    interaction.reply({ content: `Invited ${member.user.tag} to the vc!`, flags: MessageFlags.Ephemeral });
                 }
             });
             break;

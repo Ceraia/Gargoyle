@@ -2,9 +2,14 @@ import {
     AnySelectMenuInteraction,
     ButtonInteraction,
     ChatInputCommandInteraction,
+    ContextMenuCommandBuilder,
+    ContextMenuCommandInteraction,
     Message,
+    MessageContextMenuCommandInteraction,
+    MessageFlags,
     ModalSubmitInteraction,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    UserContextMenuCommandInteraction
 } from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
 import TextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
@@ -14,12 +19,13 @@ abstract class GargoyleCommand {
     public abstract category: string;
     public slashCommand: SlashCommandBuilder | null = null;
     public textCommand: TextCommandBuilder | null = null;
+    public contextCommands: ContextMenuCommandBuilder[] | null = null;
     public events: GargoyleEvent[] = [];
     public guild: string | null = null;
 
     public executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): void {
         client.logger.error(`${interaction.commandName} does not have a slash command implementation.`);
-        interaction.reply({ content: 'This command does not have a slash command implementation.', ephemeral: true });
+        interaction.reply({ content: 'This command does not have a slash command implementation.', flags: MessageFlags.Ephemeral });
     }
     public executeTextCommand(client: GargoyleClient, message: Message): void {
         client.logger.error(`${message.content} does not have a text command implementation.`);
@@ -29,17 +35,24 @@ abstract class GargoyleCommand {
             }, 5000);
         });
     }
+    public executeContextMenuCommand(
+        client: GargoyleClient,
+        interaction: ContextMenuCommandInteraction | UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction
+    ) {
+        client.logger.error(`${interaction.commandName} does not have a context menu command implementation.`);
+        interaction.reply({ content: 'This command does not have a context menu command implementation.', flags: MessageFlags.Ephemeral });
+    }
     public executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): void {
         client.logger.error(`${interaction.customId} with argument ${args} does not have a button command implementation.`);
-        interaction.reply({ content: 'This command does not have a button command implementation.', ephemeral: true });
+        interaction.reply({ content: 'This command does not have a button command implementation.', flags: MessageFlags.Ephemeral });
     }
     public executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): void {
         client.logger.error(`${interaction.customId} with argument ${args} does not have a select menu command implementation.`);
-        interaction.reply({ content: 'This command does not have a select menu command implementation.', ephemeral: true });
+        interaction.reply({ content: 'This command does not have a select menu command implementation.', flags: MessageFlags.Ephemeral });
     }
     public executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
         client.logger.error(`${interaction.customId} with argument ${args} does not have a modal command implementation.`);
-        interaction.reply({ content: 'This command does not have a modal command implementation.', ephemeral: true });
+        interaction.reply({ content: 'This command does not have a modal command implementation.', flags: MessageFlags.Ephemeral });
     }
 }
 
