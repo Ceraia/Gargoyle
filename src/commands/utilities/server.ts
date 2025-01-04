@@ -1,7 +1,7 @@
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
-import { sendAsServer } from '@src/system/backend/tools/server.js';
+import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
     ApplicationCommandType,
@@ -62,9 +62,11 @@ export default class Server extends GargoyleCommand {
             if (!interaction.channel) return;
             (interaction.channel as TextChannel).messages.fetch(args[1]).then((message) => {
                 message.edit(interaction.fields.getTextInputValue('message')).catch(() => {
-                    interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral });
+                    editAsServer({ content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel, message.id).catch(() => {
+                        interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => { })
+                    })
                 }).then(() => {
-                    interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral });
+                    interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => { })
                 })
             });
         }
@@ -73,7 +75,7 @@ export default class Server extends GargoyleCommand {
     public override executeContextMenuCommand(_client: GargoyleClient, interaction: MessageContextMenuCommandInteraction): void {
         if (interaction instanceof MessageContextMenuCommandInteraction) {
             interaction.showModal(
-                new GargoyleModalBuilder(this, 'message', interaction.targetMessage.id)
+                new GargoyleModalBuilder(this, 'edit', interaction.targetMessage.id)
                     .setTitle('Edit Server Message')
                     .setComponents(
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
