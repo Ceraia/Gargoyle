@@ -30,10 +30,9 @@ export default class ContextCommandHandler extends GargoyleEvent {
                 });
 
 
-            if (interaction.guild?.commands.cache.has(interaction.commandName)) {
-                client.logger.warning(`Command not found: ${interaction.commandName}`);
-                interaction.guild.commands.cache.get(interaction.commandName)?.delete();
-            }
+            client.logger.warning(`Command not found: ${interaction.commandName}, deleting command.`);
+            interaction.command?.delete();
+
         } else {
             command.executeContextMenuCommand(client, interaction);
             return client.logger.trace(`${interaction.user} used the ${interaction.commandName} context command.`);
