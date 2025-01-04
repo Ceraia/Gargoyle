@@ -11,6 +11,7 @@ import {
     ChatInputCommandInteraction,
     InteractionContextType,
     Message,
+    MessageFlags,
     SlashCommandBuilder,
     TextChannel
 } from 'discord.js';
@@ -31,12 +32,12 @@ export default class ButtonRole extends GargoyleCommand {
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (!interaction.memberPermissions?.has('ManageRoles')) {
-            await interaction.reply({ content: 'You do not have the required permissions to use this command.', ephemeral: true });
+            await interaction.reply({ content: 'You do not have the required permissions to use this command.', flags: MessageFlags.Ephemeral });
             return;
         }
         await interaction.reply({
             content: 'What role(s) would you like to give?',
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
             components: [
                 new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
                     new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
@@ -86,7 +87,7 @@ export default class ButtonRole extends GargoyleCommand {
                     if (role.position >= member?.roles.highest.position) {
                         interaction.reply({
                             content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                         return;
                     }
@@ -136,11 +137,11 @@ export default class ButtonRole extends GargoyleCommand {
                     .catch(() => {
                         interaction.reply({
                             content: `Failed to remove role ${role.name}, I may not have the correct permissions to take it away from you.`,
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                     })
                     .then(() => {
-                        interaction.reply({ content: `Removed role ${role.name}`, ephemeral: true });
+                        interaction.reply({ content: `Removed role ${role.name}`, flags: MessageFlags.Ephemeral });
                     });
             } else {
                 await member?.roles
@@ -148,11 +149,11 @@ export default class ButtonRole extends GargoyleCommand {
                     .catch(() => {
                         interaction.reply({
                             content: `Failed to add role ${role.name}, I may not have the correct permissions to give it to you.`,
-                            ephemeral: true
+                            flags: MessageFlags.Ephemeral
                         });
                     })
                     .then(() => {
-                        interaction.reply({ content: `Added role ${role.name}`, ephemeral: true });
+                        interaction.reply({ content: `Added role ${role.name}`, flags: MessageFlags.Ephemeral });
                     });
             }
         }
