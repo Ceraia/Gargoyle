@@ -1,6 +1,7 @@
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
     ApplicationCommandType,
@@ -55,7 +56,7 @@ export default class Server extends GargoyleCommand {
     public override executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
         if (args[0] === 'message') {
             interaction.reply({ content: 'Sending message, one moment...', flags: MessageFlags.Ephemeral });
-            (interaction.channel as TextChannel).send({ content: interaction.fields.getTextInputValue('message') });
+            sendAsServer({ content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel);
         }
     }
 }
