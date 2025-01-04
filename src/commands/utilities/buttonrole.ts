@@ -85,13 +85,13 @@ export default class ButtonRole extends GargoyleCommand {
                     const role = await interaction.guild?.roles.fetch(roleId);
                     if (!role) continue;
 
-                    if (role.position >= member?.roles.highest.position && member.guild.ownerId !== member.id
-
-                    ) {
-                        interaction.reply({
-                            content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
-                            flags: MessageFlags.Ephemeral
-                        }).catch(() => { });
+                    if (role.position >= member?.roles.highest.position && member.guild.ownerId !== member.id) {
+                        interaction
+                            .reply({
+                                content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
+                                flags: MessageFlags.Ephemeral
+                            })
+                            .catch(() => {});
 
                         return;
                     }

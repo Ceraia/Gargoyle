@@ -8,6 +8,7 @@ import {
     ChatInputCommandInteraction,
     ContextMenuCommandBuilder,
     InteractionContextType,
+    MessageContextMenuCommandInteraction,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
@@ -57,6 +58,36 @@ export default class Server extends GargoyleCommand {
         if (args[0] === 'message') {
             interaction.reply({ content: 'Sending message, one moment...', flags: MessageFlags.Ephemeral });
             sendAsServer({ content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel);
+        } else if (args[0] === 'edit') {
+            if (!interaction.channel) return;
+            (interaction.channel as TextChannel).messages.fetch(args[1]).then((message) => {
+                message.edit(interaction.fields.getTextInputValue('message')).catch(() => {
+                    interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral });
+                }).then(() => {
+                    interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral });
+                })
+            });
+        }
+    }
+
+    public override executeContextMenuCommand(_client: GargoyleClient, interaction: MessageContextMenuCommandInteraction): void {
+        if (interaction instanceof MessageContextMenuCommandInteraction) {
+            interaction.showModal(
+                new GargoyleModalBuilder(this, 'message', interaction.targetMessage.id)
+                    .setTitle('Edit Server Message')
+                    .setComponents(
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('message')
+                                .setLabel('Message')
+                                .setPlaceholder('Enter your message here')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                                .setValue(interaction.targetMessage.content)
+                        )
+                    )
+            );
+
         }
     }
 }
