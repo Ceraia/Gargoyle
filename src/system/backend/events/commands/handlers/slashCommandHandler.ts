@@ -9,6 +9,7 @@ export default class SlashCommandHandler extends GargoyleEvent {
         if (!interaction.isCommand()) return;
         if (interaction.user.bot) return;
         if (!interaction.isChatInputCommand()) return;
+        if (interaction.isContextMenuCommand()) return;
 
         const command = client.commands.find((command) => {
             return command.slashCommand?.name === interaction.commandName;
