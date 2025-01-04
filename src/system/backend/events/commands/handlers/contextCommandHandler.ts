@@ -5,7 +5,10 @@ import { ContextMenuCommandInteraction, MessageContextMenuCommandInteraction, Us
 export default class ContextCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
 
-    public execute(client: GargoyleClient, interaction: ContextMenuCommandInteraction | UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction): void {
+    public execute(
+        client: GargoyleClient,
+        interaction: ContextMenuCommandInteraction | UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction
+    ): void {
         if (!interaction.isContextMenuCommand()) return;
         if (interaction.user.bot) return;
 
@@ -15,13 +18,22 @@ export default class ContextCommandHandler extends GargoyleEvent {
 
         if (!command) {
             client.logger.error(`Context command not found: ${interaction.commandName}`);
-            interaction.reply('Context command not found!').then((msg) => {
-                setTimeout(() => {
-                    msg.delete();
-                }, 5000);
-            }).catch(() => {
-                client.logger.error('Failed to send context command not found message.');
-            })
+            interaction
+                .reply('Context command not found!')
+                .then((msg) => {
+                    setTimeout(() => {
+                        msg.delete();
+                    }, 5000);
+                })
+                .catch(() => {
+                    client.logger.error('Failed to send context command not found message.');
+                });
+
+
+            if (interaction.guild?.commands.cache.has(interaction.commandName)) {
+                client.logger.warning(`Command not found: ${interaction.commandName}`);
+                interaction.guild.commands.cache.get(interaction.commandName)?.delete();
+            }
         } else {
             command.executeContextMenuCommand(client, interaction);
             return client.logger.trace(`${interaction.user} used the ${interaction.commandName} context command.`);

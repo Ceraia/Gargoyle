@@ -61,13 +61,20 @@ export default class Server extends GargoyleCommand {
         } else if (args[0] === 'edit') {
             if (!interaction.channel) return;
             (interaction.channel as TextChannel).messages.fetch(args[1]).then((message) => {
-                message.edit(interaction.fields.getTextInputValue('message')).catch(() => {
-                    editAsServer({ content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel, message.id).catch(() => {
-                        interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => { })
+                message
+                    .edit(interaction.fields.getTextInputValue('message'))
+                    .catch(() => {
+                        editAsServer(
+                            { content: interaction.fields.getTextInputValue('message') },
+                            interaction.channel as TextChannel,
+                            message.id
+                        ).catch(() => {
+                            interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => {});
+                        });
                     })
-                }).then(() => {
-                    interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => { })
-                })
+                    .then(() => {
+                        interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => {});
+                    });
             });
         }
     }
@@ -89,7 +96,6 @@ export default class Server extends GargoyleCommand {
                         )
                     )
             );
-
         }
     }
 }
