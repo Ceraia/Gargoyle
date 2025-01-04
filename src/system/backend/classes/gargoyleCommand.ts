@@ -34,7 +34,10 @@ abstract class GargoyleCommand {
             }, 5000);
         });
     }
-    public executeContextMenuCommand(client: GargoyleClient, interaction: ContextMenuCommandInteraction | UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction) {
+    public executeContextMenuCommand(
+        client: GargoyleClient,
+        interaction: ContextMenuCommandInteraction | UserContextMenuCommandInteraction | MessageContextMenuCommandInteraction
+    ) {
         client.logger.error(`${interaction.commandName} does not have a context menu command implementation.`);
         interaction.reply({ content: 'This command does not have a context menu command implementation.', ephemeral: true });
     }
