@@ -15,7 +15,7 @@ import {
     TextChannel
 } from 'discord.js';
 
-export default class Ping extends GargoyleCommand {
+export default class ButtonRole extends GargoyleCommand {
     public override category: string = 'utilities';
     public override slashCommand = new SlashCommandBuilder()
         .setName('rolebutton')
