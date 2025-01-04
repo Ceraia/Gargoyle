@@ -7,6 +7,7 @@ import {
     ChatInputCommandInteraction,
     ContextMenuCommandBuilder,
     InteractionContextType,
+    MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
@@ -53,7 +54,7 @@ export default class Server extends GargoyleCommand {
 
     public override executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
         if (args[0] === 'message') {
-            interaction.reply({ content: 'Sending message, one moment...', ephemeral: true });
+            interaction.reply({ content: 'Sending message, one moment...', flags: MessageFlags.Ephemeral });
             (interaction.channel as TextChannel).send({ content: interaction.fields.getTextInputValue('message') });
         }
     }
