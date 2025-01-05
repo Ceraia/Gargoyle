@@ -1,6 +1,6 @@
-import { MessageCreateOptions, MessageResolvable, TextChannel } from 'discord.js';
+import { Guild, MessageCreateOptions, MessageResolvable, TextChannel } from 'discord.js';
 
-export function sendAsServer(message: MessageCreateOptions, channel: TextChannel): Promise<void> {
+export function sendAsServer(message: MessageCreateOptions, channel: TextChannel, guild?: Guild): Promise<void> {
     return channel
         .fetchWebhooks()
         .then(async (webhooks) => {
@@ -8,7 +8,7 @@ export function sendAsServer(message: MessageCreateOptions, channel: TextChannel
 
             if (webhooks.size === 0) {
                 webhook = await channel.createWebhook({
-                    name: channel.guild?.name || channel.client.user.username,
+                    name: guild ? guild.name : channel.guild?.name || channel.client.user.username,
                     reason: 'Server Message'
                 });
             } else {
@@ -16,8 +16,8 @@ export function sendAsServer(message: MessageCreateOptions, channel: TextChannel
             }
 
             await webhook?.send({
-                avatarURL: channel.guild?.iconURL() || undefined,
-                username: channel.guild?.name || channel.client.user.username,
+                avatarURL: guild ? guild.iconURL() || undefined : channel.guild?.iconURL() || undefined,
+                username: guild ? guild.name : channel.guild?.name || channel.client.user.username,
                 ...message
             });
         })

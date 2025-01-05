@@ -29,10 +29,8 @@ export default class ContextCommandHandler extends GargoyleEvent {
                     client.logger.error('Failed to send context command not found message.');
                 });
 
-
             client.logger.warning(`Command not found: ${interaction.commandName}, deleting command.`);
             interaction.command?.delete();
-
         } else {
             command.executeContextMenuCommand(client, interaction);
             return client.logger.trace(`${interaction.user} used the ${interaction.commandName} context command.`);

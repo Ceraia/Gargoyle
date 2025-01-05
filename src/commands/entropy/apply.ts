@@ -4,6 +4,7 @@ import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBu
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -28,16 +29,23 @@ export default class Ping extends GargoyleCommand {
         .setDescription('Open an entropy application panel')
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]);
 
-    public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+    public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         await interaction.reply({ content: 'Sending entropy application panel', flags: MessageFlags.Ephemeral });
-        await (interaction.channel as TextChannel).send({
-            embeds: [new GargoyleEmbedBuilder().setTitle('Entropy Application').setDescription('Gen.4 Entropy. Apply now, you will be notified.')],
-            components: [
-                new ActionRowBuilder<ButtonBuilder>().addComponents(
-                    new GargoyleButtonBuilder(this, 'apply').setLabel('Apply').setStyle(ButtonStyle.Secondary)
-                )
-            ]
-        });
+        const entropyGuild = client.guilds.cache.get('1009048008857493624');
+        await sendAsServer(
+            {
+                embeds: [
+                    new GargoyleEmbedBuilder().setTitle('Entropy Application').setDescription('Gen.4 Entropy. Apply now, you will be notified.')
+                ],
+                components: [
+                    new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new GargoyleButtonBuilder(this, 'apply').setLabel('Apply').setStyle(ButtonStyle.Secondary)
+                    )
+                ]
+            },
+            interaction.channel as TextChannel,
+            entropyGuild
+        );
     }
 
     public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
