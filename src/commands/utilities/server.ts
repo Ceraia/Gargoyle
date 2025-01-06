@@ -26,6 +26,12 @@ export default class Server extends GargoyleCommand {
         .setDescription('Server / community commands')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addSubcommand((subcommand) => subcommand.setName('message').setDescription('Send a message as the server'))
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName('attachment')
+                .setDescription('Send an attachment as the server')
+                .addAttachmentOption((option) => option.setName('attachment').setDescription('Attachment to send').setRequired(true))
+        )
         .setContexts([InteractionContextType.Guild]) as SlashCommandBuilder;
     public override contextCommands = [
         new ContextMenuCommandBuilder()
@@ -51,6 +57,9 @@ export default class Server extends GargoyleCommand {
                         )
                     )
             );
+        } else if (interaction.options.getSubcommand() === 'attachment') {
+            await interaction.reply({ content: 'Sending attachment, one moment...', flags: MessageFlags.Ephemeral });
+            sendAsServer({ files: [interaction.options.getAttachment('attachment')!] }, interaction.channel as TextChannel);
         }
     }
 
