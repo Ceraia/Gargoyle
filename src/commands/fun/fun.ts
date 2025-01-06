@@ -206,7 +206,7 @@ export default class Fun extends GargoyleCommand {
             });
         }
         if (subcommand === 'clap') {
-            return interaction.reply({ content: text.replace(/ /g, ' 👏 '), flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: text.replace(/ /g, '👏'), flags: MessageFlags.Ephemeral });
         }
 
         return interaction.reply({ content: text });
