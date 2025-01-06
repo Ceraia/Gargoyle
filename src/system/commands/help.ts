@@ -34,10 +34,10 @@ export default class Help extends GargoyleCommand {
                 .setColor(0x2b2d31)
                 .setDescription(
                     'A bot made by [Axodouble](https://axodouble.com).\n' +
-                    'Distriobuted, hosted & developed by [Ceraia](https://ceraia.com).' +
-                    'This bot is built on the Gargoyle, a custom bot framework.\n\n' +
-                    'This bot is still in very early development and major changes are expected,\n' +
-                    'If you have any suggestions or issues, please contact Axodouble.'
+                        'Distriobuted, hosted & developed by [Ceraia](https://ceraia.com).' +
+                        'This bot is built on the Gargoyle, a custom bot framework.\n\n' +
+                        'This bot is still in very early development and major changes are expected,\n' +
+                        'If you have any suggestions or issues, please contact Axodouble.'
                 )
         ],
         components: [this.selectMenu]

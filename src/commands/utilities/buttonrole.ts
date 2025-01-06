@@ -91,7 +91,7 @@ export default class ButtonRole extends GargoyleCommand {
                                 content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
                                 flags: MessageFlags.Ephemeral
                             })
-                            .catch(() => { });
+                            .catch(() => {});
 
                         return;
                     }

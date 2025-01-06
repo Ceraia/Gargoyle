@@ -78,11 +78,11 @@ export default class Server extends GargoyleCommand {
                             interaction.channel as TextChannel,
                             message.id
                         ).catch(() => {
-                            interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => { });
+                            interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => {});
                         });
                     })
                     .then(() => {
-                        interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => { });
+                        interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => {});
                     });
             });
         }
