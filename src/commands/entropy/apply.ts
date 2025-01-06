@@ -1,8 +1,8 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
-import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
-import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
-import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
+import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
+import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
+import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {

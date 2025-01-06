@@ -22,7 +22,7 @@ export default class VoiceActivity extends GargoyleEvent {
         const userId = member.id;
 
         if (newState.channelId && !oldState.channelId) {
-            // User joined a voice channel
+            // User joined a voice channel without leaving another one
             getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
                 voiceTime.activity.push({
                     dateJoined: new Date(),
@@ -31,7 +31,32 @@ export default class VoiceActivity extends GargoyleEvent {
                 });
                 await voiceTime.save();
             });
+        } else if (newState.channelId && oldState.channelId) {
+            // User switched voice channels
+            if (newState.guild.afkChannelId === newState.channelId) {
+                // User joined the AFK channel, thus has left the voice channel / is AFK
+                getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
+                    const lastActivity = voiceTime.activity.pop();
+                    if (lastActivity) {
+                        lastActivity.hasLeft = true;
+                        lastActivity.dateLastChecked = new Date();
+                        voiceTime.activity.push(lastActivity);
+                        await voiceTime.save();
+                    }
+                });
+            } else {
+                getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
+                    const lastActivity = voiceTime.activity.pop();
+                    if (lastActivity) {
+                        if (lastActivity.hasLeft) return;
+                        lastActivity.dateLastChecked = new Date();
+                        voiceTime.activity.push(lastActivity);
+                        await voiceTime.save();
+                    }
+                });
+            }
         } else {
+            // User left a voice channel
             getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
                 const lastActivity = voiceTime.activity.pop();
                 if (lastActivity) {

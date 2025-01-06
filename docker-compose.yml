@@ -1,32 +1,35 @@
-# This file is explicitly made for a docker stack, you can use this stack
-# to deploy the bot and the database with ease without needing to manually
-# setting up the database, and purely supply a token
-version: "3"
+version: '3.8'
 
 services:
-  ceraia-bot:
-    image: ghcr.io/ceraia/gargoyle:main
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/dev/Dockerfile
+    volumes:
+      - .:/workspace/gargoyle
     depends_on:
-      - ceraia-mongo
+      - mongo
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
-      MONGO_URI: mongodb://${CERAIA_MONGODB_USERNAME}:${CERAIA_MONGODB_PASSWORD}@ceraia-mongo:27017/<BOT>?authSource=admin
+      MONGO_URI: mongodb://${DBUSERNAME}:${DBPASSWORD}@mongo:27017/gargoyle?authSource=admin
+      DEBUG: true
     labels:
-      traefik.enable: "false"
+      traefik.enable: 'false'
     networks:
-      - ceraia-bot
+      - gargoyle
 
-  ceraia-mongo:
+  mongo:
+    hostname: mongo
     image: mongo:latest
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${CERAIA_MONGODB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${CERAIA_MONGODB_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${DBUSERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DBPASSWORD}
     volumes:
       - ./container/db:/data/db
       - ./container/configdb:/data/configdb
     networks:
-      - ceraia-bot
+      - gargoyle
 
 networks:
-  ceraia-bot:
+  gargoyle:
     driver: bridge

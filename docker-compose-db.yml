@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  mongo:
+    hostname: mongo
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DBUSERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DBPASSWORD}
+    volumes:
+      - ./container/db:/data/db
+      - ./container/configdb:/data/configdb
+    networks:
+      - gargoyle
+    ports:
+      - 27017:27017
+
+  express:
+    image: mongo-express:latest
+    ports:
+      - 80:80
+    depends_on:
+      - mongo
+    environment:
+      ME_CONFIG_BASICAUTH_PASSWORD: ${DBPASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME: ${DBUSERNAME}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DBUSERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DBPASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${DBUSERNAME}:${DBPASSWORD}@mongo:27017/gargoyle?authSource=admin
+    networks:
+      - gargoyle
+
+networks:
+  gargoyle:
+    driver: bridge

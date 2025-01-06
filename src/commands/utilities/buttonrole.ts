@@ -1,8 +1,8 @@
 import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
-import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
-import { GargoyleRoleSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
+import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
+import { GargoyleRoleSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
 import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
