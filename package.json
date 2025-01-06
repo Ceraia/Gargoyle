@@ -31,9 +31,9 @@
     "scripts": {
         "start": "bun run .",
         "dev": "bun run --watch .",
-        "docker-start": "docker compose -f ./docker-compose-dev.yml up -d",
+        "docker-start": "docker compose -f ./docker-compose-dev.yml up -d --remove-orphans",
         "docker-stop": "docker compose -f ./docker-compose-dev.yml down",
-        "db-on": "docker compose -f ./docker-compose-db.yml up -d",
+        "db-on": "docker compose -f ./docker-compose-db.yml up -d --remove-orphans",
         "db-off": "docker compose -f ./docker-compose-db.yml down",
         "build": "tsc",
         "format": "prettier --write \"src/**\"",
