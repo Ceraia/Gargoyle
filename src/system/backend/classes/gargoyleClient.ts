@@ -23,7 +23,7 @@ class GargoyleClient extends Client {
      * The database instance associated with the client.
      * @type {Database | null}
      */
-    db: Database | null;
+    db: Database | null = null;
     /**
      * The command prefix for the client.
      * @type {string}
@@ -44,7 +44,6 @@ class GargoyleClient extends Client {
     constructor(options: ClientOptions) {
         super(options);
         this.startTime = new Date();
-        this.db = new Database(this);
         this.prefix = process.env.PREFIX ?? ',';
         this.commands = [];
     }
@@ -101,6 +100,11 @@ class GargoyleClient extends Client {
      */
     override async login(token?: string) {
         this.startHealthCheckServer();
+
+        this.db = new Database(this);
+
+        await this.db.connect();
+
         if (this.db?.willConnect) this.logger.log('Waiting for database connection...');
         if (!this.db?.willConnect) {
             this.db = null;

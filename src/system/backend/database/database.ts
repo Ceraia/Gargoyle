@@ -5,25 +5,34 @@ import { databaseGuildUsers, getGuildUser } from '@src/system/backend/database/m
 
 class Database extends mongoose.Connection {
     public willConnect: boolean = true;
+    private client: GargoyleClient;
 
     constructor(client: GargoyleClient) {
-        client.logger.log('Connecting to the database');
         super();
+        this.client = client;
+    }
+
+    public async connect(): Promise<void> {
         const uri = process.env.MONGO_URI;
         if (!uri) {
-            client.logger.warning('No MongoDB URI provided', 'No database connection will be established');
+            this.client.logger.warning('No MongoDB URI provided', 'No database connection will be established');
             this.willConnect = false;
-            return;
+            this.client.db = null;
         }
-        mongoose
-            .connect(uri)
-            .then(() => {
-                client.logger.log('Connected to the database');
-            })
-            .catch((err) => {
-                client.logger.error(err, 'Error connecting to the database: No database connection will be established');
-                this.willConnect = false;
-            });
+
+        if (uri) {
+            await mongoose
+                .connect(uri)
+                .then(() => {
+                    this.client.logger.log('Connected to the database');
+                    this.client.db = this;
+                })
+                .catch((err) => {
+                    this.client.logger.error(err, 'Error connecting to the database: No database connection will be established');
+                    this.willConnect = false;
+                    this.client.db = null;
+                });
+        }
     }
 
     public databaseGuilds = databaseGuilds;
