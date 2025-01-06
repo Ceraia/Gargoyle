@@ -1,4 +1,4 @@
-import TextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
+import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import {
@@ -13,8 +13,8 @@ import {
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder
 } from 'discord.js';
-import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
-import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
+import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
+import { GargoyleStringSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
 
 export default class Help extends GargoyleCommand {
     override category: string = 'base';
@@ -34,10 +34,10 @@ export default class Help extends GargoyleCommand {
                 .setColor(0x2b2d31)
                 .setDescription(
                     'A bot made by [Axodouble](https://axodouble.com).\n' +
-                        'Distriobuted, hosted & developed by [Ceraia](https://ceraia.com).' +
-                        'This bot is built on the Gargoyle, a custom bot framework.\n\n' +
-                        'This bot is still in very early development and major changes are expected,\n' +
-                        'If you have any suggestions or issues, please contact Axodouble.'
+                    'Distriobuted, hosted & developed by [Ceraia](https://ceraia.com).' +
+                    'This bot is built on the Gargoyle, a custom bot framework.\n\n' +
+                    'This bot is still in very early development and major changes are expected,\n' +
+                    'If you have any suggestions or issues, please contact Axodouble.'
                 )
         ],
         components: [this.selectMenu]

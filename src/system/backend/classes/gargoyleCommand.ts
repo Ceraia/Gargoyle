@@ -12,7 +12,7 @@ import {
     UserContextMenuCommandInteraction
 } from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
-import TextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
+import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleEvent from './gargoyleEvent.js';
 
 abstract class GargoyleCommand {

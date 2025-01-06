@@ -1,4 +1,4 @@
-import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
+import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
@@ -78,11 +78,11 @@ export default class Server extends GargoyleCommand {
                             interaction.channel as TextChannel,
                             message.id
                         ).catch(() => {
-                            interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => {});
+                            interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => { });
                         });
                     })
                     .then(() => {
-                        interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => {});
+                        interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => { });
                     });
             });
         }

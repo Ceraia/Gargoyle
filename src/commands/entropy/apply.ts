@@ -1,8 +1,8 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
-import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
-import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
-import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
+import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
+import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
+import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
@@ -124,10 +124,10 @@ export default class Ping extends GargoyleCommand {
                             .setTitle(`Application by ${interaction.user.username}`)
                             .setDescription(
                                 `**Steam Account Link:** ${interaction.fields.getTextInputValue('steam') || ''}\n` +
-                                    `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
-                                    `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
-                                    `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
-                                    `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
+                                `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
+                                `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
+                                `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
+                                `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
                             )
                     ],
                     components: [
@@ -165,6 +165,6 @@ class RolePrefix extends GargoyleEvent {
 
         namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
 
-        updatedMember.setNickname(namePrefix).catch(() => {});
+        updatedMember.setNickname(namePrefix).catch(() => { });
     }
 }
