@@ -106,6 +106,7 @@ export default class VoicechatCommand extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        interaction.message.edit(this.panelMessage as MessageEditOptions);
         if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;
         if (client.user === null) return;
