@@ -10,61 +10,31 @@ export default class Fun extends GargoyleCommand {
             subcommand
                 .setName('aesthetic')
                 .setDescription('Change text to look like ｔｈｉｓ.')
-                .addStringOption((option) =>
-                    option
-                        .setName('text')
-                        .setDescription('The text to change.')
-                        .setRequired(true)
-                        .setMaxLength(2000)
-                )
+                .addStringOption((option) => option.setName('text').setDescription('The text to change.').setRequired(true).setMaxLength(2000))
         )
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('upside-down')
                 .setDescription('Flip text.')
-                .addStringOption((option) =>
-                    option
-                        .setName('text')
-                        .setDescription('The text to flip.')
-                        .setRequired(true)
-                        .setMaxLength(2000)
-                )
+                .addStringOption((option) => option.setName('text').setDescription('The text to flip.').setRequired(true).setMaxLength(2000))
         )
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('uwu')
                 .setDescription('UwUify text.')
-                .addStringOption((option) =>
-                    option
-                        .setName('text')
-                        .setDescription('The text to UwUify.')
-                        .setRequired(true)
-                        .setMaxLength(2000)
-                )
+                .addStringOption((option) => option.setName('text').setDescription('The text to UwUify.').setRequired(true).setMaxLength(2000))
         )
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('mock')
                 .setDescription('Mock text.')
-                .addStringOption((option) =>
-                    option
-                        .setName('text')
-                        .setDescription('The text to mock.')
-                        .setRequired(true)
-                        .setMaxLength(2000)
-                )
+                .addStringOption((option) => option.setName('text').setDescription('The text to mock.').setRequired(true).setMaxLength(2000))
         )
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('clap')
                 .setDescription('Clap text.')
-                .addStringOption((option) =>
-                    option
-                        .setName('text')
-                        .setDescription('The text to clap.')
-                        .setRequired(true)
-                        .setMaxLength(2000)
-                )
+                .addStringOption((option) => option.setName('text').setDescription('The text to clap.').setRequired(true).setMaxLength(2000))
         )
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as SlashCommandBuilder;
 
@@ -73,7 +43,7 @@ export default class Fun extends GargoyleCommand {
 
         const text = interaction.options.getString('text');
 
-        if(!text) return null;
+        if (!text) return null;
 
         if (subcommand === 'aesthetic') {
             return interaction.reply({
@@ -132,7 +102,7 @@ export default class Fun extends GargoyleCommand {
                     .replace(/Y/g, 'Ｙ')
                     .replace(/Z/g, 'Ｚ'),
                 flags: MessageFlags.Ephemeral
-            } );
+            });
         }
         if (subcommand === 'upside-down') {
             return interaction.reply({
@@ -179,7 +149,8 @@ export default class Fun extends GargoyleCommand {
                     .replace(/U/g, '∩')
                     .replace(/V/g, 'Λ')
                     .replace(/W/g, 'M')
-                    .replace(/Y/g, '⅄'), flags: MessageFlags.Ephemeral
+                    .replace(/Y/g, '⅄'),
+                flags: MessageFlags.Ephemeral
             });
         }
         if (subcommand === 'uwu') {
@@ -194,7 +165,8 @@ export default class Fun extends GargoyleCommand {
                     .replace(/th/g, 'd')
                     .replace(/Th/g, 'D')
                     .replace(/TH/g, 'D')
-                    .replace(/ove/g, 'uv'), flags: MessageFlags.Ephemeral
+                    .replace(/ove/g, 'uv'),
+                flags: MessageFlags.Ephemeral
             });
         }
         if (subcommand === 'mock') {
@@ -202,7 +174,8 @@ export default class Fun extends GargoyleCommand {
                 content: text
                     .split('')
                     .map((c, i) => (i % 2 === 0 ? c.toUpperCase() : c.toLowerCase()))
-                    .join(''), flags: MessageFlags.Ephemeral
+                    .join(''),
+                flags: MessageFlags.Ephemeral
             });
         }
         if (subcommand === 'clap') {
