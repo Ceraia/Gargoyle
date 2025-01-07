@@ -362,19 +362,33 @@ export default class VoicechatCommand extends GargoyleCommand {
 
     private panelMessage: string | InteractionReplyOptions | MessageEditOptions | MessageCreateOptions | MessagePayload = {
         content: null,
-        embeds: [new GargoyleEmbedBuilder().setTitle('Voicechat Commands')],
+        embeds: [
+            new GargoyleEmbedBuilder()
+                .setTitle('Voicechat Commands')
+                .setDescription(
+                    'Create a new VC to use this.\n\n**Buttons**\n' +
+                        '<:Lock:1206326940324331531> Lock/Unlock the VC\n' +
+                        '<:Eye:1206326935303749722> Hide/Show the VC\n' +
+                        '<:Plus:1206326946586300476> Increase the VC limit\n' +
+                        '<:Minus:1206326944979877990> Decrease the VC limit\n' +
+                        '<:Hammer:1206326936612114472> Ban from the VC\n' +
+                        '<:Mail:1206667313609187330> Unban / Invite to the VC\n' +
+                        '<:I_:1206326937748905985> Rename the VC\n' +
+                        '<:Mic:1206326943201362060> Claim the VC\n'
+                )
+        ],
         components: [
             new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
-                new GargoyleButtonBuilder(this, 'lock').setLabel('Lock').setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, 'hide').setLabel('Hide').setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, 'increase').setLabel('Increase').setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, 'decrease').setLabel('Decrease').setStyle(ButtonStyle.Secondary)
+                new GargoyleButtonBuilder(this, 'lock').setEmoji('<:Lock:1206326940324331531>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'hide').setEmoji('<:Eye:1206326935303749722>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'increase').setEmoji('<:Plus:1206326946586300476>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'decrease').setEmoji('<:Minus:1206326944979877990>').setStyle(ButtonStyle.Secondary)
             ]),
             new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
-                new GargoyleButtonBuilder(this, 'ban').setLabel('Ban').setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, 'invite').setLabel('Invite').setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, 'rename').setLabel('Rename').setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, 'claim').setLabel('Claim').setStyle(ButtonStyle.Secondary)
+                new GargoyleButtonBuilder(this, 'ban').setEmoji('<:Hammer:1206326936612114472>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'invite').setEmoji('<:Mail:1206667313609187330>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'rename').setEmoji('<:I_:1206326937748905985>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'claim').setEmoji('<:Mic:1206326943201362060>').setStyle(ButtonStyle.Secondary)
             ])
         ]
     };

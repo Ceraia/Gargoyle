@@ -41,7 +41,6 @@ class Database extends mongoose.Connection {
                 this.willConnect = false;
                 this.client.db = null;
             });
-
     }
 
     public databaseGuilds = databaseGuilds;
