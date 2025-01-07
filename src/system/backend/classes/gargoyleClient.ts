@@ -98,18 +98,10 @@ class GargoyleClient extends Client {
      * @param {string} [token] - The token to log in with. If not provided, uses the token from the environment variables.
      * @returns {Promise<string>}
      */
-    override async login(token?: string) {
+    override async login(token?: string): Promise<string> {
         this.startHealthCheckServer();
 
         this.db = new Database(this);
-
-        await this.db.connect();
-
-        if (this.db?.willConnect) this.logger.log('Waiting for database connection...');
-        if (!this.db?.willConnect) {
-            this.db = null;
-            this.logger.warning('Database connection won\'t be established, setting db to null');
-        }
 
         this.logger.debug('Awaiting promises for system events and events...');
         await Promise.all([
@@ -119,15 +111,19 @@ class GargoyleClient extends Client {
         ]);
         this.logger.debug('Promises resolved...');
 
-        try {
-            this.logger.debug('Database connection established!', 'Logging in');
-            return super.login(token ?? process.env.DISCORD_TOKEN);
-        } catch {
-            this.logger.debug('Database connection failed, setting db to null');
+        const loginResult = await super.login(token ?? process.env.DISCORD_TOKEN).catch((err) => {
+            this.logger.error(err, 'Error logging in');
+            process.exit(0);
+        });
+
+        await this.db?.connect();
+
+        if (!this.db?.willConnect) {
             this.db = null;
-            this.logger.debug('Logging in without database connection...');
-            return super.login(token ?? process.env.DISCORD_TOKEN);
+            this.logger.warning('Database connection won\'t be established, setting db to null');
         }
+
+        return loginResult;
     }
 
     /**
