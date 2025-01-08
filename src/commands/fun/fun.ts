@@ -482,5 +482,11 @@ function eightBall(interaction: ChatInputCommandInteraction): Promise<Interactio
         'Very doubtful.'
     ];
 
-    return interaction.reply({ embeds: [new GargoyleEmbedBuilder().setDescription(responses[Math.floor(Math.random() * responses.length)])] });
+    return interaction.reply({
+        embeds: [
+            new GargoyleEmbedBuilder().setDescription(
+                `${interaction.options.getString('question', true)}\n${responses[Math.floor(Math.random() * responses.length)]}`
+            )
+        ]
+    });
 }
