@@ -23,7 +23,6 @@ class GargoyleButtonBuilder extends ButtonBuilder {
         );
         this.setStyle(ButtonStyle.Primary);
         this.setDisabled(false);
-        this.setLabel(argument[0]);
     }
 }
 
