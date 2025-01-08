@@ -1,7 +1,7 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
-import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse, MessageFlags, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse, SlashCommandBuilder } from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
     public override slashCommand = new SlashCommandBuilder()
@@ -136,8 +136,7 @@ function textReplace(interaction: ChatInputCommandInteraction): Promise<Interact
                 .replace(/W/g, 'Ｗ')
                 .replace(/X/g, 'Ｘ')
                 .replace(/Y/g, 'Ｙ')
-                .replace(/Z/g, 'Ｚ'),
-            flags: MessageFlags.Ephemeral
+                .replace(/Z/g, 'Ｚ')
         });
     }
     if (subcommand === 'upside-down') {
@@ -185,8 +184,7 @@ function textReplace(interaction: ChatInputCommandInteraction): Promise<Interact
                 .replace(/U/g, '∩')
                 .replace(/V/g, 'Λ')
                 .replace(/W/g, 'M')
-                .replace(/Y/g, '⅄'),
-            flags: MessageFlags.Ephemeral
+                .replace(/Y/g, '⅄')
         });
     }
     if (subcommand === 'uwu') {
@@ -201,8 +199,7 @@ function textReplace(interaction: ChatInputCommandInteraction): Promise<Interact
                 .replace(/th/g, 'd')
                 .replace(/Th/g, 'D')
                 .replace(/TH/g, 'D')
-                .replace(/ove/g, 'uv'),
-            flags: MessageFlags.Ephemeral
+                .replace(/ove/g, 'uv')
         });
     }
     if (subcommand === 'mock') {
@@ -210,12 +207,11 @@ function textReplace(interaction: ChatInputCommandInteraction): Promise<Interact
             content: text
                 .split('')
                 .map((c, i) => (i % 2 === 0 ? c.toUpperCase() : c.toLowerCase()))
-                .join(''),
-            flags: MessageFlags.Ephemeral
+                .join('')
         });
     }
     if (subcommand === 'clap') {
-        return interaction.reply({ content: text.replace(/ /g, '👏'), flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: text.replace(/ /g, '👏') });
     }
 
     return interaction.reply({ content: text });
@@ -458,8 +454,7 @@ function truthDare(interaction: ChatInputCommandInteraction): Promise<Interactio
                         dares[Math.floor(Math.random() * dares.length)]
                     }`
                 )
-        ],
-        flags: MessageFlags.Ephemeral
+        ]
     });
 }
 
@@ -487,8 +482,5 @@ function eightBall(interaction: ChatInputCommandInteraction): Promise<Interactio
         'Very doubtful.'
     ];
 
-    return interaction.reply({
-        embeds: [new GargoyleEmbedBuilder().setDescription(responses[Math.floor(Math.random() * responses.length)])],
-        flags: MessageFlags.Ephemeral
-    });
+    return interaction.reply({ embeds: [new GargoyleEmbedBuilder().setDescription(responses[Math.floor(Math.random() * responses.length)])] });
 }
