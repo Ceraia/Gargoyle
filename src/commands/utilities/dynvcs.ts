@@ -38,7 +38,12 @@ export default class VoicechatCommand extends GargoyleCommand {
         .setName('vc')
         .setDescription('Voicechat related commands.')
         .setContexts([InteractionContextType.Guild])
-        .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Get the voicechat panel'))
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName('panel')
+                .setDescription('Get the voicechat panel')
+                .addBooleanOption((option) => option.setName('hide').setDescription('Hide who issued the command').setRequired(false))
+        )
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('create')
@@ -61,7 +66,10 @@ export default class VoicechatCommand extends GargoyleCommand {
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommand() === 'panel') {
-            interaction.reply(this.panelMessage as InteractionReplyOptions);
+            if (interaction.options.getBoolean('hide')) {
+                interaction.reply({ content: 'Sending the panel!', flags: MessageFlags.Ephemeral });
+                (interaction.channel as TextChannel).send(this.panelMessage as MessageCreateOptions);
+            } else interaction.reply(this.panelMessage as InteractionReplyOptions);
         } else if (interaction.options.getSubcommand() === 'create') {
             if (!interaction.guild) return;
             if (!client.user) return;
