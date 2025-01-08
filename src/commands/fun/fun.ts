@@ -47,6 +47,12 @@ export default class Fun extends GargoyleCommand {
                 )
         )
         .addSubcommand((subcommand) => subcommand.setName('truth-or-dare').setDescription('Truth or dare related commands.'))
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName('8ball')
+                .setDescription('Ask the magic 8ball a question.')
+                .addStringOption((option) => option.setName('question').setDescription('The question to ask the magic 8ball.').setRequired(true))
+        )
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as SlashCommandBuilder;
 
     public override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
@@ -59,6 +65,10 @@ export default class Fun extends GargoyleCommand {
 
         if (subcommand === 'truth-or-dare') {
             return truthDare(interaction);
+        }
+
+        if (subcommand === '8ball') {
+            return eightBall(interaction);
         }
 
         return null;
@@ -449,6 +459,36 @@ function truthDare(interaction: ChatInputCommandInteraction): Promise<Interactio
                     }`
                 )
         ],
+        flags: MessageFlags.Ephemeral
+    });
+}
+
+function eightBall(interaction: ChatInputCommandInteraction): Promise<InteractionResponse<boolean>> {
+    const responses: string[] = [
+        'It is certain.',
+        'It is decidedly so.',
+        'Without a doubt.',
+        'Yes-definitely.',
+        'You may rely on it.',
+        'As I see it, yes.',
+        'Most likely.',
+        'Outlook good.',
+        'Yes.',
+        'Signs point to yes.',
+        'Reply hazy, try again.',
+        'Ask again later.',
+        'Better not tell you now.',
+        'Cannot predict now.',
+        'Concentrate and ask again.',
+        'Don\'t count on it.',
+        'My reply is no.',
+        'My sources say no.',
+        'Outlook not so good.',
+        'Very doubtful.'
+    ];
+
+    return interaction.reply({
+        embeds: [new GargoyleEmbedBuilder().setDescription(responses[Math.floor(Math.random() * responses.length)])],
         flags: MessageFlags.Ephemeral
     });
 }
