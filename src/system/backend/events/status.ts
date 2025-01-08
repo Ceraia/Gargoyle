@@ -7,9 +7,12 @@ export default class Ready extends GargoyleEvent {
     override once = true;
 
     public execute(client: GargoyleClient): void {
+        let status = 'you <3';
+        if (process.env.ENVIRONMENT === 'dev') status = 'you <3 (dev)';
+
         setInterval(() => {
             client.user?.setActivity({
-                name: 'you <3',
+                name: status,
                 type: ActivityType.Watching
             });
         }, 30000);
