@@ -6,35 +6,44 @@ export default class Fun extends GargoyleCommand {
     public override slashCommand = new SlashCommandBuilder()
         .setName('fun')
         .setDescription('Fun related commands!')
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('aesthetic')
-                .setDescription('Change text to look like ｔｈｉｓ.')
-                .addStringOption((option) => option.setName('text').setDescription('The text to change.').setRequired(true).setMaxLength(2000))
-        )
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('upside-down')
-                .setDescription('Flip text.')
-                .addStringOption((option) => option.setName('text').setDescription('The text to flip.').setRequired(true).setMaxLength(2000))
-        )
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('uwu')
-                .setDescription('UwUify text.')
-                .addStringOption((option) => option.setName('text').setDescription('The text to UwUify.').setRequired(true).setMaxLength(2000))
-        )
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('mock')
-                .setDescription('Mock text.')
-                .addStringOption((option) => option.setName('text').setDescription('The text to mock.').setRequired(true).setMaxLength(2000))
-        )
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('clap')
-                .setDescription('Clap text.')
-                .addStringOption((option) => option.setName('text').setDescription('The text to clap.').setRequired(true).setMaxLength(2000))
+        .addSubcommandGroup((subcommandGroup) =>
+            subcommandGroup
+                .setName('text')
+                .setDescription('Text related commands.')
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('aesthetic')
+                        .setDescription('Change text to look like ｔｈｉｓ.')
+                        .addStringOption((option) =>
+                            option.setName('text').setDescription('The text to change.').setRequired(true).setMaxLength(2000)
+                        )
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('upside-down')
+                        .setDescription('Flip text.')
+                        .addStringOption((option) => option.setName('text').setDescription('The text to flip.').setRequired(true).setMaxLength(2000))
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('uwu')
+                        .setDescription('UwUify text.')
+                        .addStringOption((option) =>
+                            option.setName('text').setDescription('The text to UwUify.').setRequired(true).setMaxLength(2000)
+                        )
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('mock')
+                        .setDescription('Mock text.')
+                        .addStringOption((option) => option.setName('text').setDescription('The text to mock.').setRequired(true).setMaxLength(2000))
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('clap')
+                        .setDescription('Clap text.')
+                        .addStringOption((option) => option.setName('text').setDescription('The text to clap.').setRequired(true).setMaxLength(2000))
+                )
         )
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as SlashCommandBuilder;
 
