@@ -10,6 +10,7 @@ import {
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
+    ChatInputCommandInteraction,
     Events,
     Guild,
     GuildMember,
@@ -24,13 +25,16 @@ import {
 } from 'discord.js';
 import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
-export default class Ping extends GargoyleCommand {
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+export default class Entropy extends GargoyleCommand {
     public override category: string = 'utilities';
     public override slashCommands = [
-        // new GargoyleSlashCommandBuilder()
-        //     .setName('entropy')
-        //     .setDescription('Open an entropy application panel')
-        //     .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM])
+        new GargoyleSlashCommandBuilder()
+            .setName('entropy')
+            .setDescription('Entropy related commands')
+            .addGuild('1009048008857493624')
+            .addSubcommand((subcommand) => subcommand.setName('activity').setDescription('Calculate voice activity'))
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
     public override textCommands = [
         new GargoyleTextCommandBuilder()
@@ -38,6 +42,15 @@ export default class Ping extends GargoyleCommand {
             .setDescription('Open an entropy application panel')
             .setContexts([InteractionContextType.Guild])
     ];
+
+    public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
+        if (interaction.options.getSubcommand() === 'activity') {
+            if (!interaction.guild) return;
+            interaction.reply(`Calculating all VC statistics for past 7 days for ${interaction.guild.memberCount}`);
+            this.setMemberRoles(await this.getGuildVoiceActivity(interaction.guild));
+            interaction.editReply('Finished calculating all VC statistics for past 7 days, roles applied.');
+        }
+    }
 
     public override async executeTextCommand(client: GargoyleClient, message: Message): Promise<void> {
         if (message.author.username !== 'Axodouble') return;
