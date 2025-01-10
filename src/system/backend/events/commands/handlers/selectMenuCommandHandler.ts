@@ -8,10 +8,18 @@ export default class SelectCommandHandler extends GargoyleEvent {
     public execute(client: GargoyleClient, interaction: AnySelectMenuInteraction): void {
         if (!interaction.isAnySelectMenu()) return;
 
+        const origin = interaction.customId.toLowerCase().split('-')[1];
+
         const command = client.commands.find((command) => {
             return (
-                command.slashCommand?.name === interaction.customId.toLowerCase().split('-')[1] ||
-                command.textCommand?.name === interaction.customId.toLowerCase().split('-')[1]
+                command.slashCommand?.name === origin ||
+                command.slashCommands.find((slashCommand) => {
+                    return slashCommand.name === origin;
+                }) ||
+                command.textCommand?.name === origin ||
+                command.textCommands.find((textCommand) => {
+                    return textCommand.name === origin;
+                })
             );
         });
 
