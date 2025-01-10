@@ -10,10 +10,11 @@ import {
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
-    ChatInputCommandInteraction,
     Events,
+    Guild,
     GuildMember,
     InteractionContextType,
+    Message,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
@@ -21,18 +22,26 @@ import {
     TextInputBuilder,
     TextInputStyle
 } from 'discord.js';
-import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
+import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 export default class Ping extends GargoyleCommand {
     public override category: string = 'utilities';
     public override slashCommands = [
-        new GargoyleSlashCommandBuilder()
+        // new GargoyleSlashCommandBuilder()
+        //     .setName('entropy')
+        //     .setDescription('Open an entropy application panel')
+        //     .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM])
+    ];
+    public override textCommands = [
+        new GargoyleTextCommandBuilder()
             .setName('entropy')
             .setDescription('Open an entropy application panel')
-            .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM])
+            .setContexts([InteractionContextType.Guild])
     ];
 
-    public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        await interaction.reply({ content: 'Sending entropy application panel', flags: MessageFlags.Ephemeral });
+    public override async executeTextCommand(client: GargoyleClient, message: Message): Promise<void> {
+        if (message.author.username !== 'Axodouble') return;
+        await message.delete();
         const entropyGuild = client.guilds.cache.get('1009048008857493624');
         await sendAsServer(
             {
@@ -45,7 +54,7 @@ export default class Ping extends GargoyleCommand {
                     )
                 ]
             },
-            interaction.channel as TextChannel,
+            message.channel as TextChannel,
             entropyGuild
         );
     }
@@ -142,6 +151,17 @@ export default class Ping extends GargoyleCommand {
                     interaction.reply({ content: 'Application submitted, you will hear back from us.', flags: MessageFlags.Ephemeral });
                 });
         }
+    }
+
+    private async getGuildVoiceActivity(guild: Guild): Promise<Map<GuildMember, number>> {
+        const guildMembers = await guild.members.fetch();
+        const guildMembersVoiceActivity = new Map<GuildMember, number>();
+
+        guildMembers.forEach(async (guildMember) => {
+            guildMembersVoiceActivity.set(guildMember, await getUserVoiceActivity(guildMember.id, guild.id, 7 * 24 * 60));
+        });
+
+        return guildMembersVoiceActivity;
     }
 
     public override events = [new RolePrefix()];
