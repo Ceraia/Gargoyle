@@ -1,10 +1,11 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
-import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse, SlashCommandBuilder } from 'discord.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse } from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
-    public override slashCommand = new SlashCommandBuilder()
+    public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('fun')
         .setDescription('Fun related commands!')
         .addSubcommandGroup((subcommandGroup) =>
@@ -53,7 +54,7 @@ export default class Fun extends GargoyleCommand {
                 .setDescription('Ask the magic 8ball a question.')
                 .addStringOption((option) => option.setName('question').setDescription('The question to ask the magic 8ball.').setRequired(true))
         )
-        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as SlashCommandBuilder;
+        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as GargoyleSlashCommandBuilder;
 
     public override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         const subcommandGroup = interaction.options.getSubcommandGroup();

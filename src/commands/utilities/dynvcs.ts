@@ -24,17 +24,17 @@ import {
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
-    SlashCommandBuilder,
     TextChannel,
     TextInputBuilder,
     TextInputStyle,
     VoiceChannel,
     VoiceState
 } from 'discord.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
 export default class VoicechatCommand extends GargoyleCommand {
     public override category: string = 'utilities';
-    public override slashCommand = new SlashCommandBuilder()
+    public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('vc')
         .setDescription('Voicechat related commands.')
         .setContexts([InteractionContextType.Guild])
@@ -50,7 +50,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                         .setDescription('The VC that will create the dynamic vcs')
                         .addChannelTypes(ChannelType.GuildVoice)
                 )
-        ) as SlashCommandBuilder;
+        ) as GargoyleSlashCommandBuilder;
 
     public override textCommand = new TextCommandBuilder()
         .setName('voice')

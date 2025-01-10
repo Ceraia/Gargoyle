@@ -42,6 +42,7 @@ class TextCommandBuilder {
     private _description: string | undefined;
     private _aliases: string[] = [];
     private _contexts: InteractionContextType[] = [];
+    private _guilds: string[] = [];
 
     setName(name: string): this {
         if (!name || typeof name !== 'string') {
@@ -67,6 +68,22 @@ class TextCommandBuilder {
         return this;
     }
 
+    addGuild(guild: string): this {
+        if (!guild || typeof guild !== 'string') {
+            throw new Error('Guild must be a non-empty string.');
+        }
+        this._guilds.push(guild);
+        return this;
+    }
+
+    addGuilds(...guilds: string[]): this {
+        if (!guilds) {
+            throw new Error('Guilds must be a non-empty string list.');
+        }
+        guilds.forEach((guild) => this._guilds.push(guild));
+        return this;
+    }
+
     setContexts(contexts: InteractionContextType[]): this {
         this._contexts = contexts;
         return this;
@@ -88,6 +105,10 @@ class TextCommandBuilder {
 
     get aliases(): string[] {
         return this._aliases;
+    }
+
+    get guilds(): string[] {
+        return this._guilds;
     }
 
     get contexts(): InteractionContextType[] {

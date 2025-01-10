@@ -8,19 +8,24 @@ import {
     MessageContextMenuCommandInteraction,
     MessageFlags,
     ModalSubmitInteraction,
-    SlashCommandBuilder,
     UserContextMenuCommandInteraction
 } from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
 import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleEvent from './gargoyleEvent.js';
+import GargoyleSlashCommandBuilder from '../builders/gargoyleSlashCommandBuilder.js';
 
 abstract class GargoyleCommand {
     public abstract category: string;
-    public slashCommand: SlashCommandBuilder | null = null;
+    public slashCommand: GargoyleSlashCommandBuilder | null = null;
     public textCommand: TextCommandBuilder | null = null;
     public contextCommands: ContextMenuCommandBuilder[] | null = null;
     public events: GargoyleEvent[] = [];
+
+    /**
+     * @deprecated
+     * In favor of using the gargoyle guild declaration specific to commands.
+     */
     public guild: string | null = null;
 
     public executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): void {

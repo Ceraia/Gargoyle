@@ -17,14 +17,14 @@ import {
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
-    SlashCommandBuilder,
     TextChannel,
     TextInputBuilder,
     TextInputStyle
 } from 'discord.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 export default class Ping extends GargoyleCommand {
     public override category: string = 'utilities';
-    public override slashCommand = new SlashCommandBuilder()
+    public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('entropy')
         .setDescription('Open an entropy application panel')
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]);

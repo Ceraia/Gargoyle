@@ -13,13 +13,13 @@ import {
     InteractionContextType,
     Message,
     MessageFlags,
-    SlashCommandBuilder,
     TextChannel
 } from 'discord.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
 export default class ButtonRole extends GargoyleCommand {
     public override category: string = 'utilities';
-    public override slashCommand = new SlashCommandBuilder()
+    public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('rolebutton')
         .setDescription('Create a button that gives a role')
         .setContexts([InteractionContextType.Guild]);

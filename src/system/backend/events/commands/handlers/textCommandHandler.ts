@@ -43,6 +43,14 @@ export default class TextCommandHandler extends GargoyleEvent {
                 return;
             }
 
+            if (
+                message.guild && // If the command is in a guild,
+                command.textCommand?.guilds && // and the command has guild requirements
+                command.textCommand?.guilds.length > 0 && // that are not empty,
+                !command.textCommand?.guilds.includes(message.guild.id) // but the guild is not in the guld requirements
+            )
+                return;
+
             command.executeTextCommand(client, message);
         }
     }

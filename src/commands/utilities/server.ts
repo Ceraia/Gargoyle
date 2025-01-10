@@ -1,4 +1,5 @@
 import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
@@ -13,7 +14,6 @@ import {
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
-    SlashCommandBuilder,
     TextChannel,
     TextInputBuilder,
     TextInputStyle
@@ -21,7 +21,7 @@ import {
 
 export default class Server extends GargoyleCommand {
     public override category: string = 'utilities';
-    public override slashCommand = new SlashCommandBuilder()
+    public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('server')
         .setDescription('Server / community commands')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
@@ -37,7 +37,7 @@ export default class Server extends GargoyleCommand {
                         .addAttachmentOption((option) => option.setName('attachment').setDescription('Attachment to send').setRequired(true))
                 )
         )
-        .setContexts([InteractionContextType.Guild]) as SlashCommandBuilder;
+        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
     public override contextCommands = [
         new ContextMenuCommandBuilder()
             .setContexts(InteractionContextType.Guild)
