@@ -26,6 +26,7 @@ import {
 import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+
 export default class Entropy extends GargoyleCommand {
     public override category: string = 'utilities';
     public override slashCommands = [
