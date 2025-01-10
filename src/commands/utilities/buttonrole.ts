@@ -1,4 +1,4 @@
-import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
@@ -23,7 +23,7 @@ export default class ButtonRole extends GargoyleCommand {
         .setName('rolebutton')
         .setDescription('Create a button that gives a role')
         .setContexts([InteractionContextType.Guild]);
-    public override textCommand = new TextCommandBuilder()
+    public override textCommand = new GargoyleTextCommandBuilder()
         .setName('buttonrole')
         .setDescription('Create a role button')
         .addAlias('br')

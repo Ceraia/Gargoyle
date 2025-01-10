@@ -1,4 +1,4 @@
-import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
@@ -52,7 +52,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                 )
         ) as GargoyleSlashCommandBuilder;
 
-    public override textCommand = new TextCommandBuilder()
+    public override textCommand = new GargoyleTextCommandBuilder()
         .setName('voice')
         .setDescription('Get voicechat interaction panel')
         .addAlias('vc')

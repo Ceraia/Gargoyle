@@ -37,7 +37,7 @@ import { InteractionContextType } from 'discord.js';
  * @property {string} description - The description of the command. Throws an error if not set.
  * @property {string[]} aliases - The list of aliases for the command.
  */
-class TextCommandBuilder {
+class GargoyleTextCommandBuilder {
     private _name: string | undefined;
     private _description: string | undefined;
     private _aliases: string[] = [];
@@ -116,4 +116,4 @@ class TextCommandBuilder {
     }
 }
 
-export default TextCommandBuilder;
+export default GargoyleTextCommandBuilder;

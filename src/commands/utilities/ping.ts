@@ -1,4 +1,4 @@
-import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
@@ -9,7 +9,7 @@ export default class Ping extends GargoyleCommand {
         .setName('ping')
         .setDescription('Replies with Pong!')
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]);
-    public override textCommand = new TextCommandBuilder()
+    public override textCommand = new GargoyleTextCommandBuilder()
         .setName('ping')
         .setDescription('Replies with Pong!')
         .addAlias('p')

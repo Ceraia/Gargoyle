@@ -11,14 +11,24 @@ import {
     UserContextMenuCommandInteraction
 } from 'discord.js';
 import GargoyleClient from './gargoyleClient.js';
-import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleEvent from './gargoyleEvent.js';
 import GargoyleSlashCommandBuilder from '../builders/gargoyleSlashCommandBuilder.js';
 
 abstract class GargoyleCommand {
     public abstract category: string;
+    /**
+     * @deprecated
+     * In favor of using slashCommands instead to allow multiple slash commands in a file.
+     */
     public slashCommand: GargoyleSlashCommandBuilder | null = null;
-    public textCommand: TextCommandBuilder | null = null;
+    public slashCommands: GargoyleSlashCommandBuilder[] = [];
+    /**
+     * @deprecated
+     * In favor of using slashCommands instead to allow multiple slash commands in a file.
+     */
+    public textCommand: GargoyleTextCommandBuilder | null = null;
+    public textCommands: GargoyleTextCommandBuilder[] = [];
     public contextCommands: ContextMenuCommandBuilder[] | null = null;
     public events: GargoyleEvent[] = [];
 

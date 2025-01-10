@@ -1,4 +1,4 @@
-import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import {
@@ -19,7 +19,7 @@ import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashComman
 export default class Help extends GargoyleCommand {
     override category: string = 'base';
     override slashCommand = new GargoyleSlashCommandBuilder().setName('help').setDescription('Replies with bot information');
-    override textCommand = new TextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
+    override textCommand = new GargoyleTextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
     private readonly selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
         new GargoyleStringSelectMenuBuilder(this, 'commands').addOptions(
             new StringSelectMenuOptionBuilder().setLabel('Info Message').setValue('info'),
