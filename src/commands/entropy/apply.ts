@@ -153,15 +153,34 @@ export default class Ping extends GargoyleCommand {
         }
     }
 
-    private async getGuildVoiceActivity(guild: Guild): Promise<Map<GuildMember, number>> {
+    private async getGuildVoiceActivity(guild: Guild): Promise<RankedGuildMember[]> {
         const guildMembers = await guild.members.fetch();
-        const guildMembersVoiceActivity = new Map<GuildMember, number>();
+        const guildMembersVoiceActivity: RankedGuildMember[] = [];
 
         guildMembers.forEach(async (guildMember) => {
-            guildMembersVoiceActivity.set(guildMember, await getUserVoiceActivity(guildMember.id, guild.id, 7 * 24 * 60));
+            guildMembersVoiceActivity.push(new RankedGuildMember(guildMember, await getUserVoiceActivity(guildMember.id, guild.id, 7 * 24 * 60)));
         });
 
-        return guildMembersVoiceActivity;
+        return guildMembersVoiceActivity.sort((a, b) => a.activity - b.activity);
+    }
+
+    private setMemberRoles(members: RankedGuildMember[]): void {
+        let i = 0;
+        let j = 0;
+
+        members.forEach(async (rankedMember) => {
+            const member = rankedMember.guildMember;
+            const role = member.guild.roles.cache.find((role) => {
+                return role.name.startsWith(`${j}`);
+            });
+            if (!role) return;
+            await member.roles.add(role);
+            i++;
+            if (i > j) {
+                i = 0;
+                j++;
+            }
+        });
     }
 
     public override events = [new RolePrefix()];
@@ -188,5 +207,15 @@ class RolePrefix extends GargoyleEvent {
         namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
 
         updatedMember.setNickname(namePrefix).catch(() => {});
+    }
+}
+
+class RankedGuildMember {
+    public guildMember: GuildMember;
+    public activity: number;
+
+    constructor(guildMember: GuildMember, activity: number) {
+        this.guildMember = guildMember;
+        this.activity = activity;
     }
 }
