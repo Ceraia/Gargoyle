@@ -6,7 +6,7 @@ const client = new GargoyleClient({
     intents: [
         IntentsBitField.Flags.GuildWebhooks,
         IntentsBitField.Flags.GuildMessageReactions,
-        IntentsBitField.Flags.GuildEmojisAndStickers,
+        IntentsBitField.Flags.GuildExpressions,
         IntentsBitField.Flags.GuildMembers,
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.Guilds,
