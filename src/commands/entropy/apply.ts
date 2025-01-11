@@ -48,7 +48,7 @@ export default class Entropy extends GargoyleCommand {
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.options.getSubcommand() === 'activity') {
             if (!interaction.guild) return;
-            await interaction.reply(`Calculating all VC statistics for past 7 days for ${interaction.guild.memberCount}`);
+            await interaction.reply({ content: `Calculating all VC statistics for past 7 days for ${interaction.guild.memberCount}`, flags: MessageFlags.Ephemeral });
             this.setMemberRoles(await this.getGuildVoiceActivity(interaction.guild));
             await interaction.editReply('Finished calculating all VC statistics for past 7 days, roles applied.');
         }
@@ -135,15 +135,20 @@ export default class Entropy extends GargoyleCommand {
                 .catch((err) => {
                     interaction.reply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\``, flags: MessageFlags.Ephemeral });
                 });
-            client.users.fetch(args[1]).then((user) => {
-                user.send({ content: `You have been recruited to Entropy Gen.4, invite link: ${inviteLink}` }).catch(() => {
-                    interaction.reply({ content: 'Failed to send DM to user', flags: MessageFlags.Ephemeral });
-                }).then(() => {
-                    interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, flags: MessageFlags.Ephemeral });
+            client.users
+                .fetch(args[1])
+                .then((user) => {
+                    user.send({ content: `You have been recruited to Entropy Gen.4, invite link: ${inviteLink}` })
+                        .catch(() => {
+                            interaction.reply({ content: 'Failed to send DM to user', flags: MessageFlags.Ephemeral });
+                        })
+                        .then(() => {
+                            interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, flags: MessageFlags.Ephemeral });
+                        });
+                })
+                .catch(() => {
+                    interaction.reply({ content: 'Failed to fetch user', flags: MessageFlags.Ephemeral });
                 });
-            }).catch(() => {
-                interaction.reply({ content: 'Failed to fetch user', flags: MessageFlags.Ephemeral });
-            });
         }
     }
 
@@ -180,44 +185,44 @@ export default class Entropy extends GargoyleCommand {
         const guildMembers = await guild.members.fetch();
         const guildMembersVoiceActivity: RankedGuildMember[] = [];
 
-        guildMembers.forEach(async (guildMember) => {
-            guildMembersVoiceActivity.push(new RankedGuildMember(guildMember, await getUserVoiceActivity(guildMember.id, guild.id, 7 * 24 * 60)));
-        });
+        for (const guildMember of guildMembers.values()) {
+            if(guildMember.user.bot) continue;
+            const userVoiceActivity = await getUserVoiceActivity(guildMember.id, guild.id, 7 * 24 * 60);
+            const user = new RankedGuildMember(guildMember, userVoiceActivity);
+            guildMembersVoiceActivity.push(user);
+        }
 
-        client.logger.info(`Guild has ${guildMembers.size} members`);
-        client.logger.info(`Sorting ${guildMembersVoiceActivity.length} members by activity`);
-
-        return guildMembersVoiceActivity.sort((a, b) => a.activity - b.activity);
+        return guildMembersVoiceActivity.sort((a, b) => b.activity - a.activity);
     }
 
-    private setMemberRoles(members: RankedGuildMember[]): void {
-        client.logger.info(`Setting roles for ${members.length} members`);
+    private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
         let i = 0;
         let j = 0;
 
-        members.forEach(async (rankedMember) => {
+        for (const rankedMember of members) {
             const member = rankedMember.guildMember;
-            client.logger.info(`Setting ${j} role for ${member.user.tag}`);
-            const role = member.guild.roles.cache.find((role) => {
-                return role.name.startsWith(`${j}`);
-            });
-            if (!role) return;
-            // await this.removeMemberActivityRoles(member);
+
+            const currentRoleLevel = j;
+            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${currentRoleLevel}`));
+            if (!role) continue;
+
+            await this.removeMemberActivityRoles(member);
             await member.roles.add(role);
+
             i++;
-            if (i > j) {
+            if (i >= j + 1) {
                 i = 0;
                 j++;
             }
-        });
+        }
     }
 
-    private removeMemberActivityRoles(member: GuildMember): void {
-        member.roles.cache.forEach(async (role) => {
+    private async removeMemberActivityRoles(member: GuildMember): Promise<void> {
+        for (const role of member.roles.cache.values()) {
             if (role.name.match(/^\d/)) {
                 await member.roles.remove(role);
             }
-        });
+        }
     }
 
     public override events = [new RolePrefix()];
@@ -226,10 +231,8 @@ export default class Entropy extends GargoyleCommand {
 class RolePrefix extends GargoyleEvent {
     public event = Events.GuildMemberUpdate as const;
 
-    public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
+    public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
         if (member.guild.id !== '1009048008857493624') return;
-
-        client.logger.debug(`Updating nickname for ${member.user.tag}`);
 
         const updatedMember = await member.fetch(true);
         let namePrefix = '[';
