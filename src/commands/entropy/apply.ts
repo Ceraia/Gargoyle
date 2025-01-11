@@ -207,10 +207,12 @@ export default class Entropy extends GargoyleCommand {
             const member = rankedMember.guildMember;
 
             if (rankedMember.activity === 0) {
-                await this.removeMemberActivityRoles(member);
                 const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${9}`));
                 if (!role) continue;
-                await member.roles.add(role);
+                if (!member.roles.cache.has(role.id)) {
+                    await this.removeMemberActivityRoles(member);
+                    await member.roles.add(role);
+                }
                 continue;
             }
 
@@ -218,8 +220,10 @@ export default class Entropy extends GargoyleCommand {
             const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${currentRoleLevel}`));
             if (!role) continue;
 
-            await this.removeMemberActivityRoles(member);
-            await member.roles.add(role);
+            if (!member.roles.cache.has(role.id)) {
+                await this.removeMemberActivityRoles(member);
+                await member.roles.add(role);
+            }
 
             i++;
             if (i >= j + 1) {
