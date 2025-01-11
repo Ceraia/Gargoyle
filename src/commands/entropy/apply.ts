@@ -184,6 +184,9 @@ export default class Entropy extends GargoyleCommand {
             guildMembersVoiceActivity.push(new RankedGuildMember(guildMember, await getUserVoiceActivity(guildMember.id, guild.id, 7 * 24 * 60)));
         });
 
+        client.logger.info(`Guild has ${guildMembers.size} members`);
+        client.logger.info(`Sorting ${guildMembersVoiceActivity.length} members by activity`);
+
         return guildMembersVoiceActivity.sort((a, b) => a.activity - b.activity);
     }
 
