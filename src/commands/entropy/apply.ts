@@ -26,6 +26,7 @@ import {
 import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import client from '@src/system/botClient.js';
 
 export default class Entropy extends GargoyleCommand {
     public override category: string = 'utilities';
@@ -134,7 +135,15 @@ export default class Entropy extends GargoyleCommand {
                 .catch((err) => {
                     interaction.reply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\``, flags: MessageFlags.Ephemeral });
                 });
-            interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, flags: MessageFlags.Ephemeral });
+            client.users.fetch(args[1]).then((user) => {
+                user.send({ content: `You have been recruited to Entropy Gen.4, invite link: ${inviteLink}` }).catch(() => {
+                    interaction.reply({ content: 'Failed to send DM to user', flags: MessageFlags.Ephemeral });
+                }).then(() => {
+                    interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, flags: MessageFlags.Ephemeral });
+                });
+            }).catch(() => {
+                interaction.reply({ content: 'Failed to fetch user', flags: MessageFlags.Ephemeral });
+            });
         }
     }
 
