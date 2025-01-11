@@ -31,6 +31,7 @@ import {
     VoiceState
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 
 export default class VoicechatCommand extends GargoyleCommand {
     public override category: string = 'utilities';
@@ -62,7 +63,7 @@ export default class VoicechatCommand extends GargoyleCommand {
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommand() === 'panel') {
             interaction.reply({ content: 'Sending the panel!', flags: MessageFlags.Ephemeral });
-            (interaction.channel as TextChannel).send(this.panelMessage as MessageCreateOptions);
+            sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
         } else if (interaction.options.getSubcommand() === 'create') {
             if (!interaction.guild) return;
             if (!client.user) return;
@@ -103,11 +104,11 @@ export default class VoicechatCommand extends GargoyleCommand {
     }
 
     public override executeTextCommand(_client: GargoyleClient, message: Message) {
-        (message.channel as TextChannel).send(this.panelMessage as MessageCreateOptions);
+        sendAsServer(this.panelMessage as MessageCreateOptions, message.channel as TextChannel);
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        interaction.message.edit(this.panelMessage as MessageEditOptions);
+        editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id);
         if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;
         if (client.user === null) return;
@@ -273,7 +274,6 @@ export default class VoicechatCommand extends GargoyleCommand {
             break;
         }
         }
-        interaction.message.edit(this.panelMessage as MessageEditOptions);
     }
 
     public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
