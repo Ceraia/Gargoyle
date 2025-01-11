@@ -108,11 +108,9 @@ export default class VoicechatCommand extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id).catch(() => {
-            interaction.message.delete().then(() => {
-                sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
-            }).catch(() => {});
-        });
+        if (interaction.message.webhookId) editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id);
+        else interaction.message.delete().then(() => sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
+
         if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;
         if (client.user === null) return;
