@@ -127,6 +127,7 @@ export default class Entropy extends GargoyleCommand {
                     )
             );
         } else if (args[0] === 'recruit') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const inviteLink = await (interaction.channel as TextChannel)
                 .createInvite({
                     temporary: true,
@@ -136,21 +137,21 @@ export default class Entropy extends GargoyleCommand {
                     reason: `Recruited by ${interaction.user.username}`
                 })
                 .catch((err) => {
-                    interaction.reply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\``, flags: MessageFlags.Ephemeral });
+                    interaction.editReply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\`` });
                 });
             client.users
                 .fetch(args[1])
                 .then((user) => {
                     user.send({ content: `You have been recruited to Entropy Gen.4, invite link: ${inviteLink}` })
                         .catch(() => {
-                            interaction.reply({ content: 'Failed to send DM to user', flags: MessageFlags.Ephemeral });
+                            interaction.editReply({ content: 'Failed to send DM to user' });
                         })
                         .then(() => {
-                            interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, flags: MessageFlags.Ephemeral });
+                            interaction.editReply({ content: `User recruited, invite link: ${inviteLink}` });
                         });
                 })
                 .catch(() => {
-                    interaction.reply({ content: 'Failed to fetch user', flags: MessageFlags.Ephemeral });
+                    interaction.editReply({ content: 'Failed to fetch user' });
                 });
         }
     }
