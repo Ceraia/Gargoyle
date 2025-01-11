@@ -188,11 +188,20 @@ export default class Entropy extends GargoyleCommand {
                 return role.name.startsWith(`${j}`);
             });
             if (!role) return;
+            await this.removeMemberActivityRoles(member);
             await member.roles.add(role);
             i++;
             if (i > j) {
                 i = 0;
                 j++;
+            }
+        });
+    }
+
+    private removeMemberActivityRoles(member: GuildMember): void {
+        member.roles.cache.forEach(async (role) => {
+            if (role.name.match(/^\d/)) {
+                await member.roles.remove(role);
             }
         });
     }
