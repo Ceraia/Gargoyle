@@ -206,6 +206,14 @@ export default class Entropy extends GargoyleCommand {
         for (const rankedMember of members) {
             const member = rankedMember.guildMember;
 
+            if (rankedMember.activity === 0) {
+                await this.removeMemberActivityRoles(member);
+                const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${9}`));
+                if (!role) continue;
+                await member.roles.add(role);
+                continue;
+            }
+
             const currentRoleLevel = j;
             const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${currentRoleLevel}`));
             if (!role) continue;
@@ -216,7 +224,7 @@ export default class Entropy extends GargoyleCommand {
             i++;
             if (i >= j + 1) {
                 i = 0;
-                j++;
+                if (j !== 9) j++;
             }
         }
     }
