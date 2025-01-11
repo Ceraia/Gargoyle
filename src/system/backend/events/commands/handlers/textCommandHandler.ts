@@ -13,7 +13,13 @@ export default class TextCommandHandler extends GargoyleEvent {
         const commandName = message.content.slice(client.prefix.length).split(' ')[0].toLowerCase();
 
         const command = client.commands.find((command) => {
-            return command.textCommand?.name === commandName || command.textCommand?.aliases?.includes(commandName);
+            return (
+                command.textCommand?.name === commandName ||
+                command.textCommand?.aliases?.includes(commandName) ||
+                command.textCommands.find((textCommand) => {
+                    return textCommand.name === commandName || textCommand.aliases?.includes(commandName);
+                })
+            );
         });
 
         if (!command) {
