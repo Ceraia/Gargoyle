@@ -49,8 +49,12 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
                 messageEdit = messageId;
             }
 
-            await webhook?.editMessage(messageEdit, { ...message });
-            return true;
+            await webhook?.editMessage(messageEdit, { ...message }).then(() => {
+                return true;
+            }).catch(() => {
+                return false;
+            });
+            return false;
         })
         .catch(() => {
             return false;
