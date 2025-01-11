@@ -48,9 +48,9 @@ export default class Entropy extends GargoyleCommand {
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.options.getSubcommand() === 'activity') {
             if (!interaction.guild) return;
-            interaction.reply(`Calculating all VC statistics for past 7 days for ${interaction.guild.memberCount}`);
+            await interaction.reply(`Calculating all VC statistics for past 7 days for ${interaction.guild.memberCount}`);
             this.setMemberRoles(await this.getGuildVoiceActivity(interaction.guild));
-            interaction.editReply('Finished calculating all VC statistics for past 7 days, roles applied.');
+            await interaction.editReply('Finished calculating all VC statistics for past 7 days, roles applied.');
         }
     }
 
@@ -188,16 +188,18 @@ export default class Entropy extends GargoyleCommand {
     }
 
     private setMemberRoles(members: RankedGuildMember[]): void {
+        client.logger.info(`Setting roles for ${members.length} members`);
         let i = 0;
         let j = 0;
 
         members.forEach(async (rankedMember) => {
             const member = rankedMember.guildMember;
+            client.logger.info(`Setting ${j} role for ${member.user.tag}`);
             const role = member.guild.roles.cache.find((role) => {
                 return role.name.startsWith(`${j}`);
             });
             if (!role) return;
-            await this.removeMemberActivityRoles(member);
+            // await this.removeMemberActivityRoles(member);
             await member.roles.add(role);
             i++;
             if (i > j) {
