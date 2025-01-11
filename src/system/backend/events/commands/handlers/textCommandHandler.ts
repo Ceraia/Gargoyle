@@ -35,9 +35,8 @@ export default class TextCommandHandler extends GargoyleEvent {
                 }, 5000);
             });
         } else {
-            client.logger.trace(`${message.author.tag} used the ${command.textCommand?.name} command.`);
-
             if (message.guild && !textCommand.contexts.includes(InteractionContextType.Guild)) {
+                client.logger.trace(`${message.author.tag} tried to use the ${textCommand.name} command in a guild.`);
                 message.reply('This command cannot be used in Guilds!').then((msg) => {
                     setTimeout(() => {
                         msg.delete();
@@ -47,6 +46,7 @@ export default class TextCommandHandler extends GargoyleEvent {
             }
 
             if (message.channel.type === ChannelType.DM && !textCommand.contexts.includes(InteractionContextType.PrivateChannel)) {
+                client.logger.trace(`${message.author.tag} tried to use the ${textCommand.name} command in a DM.`);
                 message.reply('This command cannot be used in DMs!').then((msg) => {
                     setTimeout(() => {
                         msg.delete();
@@ -61,6 +61,7 @@ export default class TextCommandHandler extends GargoyleEvent {
                 textCommand.guilds.length > 0 && // that are not empty,
                 !textCommand.guilds.includes(message.guild.id) // but the guild is not in the guld requirements
             ) {
+                client.logger.trace(`${message.author.tag} tried to use the ${textCommand.name} command in a guild.`);
                 message.reply('This command cannot be used in this guild!').then((msg) => {
                     setTimeout(() => {
                         msg.delete();
@@ -70,6 +71,7 @@ export default class TextCommandHandler extends GargoyleEvent {
             }
 
             command.executeTextCommand(client, message);
+            client.logger.trace(`${message.author.tag} used the ${textCommand.name} command.`);
         }
     }
 }

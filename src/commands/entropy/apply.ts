@@ -58,7 +58,7 @@ export default class Entropy extends GargoyleCommand {
     }
 
     public override async executeTextCommand(client: GargoyleClient, message: Message): Promise<void> {
-        if (message.author.username !== 'Axodouble') return;
+        if (message.author.username !== 'axodouble') return;
         await message.delete();
         const entropyGuild = client.guilds.cache.get('1009048008857493624');
         await sendAsServer(
