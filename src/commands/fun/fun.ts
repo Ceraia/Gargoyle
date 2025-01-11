@@ -1,10 +1,11 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
-import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse, SlashCommandBuilder } from 'discord.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse } from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
-    public override slashCommand = new SlashCommandBuilder()
+    public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('fun')
         .setDescription('Fun related commands!')
         .addSubcommandGroup((subcommandGroup) =>
@@ -53,7 +54,7 @@ export default class Fun extends GargoyleCommand {
                 .setDescription('Ask the magic 8ball a question.')
                 .addStringOption((option) => option.setName('question').setDescription('The question to ask the magic 8ball.').setRequired(true))
         )
-        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as SlashCommandBuilder;
+        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as GargoyleSlashCommandBuilder;
 
     public override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         const subcommandGroup = interaction.options.getSubcommandGroup();
@@ -219,23 +220,6 @@ function textReplace(interaction: ChatInputCommandInteraction): Promise<Interact
 
 function truthDare(interaction: ChatInputCommandInteraction): Promise<InteractionResponse<boolean>> {
     const truths: string[] = [
-        'What\'s the most embarrassing thing that\'s ever happened to you?',
-        'Have you ever lied to get out of trouble?',
-        'What\'s your biggest fear?',
-        'What\'s the worst gift you\'ve ever received?',
-        'What\'s the most childish thing you still do?',
-        'What\'s a secret you\'ve never told anyone?',
-        'What\'s the worst thing you\'ve ever done?',
-        'What\'s the most embarrassing thing in your room?',
-        'What\'s the most awkward date you\'ve been on?',
-        'What\'s the most trouble you\'ve gotten into at school?',
-        'What\'s the worst thing you\'ve ever said to someone?',
-        'What\'s the most embarrassing nickname you\'ve had?',
-        'What\'s the most embarrassing thing you\'ve done in public?',
-        'What\'s the weirdest thing you\'ve ever eaten?',
-        'What\'s the most embarrassing thing you\'ve worn?',
-        'What\'s the most embarrassing thing you\'ve done for a dare?',
-        'What\'s the most embarrassing thing you\'ve done in front of a crush?',
         'What\'s the most embarrassing thing that\'s ever happened to you?',
         'Have you ever lied to get out of trouble?',
         'What\'s your biggest fear?',

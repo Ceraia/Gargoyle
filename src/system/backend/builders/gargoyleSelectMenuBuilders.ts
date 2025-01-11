@@ -30,7 +30,12 @@ class GargoyleStringSelectMenuBuilder extends StringSelectMenuBuilder {
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
         this.setCustomId(
-            `cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.join('-').toLowerCase()}`
+            `cmd-${
+                command.slashCommand?.name.toLowerCase() ??
+                command.textCommand?.name.toLowerCase() ??
+                command.slashCommands[0].name.toLowerCase() ??
+                command.textCommands[0].name.toLowerCase()
+            }-${argument.join('-').toLowerCase()}`
         );
     }
 
@@ -58,7 +63,12 @@ class GargoyleUserSelectMenuBuilder extends UserSelectMenuBuilder {
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
         this.setCustomId(
-            `cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.join('-').toLowerCase()}`
+            `cmd-${
+                command.slashCommand?.name.toLowerCase() ??
+                command.textCommand?.name.toLowerCase() ??
+                command.slashCommands[0].name.toLowerCase() ??
+                command.textCommands[0].name.toLowerCase()
+            }-${argument.join('-').toLowerCase()}`
         );
     }
 }
@@ -79,7 +89,12 @@ class GargoyleRoleSelectMenuBuilder extends RoleSelectMenuBuilder {
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
         this.setCustomId(
-            `cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.join('-').toLowerCase()}`
+            `cmd-${
+                command.slashCommand?.name.toLowerCase() ??
+                command.textCommand?.name.toLowerCase() ??
+                command.slashCommands[0].name.toLowerCase() ??
+                command.textCommands[0].name.toLowerCase()
+            }-${argument.join('-').toLowerCase()}`
         );
     }
 }
@@ -100,7 +115,12 @@ class GargoyleMentionableSelectMenuBuilder extends MentionableSelectMenuBuilder 
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
         this.setCustomId(
-            `cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.join('-').toLowerCase()}`
+            `cmd-${
+                command.slashCommand?.name.toLowerCase() ??
+                command.textCommand?.name.toLowerCase() ??
+                command.slashCommands[0].name.toLowerCase() ??
+                command.textCommands[0].name.toLowerCase()
+            }-${argument.join('-').toLowerCase()}`
         );
     }
 }
@@ -121,7 +141,12 @@ class GargoyleChannelSelectMenuBuilder extends ChannelSelectMenuBuilder {
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
         this.setCustomId(
-            `cmd-${command.slashCommand?.name.toLowerCase() ?? command.textCommand?.name.toLowerCase()}-${argument.join('-').toLowerCase()}`
+            `cmd-${
+                command.slashCommand?.name.toLowerCase() ??
+                command.textCommand?.name.toLowerCase() ??
+                command.slashCommands[0].name.toLowerCase() ??
+                command.textCommands[0].name.toLowerCase()
+            }-${argument.join('-').toLowerCase()}`
         );
     }
 }

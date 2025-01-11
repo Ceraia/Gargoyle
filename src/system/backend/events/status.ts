@@ -7,8 +7,8 @@ export default class Ready extends GargoyleEvent {
     override once = true;
 
     public execute(client: GargoyleClient): void {
-        let status = 'you <3';
-        if (process.env.ENVIRONMENT === 'dev') status = 'you <3 (dev)';
+        let status = 'you <3 (dev)';
+        if (process.env.ENVIRONMENT === 'prod') status = 'you <3';
 
         setInterval(() => {
             client.user?.setActivity({

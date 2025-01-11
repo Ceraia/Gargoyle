@@ -12,25 +12,54 @@ import {
     ButtonStyle,
     ChatInputCommandInteraction,
     Events,
+    Guild,
     GuildMember,
     InteractionContextType,
+    Message,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
-    SlashCommandBuilder,
     TextChannel,
     TextInputBuilder,
     TextInputStyle
 } from 'discord.js';
-export default class Ping extends GargoyleCommand {
-    public override category: string = 'utilities';
-    public override slashCommand = new SlashCommandBuilder()
-        .setName('entropy')
-        .setDescription('Open an entropy application panel')
-        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]);
+import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
+import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import client from '@src/system/botClient.js';
 
-    public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        await interaction.reply({ content: 'Sending entropy application panel', flags: MessageFlags.Ephemeral });
+export default class Entropy extends GargoyleCommand {
+    public override category: string = 'utilities';
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('entropy')
+            .setDescription('Entropy related commands')
+            .addGuild('1009048008857493624')
+            .addSubcommand((subcommand) => subcommand.setName('activity').setDescription('Calculate voice activity'))
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
+    ];
+    public override textCommands = [
+        new GargoyleTextCommandBuilder()
+            .setName('entropy')
+            .setDescription('Open an entropy application panel')
+            .setContexts([InteractionContextType.Guild])
+    ];
+
+    public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
+        if (interaction.options.getSubcommand() === 'activity') {
+            if (!interaction.guild) return;
+            await interaction.reply({
+                content: `Calculating all VC statistics for past 7 days for ${interaction.guild.memberCount}`,
+                flags: MessageFlags.Ephemeral
+            });
+            this.setMemberRoles(await this.getGuildVoiceActivity(interaction.guild));
+            await interaction.editReply('Finished calculating all VC statistics for past 7 days, roles applied.');
+        }
+    }
+
+    public override async executeTextCommand(client: GargoyleClient, message: Message): Promise<void> {
+        if (message.author.username !== 'axodouble') return;
+        await message.delete();
         const entropyGuild = client.guilds.cache.get('1009048008857493624');
         await sendAsServer(
             {
@@ -43,7 +72,7 @@ export default class Ping extends GargoyleCommand {
                     )
                 ]
             },
-            interaction.channel as TextChannel,
+            message.channel as TextChannel,
             entropyGuild
         );
     }
@@ -98,6 +127,7 @@ export default class Ping extends GargoyleCommand {
                     )
             );
         } else if (args[0] === 'recruit') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const inviteLink = await (interaction.channel as TextChannel)
                 .createInvite({
                     temporary: true,
@@ -107,9 +137,22 @@ export default class Ping extends GargoyleCommand {
                     reason: `Recruited by ${interaction.user.username}`
                 })
                 .catch((err) => {
-                    interaction.reply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\``, flags: MessageFlags.Ephemeral });
+                    interaction.editReply({ content: `Failed to create invite link\n\`\`\`${err as string}\`\`\`` });
                 });
-            interaction.reply({ content: `User recruited, invite link: ${inviteLink}`, flags: MessageFlags.Ephemeral });
+            client.users
+                .fetch(args[1])
+                .then((user) => {
+                    user.send({ content: `You have been recruited to Entropy Gen.4, invite link: ${inviteLink}` })
+                        .catch(() => {
+                            interaction.editReply({ content: 'Failed to send DM to user' });
+                        })
+                        .then(() => {
+                            interaction.editReply({ content: `User recruited, invite link: ${inviteLink}` });
+                        });
+                })
+                .catch(() => {
+                    interaction.editReply({ content: 'Failed to fetch user' });
+                });
         }
     }
 
@@ -142,16 +185,70 @@ export default class Ping extends GargoyleCommand {
         }
     }
 
+    private async getGuildVoiceActivity(guild: Guild): Promise<RankedGuildMember[]> {
+        const guildMembers = await guild.members.fetch();
+        const guildMembersVoiceActivity: RankedGuildMember[] = [];
+
+        for (const guildMember of guildMembers.values()) {
+            if (guildMember.user.bot) continue;
+            const userVoiceActivity = await getUserVoiceActivity(guildMember.id, guild.id, 7 * 24 * 60);
+            const user = new RankedGuildMember(guildMember, userVoiceActivity);
+            guildMembersVoiceActivity.push(user);
+        }
+
+        return guildMembersVoiceActivity.sort((a, b) => b.activity - a.activity);
+    }
+
+    private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
+        let i = 0;
+        let j = 0;
+
+        for (const rankedMember of members) {
+            const member = rankedMember.guildMember;
+
+            if (rankedMember.activity === 0) {
+                const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${9}`));
+                if (!role) continue;
+                if (!member.roles.cache.has(role.id)) {
+                    await this.removeMemberActivityRoles(member);
+                    await member.roles.add(role);
+                }
+                continue;
+            }
+
+            const currentRoleLevel = j;
+            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${currentRoleLevel}`));
+            if (!role) continue;
+
+            if (!member.roles.cache.has(role.id)) {
+                await this.removeMemberActivityRoles(member);
+                await member.roles.add(role);
+            }
+
+            i++;
+            if (i >= j + 1) {
+                i = 0;
+                if (j !== 9) j++;
+            }
+        }
+    }
+
+    private async removeMemberActivityRoles(member: GuildMember): Promise<void> {
+        for (const role of member.roles.cache.values()) {
+            if (role.name.match(/^\d/)) {
+                await member.roles.remove(role);
+            }
+        }
+    }
+
     public override events = [new RolePrefix()];
 }
 
 class RolePrefix extends GargoyleEvent {
     public event = Events.GuildMemberUpdate as const;
 
-    public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
+    public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
         if (member.guild.id !== '1009048008857493624') return;
-
-        client.logger.debug(`Updating nickname for ${member.user.tag}`);
 
         const updatedMember = await member.fetch(true);
         let namePrefix = '[';
@@ -166,5 +263,15 @@ class RolePrefix extends GargoyleEvent {
         namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
 
         updatedMember.setNickname(namePrefix).catch(() => {});
+    }
+}
+
+class RankedGuildMember {
+    public guildMember: GuildMember;
+    public activity: number;
+
+    constructor(guildMember: GuildMember, activity: number) {
+        this.guildMember = guildMember;
+        this.activity = activity;
     }
 }

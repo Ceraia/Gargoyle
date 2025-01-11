@@ -37,11 +37,12 @@ import { InteractionContextType } from 'discord.js';
  * @property {string} description - The description of the command. Throws an error if not set.
  * @property {string[]} aliases - The list of aliases for the command.
  */
-class TextCommandBuilder {
+class GargoyleTextCommandBuilder {
     private _name: string | undefined;
     private _description: string | undefined;
     private _aliases: string[] = [];
     private _contexts: InteractionContextType[] = [];
+    private _guilds: string[] = [];
 
     setName(name: string): this {
         if (!name || typeof name !== 'string') {
@@ -64,6 +65,22 @@ class TextCommandBuilder {
             throw new Error('Alias must be a non-empty string.');
         }
         this._aliases.push(alias);
+        return this;
+    }
+
+    addGuild(guild: string): this {
+        if (!guild || typeof guild !== 'string') {
+            throw new Error('Guild must be a non-empty string.');
+        }
+        this._guilds.push(guild);
+        return this;
+    }
+
+    addGuilds(...guilds: string[]): this {
+        if (!guilds) {
+            throw new Error('Guilds must be a non-empty string list.');
+        }
+        guilds.forEach((guild) => this._guilds.push(guild));
         return this;
     }
 
@@ -90,9 +107,13 @@ class TextCommandBuilder {
         return this._aliases;
     }
 
+    get guilds(): string[] {
+        return this._guilds;
+    }
+
     get contexts(): InteractionContextType[] {
         return this._contexts;
     }
 }
 
-export default TextCommandBuilder;
+export default GargoyleTextCommandBuilder;

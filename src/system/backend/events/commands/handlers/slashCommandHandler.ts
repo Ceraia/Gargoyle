@@ -12,7 +12,12 @@ export default class SlashCommandHandler extends GargoyleEvent {
         if (interaction.isContextMenuCommand()) return;
 
         const command = client.commands.find((command) => {
-            return command.slashCommand?.name === interaction.commandName;
+            return (
+                command.slashCommand?.name === interaction.commandName ||
+                command.slashCommands.find((slashcommand) => {
+                    return slashcommand.name === interaction.commandName;
+                })
+            );
         });
 
         if (!command) {

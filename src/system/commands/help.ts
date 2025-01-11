@@ -1,4 +1,4 @@
-import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import {
@@ -9,17 +9,17 @@ import {
     EmbedBuilder,
     Message,
     MessageFlags,
-    SlashCommandBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder
 } from 'discord.js';
 import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
 import { GargoyleStringSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
+import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashCommandBuilder.js';
 
 export default class Help extends GargoyleCommand {
     override category: string = 'base';
-    override slashCommand = new SlashCommandBuilder().setName('help').setDescription('Replies with bot information');
-    override textCommand = new TextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
+    override slashCommand = new GargoyleSlashCommandBuilder().setName('help').setDescription('Replies with bot information');
+    override textCommand = new GargoyleTextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
     private readonly selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
         new GargoyleStringSelectMenuBuilder(this, 'commands').addOptions(
             new StringSelectMenuOptionBuilder().setLabel('Info Message').setValue('info'),

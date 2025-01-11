@@ -6,17 +6,13 @@ const guildSchema = new Schema({
         type: String,
         default: ','
     },
-    dynamic_vcs: {
+    dynamicVCs: {
         prefix: {
             type: String,
             default: ''
-        },
-        overrides: {
-            type: Array,
-            default: []
         }
     },
-    autoroles: {
+    autoRoles: {
         type: Array,
         default: []
     }

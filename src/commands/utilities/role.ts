@@ -1,4 +1,3 @@
-import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
@@ -11,55 +10,40 @@ import {
     ButtonStyle,
     ChatInputCommandInteraction,
     InteractionContextType,
-    Message,
     MessageFlags,
     TextChannel
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
-export default class ButtonRole extends GargoyleCommand {
+export default class Role extends GargoyleCommand {
     public override category: string = 'utilities';
-    public override slashCommand = new GargoyleSlashCommandBuilder()
-        .setName('rolebutton')
-        .setDescription('Create a button that gives a role')
-        .setContexts([InteractionContextType.Guild]);
-    public override textCommand = new GargoyleTextCommandBuilder()
-        .setName('buttonrole')
-        .setDescription('Create a role button')
-        .addAlias('br')
-        .addAlias('rolebutton')
-        .addAlias('rb')
-        .setContexts([InteractionContextType.Guild]);
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('role')
+            .setDescription('Role related commands')
+            .addSubcommand((subcommand) => subcommand.setName('button').setDescription('Create a button that gives a role'))
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
+    ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (!interaction.memberPermissions?.has('ManageRoles')) {
-            await interaction.reply({ content: 'You do not have the required permissions to use this command.', flags: MessageFlags.Ephemeral });
-            return;
+        if (interaction.options.getSubcommand() === 'button') {
+            if (!interaction.memberPermissions?.has('ManageRoles')) {
+                await interaction.reply({
+                    content: 'You do not have the required permissions to use this command.',
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+            await interaction.reply({
+                content: 'What role(s) would you like to give?',
+                flags: MessageFlags.Ephemeral,
+                components: [
+                    new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
+                        new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
+                    )
+                ]
+            });
         }
-        await interaction.reply({
-            content: 'What role(s) would you like to give?',
-            flags: MessageFlags.Ephemeral,
-            components: [
-                new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
-                    new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
-                )
-            ]
-        });
-    }
-
-    public override async executeTextCommand(_client: GargoyleClient, message: Message) {
-        if (!message.member?.permissions?.has('ManageRoles')) {
-            await message.reply({ content: 'You do not have the required permissions to use this command.' });
-            return;
-        }
-        (message.channel as TextChannel).send({
-            content: 'What role(s) would you like to give?',
-            components: [
-                new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
-                    new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
-                )
-            ]
-        });
     }
 
     public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {

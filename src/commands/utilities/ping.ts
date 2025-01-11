@@ -1,14 +1,15 @@
-import TextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
-import { ChatInputCommandInteraction, InteractionContextType, Message, SlashCommandBuilder, TextChannel } from 'discord.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import { ChatInputCommandInteraction, InteractionContextType, Message, TextChannel } from 'discord.js';
 export default class Ping extends GargoyleCommand {
     public override category: string = 'utilities';
-    public override slashCommand = new SlashCommandBuilder()
+    public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('ping')
         .setDescription('Replies with Pong!')
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]);
-    public override textCommand = new TextCommandBuilder()
+    public override textCommand = new GargoyleTextCommandBuilder()
         .setName('ping')
         .setDescription('Replies with Pong!')
         .addAlias('p')
