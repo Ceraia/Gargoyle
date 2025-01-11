@@ -22,7 +22,16 @@ export default class TextCommandHandler extends GargoyleEvent {
             );
         });
 
-        if (!command) {
+        let textCommand = command?.textCommands.find((textCommand) => {
+            return (
+                textCommand.name === commandName ||
+                textCommand.aliases?.includes(commandName)
+            );
+        });
+
+        if (!textCommand) textCommand = command?.textCommand ?? undefined;
+
+        if (!command || !textCommand) {
             message.reply('Command not found!').then((msg) => {
                 setTimeout(() => {
                     msg.delete();
@@ -31,7 +40,9 @@ export default class TextCommandHandler extends GargoyleEvent {
         } else {
             client.logger.trace(`${message.author.tag} used the ${command.textCommand?.name} command.`);
 
-            if (message.guild && !command.textCommand?.contexts.includes(InteractionContextType.Guild)) {
+            if (message.guild &&
+                !textCommand.contexts.includes(InteractionContextType.Guild)
+            ) {
                 message.reply('This command cannot be used in Guilds!').then((msg) => {
                     setTimeout(() => {
                         msg.delete();
@@ -40,7 +51,9 @@ export default class TextCommandHandler extends GargoyleEvent {
                 return;
             }
 
-            if (message.channel.type === ChannelType.DM && !command.textCommand?.contexts.includes(InteractionContextType.PrivateChannel)) {
+            if (message.channel.type === ChannelType.DM &&
+                !textCommand.contexts.includes(InteractionContextType.PrivateChannel)
+            ) {
                 message.reply('This command cannot be used in DMs!').then((msg) => {
                     setTimeout(() => {
                         msg.delete();
@@ -51,9 +64,9 @@ export default class TextCommandHandler extends GargoyleEvent {
 
             if (
                 message.guild && // If the command is in a guild,
-                command.textCommand?.guilds && // and the command has guild requirements
-                command.textCommand?.guilds.length > 0 && // that are not empty,
-                !command.textCommand?.guilds.includes(message.guild.id) // but the guild is not in the guld requirements
+                textCommand?.guilds && // and the command has guild requirements
+                textCommand?.guilds.length > 0 && // that are not empty,
+                !textCommand?.guilds.includes(message.guild.id) // but the guild is not in the guld requirements
             )
                 return;
 
