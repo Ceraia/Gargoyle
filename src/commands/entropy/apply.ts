@@ -130,7 +130,6 @@ export default class Entropy extends GargoyleCommand {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const inviteLink = await (interaction.channel as TextChannel)
                 .createInvite({
-                    temporary: true,
                     maxAge: 1 * 60 * 60 * 24 * 7,
                     maxUses: 1,
                     unique: true,
