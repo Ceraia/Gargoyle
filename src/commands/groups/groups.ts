@@ -100,6 +100,20 @@ export default class Fun extends GargoyleCommand {
             } else {
                 interaction.editReply('Channel is not a group channel.');
             }
+            break;
+        }
+        case 'create': {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            if (!interaction.guild) return;
+            const name = interaction.options.getString('name');
+            if (!name) return;
+            const channel = await createGroup(client, interaction.guild as Guild, name, interaction.member as GuildMember);
+            if (!channel) {
+                interaction.editReply('Failed to create group.');
+                return;
+            }
+            interaction.editReply(`Group ${name} created.`);
+            break;
         }
         }
     }
@@ -121,6 +135,30 @@ async function setGroupCategory(client: GargoyleClient, channel: GuildChannel): 
     });
 
     return false;
+}
+
+async function getGroupCategory(client: GargoyleClient, guild: Guild): Promise<CategoryChannel | null> {
+    const fetchedChannels = await guild.channels.fetch();
+    if (!fetchedChannels) {
+        return null;
+    }
+
+    if (!client.user) {
+        return null;
+    }
+
+    for (const channel of fetchedChannels) {
+        if (!channel) continue;
+        const fetchedChannel = await client.channels.fetch(channel[0]);
+
+        if (!fetchedChannel) continue;
+
+        if (!isGroupCategory(fetchedChannel)) continue;
+
+        return fetchedChannel as CategoryChannel;
+    }
+
+    return null;
 }
 
 async function removeGuildGroupCategories(client: GargoyleClient, guild: Guild): Promise<boolean> {
@@ -182,4 +220,16 @@ async function isGroupOwner(channel: GuildChannel, member: GuildMember): Promise
     const permissions = fetchedChannel.permissionOverwrites.cache.get(member.id);
     if (permissions && permissions.allow.has(PermissionFlagsBits.SendTTSMessages)) return true;
     return false;
+}
+
+async function createGroup(client: GargoyleClient, guild: Guild, name: string, owner: GuildMember): Promise<GuildChannel | null> {
+    const category = await getGroupCategory(client, guild);
+    if (!category) return null;
+
+    const channel = await guild.channels.create({ name: name, type: ChannelType.GuildText });
+    if (!channel) return null;
+
+    await channel.permissionOverwrites.create(owner, { SendTTSMessages: true });
+
+    return channel;
 }
