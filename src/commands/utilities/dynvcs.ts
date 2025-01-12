@@ -65,10 +65,11 @@ export default class VoicechatCommand extends GargoyleCommand {
             interaction.reply({ content: 'Sending the panel!', flags: MessageFlags.Ephemeral });
             sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
         } else if (interaction.options.getSubcommand() === 'create') {
+            interaction.deferReply({ flags: MessageFlags.Ephemeral });
             if (!interaction.guild) return;
             if (!client.user) return;
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels)) {
-                interaction.reply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!', flags: MessageFlags.Ephemeral });
+                interaction.editReply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!' });
             }
 
             let vc = interaction.options.getChannel('vc');
@@ -96,10 +97,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                     (channel as VoiceChannel).permissionOverwrites.edit(interaction.guild.id, { Connect: true, PrioritySpeaker: true });
                 });
 
-            interaction.reply({
-                content: `Created the dynamic vc, use \`/vc panel\` or \`${client.prefix}vc\` to get the vc panel!`,
-                flags: MessageFlags.Ephemeral
-            });
+            interaction.editReply({ content: `Created the dynamic vc, use \`/vc panel\` or \`${client.prefix}vc\` to get the vc panel!` });
         }
     }
 
