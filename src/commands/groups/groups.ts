@@ -10,6 +10,7 @@ import {
     ChatInputCommandInteraction,
     Guild,
     GuildChannel,
+    GuildMember,
     InteractionContextType,
     MessageFlags,
     PermissionFlagsBits
@@ -60,6 +61,10 @@ export default class Fun extends GargoyleCommand {
 
         switch (subcommand) {
         case 'setup': {
+            if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+                interaction.reply({ content: 'You do not have permission to run this command.', ephemeral: true });
+                return;
+            }
             let channel = interaction.options.getChannel('channel');
             if (!channel) {
                 const createdChannel = await interaction.guild?.channels.create({
@@ -86,6 +91,10 @@ export default class Fun extends GargoyleCommand {
             const channel = interaction.options.getChannel('channel');
             if (!channel) return;
             if (await isGroup(channel as GuildChannel)) {
+                if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) && !await isGroupOwner(channel as GuildChannel, interaction.member as GuildMember)) {
+                    interaction.reply({ content: 'You do not have permission to remove this group.', ephemeral: true });
+                    return;
+                }
                 await (channel as GuildChannel).delete();
                 interaction.editReply('Group deleted.');
             } else {
@@ -161,4 +170,16 @@ async function isGroup(channel: GuildChannel): Promise<boolean> {
 
     if (!isGroupCategory(fetchedChannel.parent)) return false;
     return true;
+}
+
+async function isGroupOwner(channel: GuildChannel, member: GuildMember): Promise<boolean> {
+    const fetchedChannel = await channel.fetch();
+    if (!fetchedChannel) return false;
+
+    if (!isGroup(fetchedChannel)) return false;
+
+    if (!fetchedChannel.permissionOverwrites.cache.get(member.id)) return false;
+    const permissions = fetchedChannel.permissionOverwrites.cache.get(member.id);
+    if (permissions && permissions.allow.has(PermissionFlagsBits.SendTTSMessages)) return true;
+    return false;
 }
