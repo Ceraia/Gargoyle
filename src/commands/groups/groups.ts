@@ -86,6 +86,48 @@ export default class Groups extends GargoyleCommand {
         }
     }
 
+    private async createGroup(client: GargoyleClient, guild: Guild, name: string, owner: GuildMember): Promise<GuildChannel | null> {
+        try {
+            const category = await this.getGroupCategory(client, guild);
+            if (!category) return null;
+
+            const permissionOverwrites = category.permissionOverwrites.cache.map((permission) => ({
+                id: permission.id,
+                allow: permission.allow.toArray(),
+                deny: permission.deny.toArray()
+            }));
+
+            const channel = await guild.channels.create({
+                name,
+                type: ChannelType.GuildText,
+                parent: category.id,
+                permissionOverwrites: [
+                    { id: owner.id, allow: [PermissionFlagsBits.UseExternalStickers] },
+                    ...permissionOverwrites,
+                    { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }
+                ]
+            });
+
+            channel.send({
+                content: `Welcome to ${name}!`,
+                embeds: [new GargoyleEmbedBuilder().setTitle(`${name}`).setDescription(`This group was created by <@!${owner.id}>\n`)],
+                components: [
+                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                        new GargoyleButtonBuilder(this, 'invite').setLabel('Invite').setStyle(ButtonStyle.Secondary),
+                        new GargoyleButtonBuilder(this, 'kick').setLabel('Kick').setStyle(ButtonStyle.Secondary),
+                        new GargoyleButtonBuilder(this, 'promote').setLabel('Promote').setStyle(ButtonStyle.Secondary),
+                        new GargoyleButtonBuilder(this, 'leave').setLabel('Leave').setStyle(ButtonStyle.Secondary)
+                    )
+                ]
+            });
+
+            return channel;
+        } catch (error) {
+            client.logger.error(`Failed to create group ${name}:`, error as string);
+            return null;
+        }
+    }
+
     private async handleSetup(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -238,50 +280,6 @@ export default class Groups extends GargoyleCommand {
         } catch (error) {
             client.logger.error(`Failed to check group ownership for ${member.id}:`, error as string);
             return false;
-        }
-    }
-
-    private async createGroup(client: GargoyleClient, guild: Guild, name: string, owner: GuildMember): Promise<GuildChannel | null> {
-        try {
-            const category = await this.getGroupCategory(client, guild);
-            if (!category) return null;
-
-            const permissionOverwrites = category.permissionOverwrites.cache.map((permission) => ({
-                id: permission.id,
-                allow: permission.allow.toArray(),
-                deny: permission.deny.toArray()
-            }));
-
-            const channel = await guild.channels.create({
-                name,
-                type: ChannelType.GuildText,
-                parent: category.id,
-                permissionOverwrites: [
-                    { id: owner.id, allow: [PermissionFlagsBits.UseExternalStickers] },
-                    ...permissionOverwrites,
-                    { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }
-                ]
-            });
-
-            channel.send({
-                content: `Welcome to ${name}!`,
-                embeds: [
-                    new GargoyleEmbedBuilder().setTitle(`${name}`).setDescription(`This group was created by <@!${owner.id}>\n`)
-                ],
-                components: [
-                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                        new GargoyleButtonBuilder(this, 'invite').setLabel('Invite').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'kick').setLabel('Kick').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'promote').setLabel('Promote').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'leave').setLabel('Leave').setStyle(ButtonStyle.Secondary)
-                    )
-                ]
-            });
-
-            return channel;
-        } catch (error) {
-            client.logger.error(`Failed to create group ${name}:`, error as string);
-            return null;
         }
     }
 }
