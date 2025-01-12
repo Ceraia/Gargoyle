@@ -48,12 +48,17 @@ export default class Entropy extends GargoyleCommand {
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.options.getSubcommand() === 'activity') {
             if (!interaction.guild) return;
+
             await interaction.reply({
-                content: `Calculating all VC statistics for past 7 days for ${interaction.guild.memberCount}`,
+                content: `Calculating all VC statistics for the past 7 days for ${interaction.guild.memberCount} members...`,
                 flags: MessageFlags.Ephemeral
             });
-            this.setMemberRoles(await this.getGuildVoiceActivity(interaction.guild));
-            await interaction.editReply('Finished calculating all VC statistics for past 7 days, roles applied.');
+
+            const rankedMembers = await this.getGuildVoiceActivity(interaction.guild);
+
+            await this.setMemberRoles(rankedMembers);
+
+            await interaction.editReply('Finished calculating all VC statistics for the past 7 days. Roles applied.');
         }
     }
 
