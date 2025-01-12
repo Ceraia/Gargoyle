@@ -1,7 +1,7 @@
-import GargoyleClient from '@classes/gargoyleClient.js';
-import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleClient from "@classes/gargoyleClient.js";
+import GargoyleCommand from "@classes/gargoyleCommand.js";
 
-import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import GargoyleSlashCommandBuilder from "@src/system/backend/builders/gargoyleSlashCommandBuilder.js";
 
 import {
     CategoryChannel,
@@ -15,41 +15,41 @@ import {
     MessageFlags,
     PermissionFlagsBits,
     TextChannel
-} from 'discord.js';
+} from "discord.js";
 export default class Fun extends GargoyleCommand {
-    public override category: string = 'fun';
+    public override category: string = "fun";
     public override slashCommand = new GargoyleSlashCommandBuilder()
-        .setName('group')
-        .setDescription('Group related commands.')
+        .setName("group")
+        .setDescription("Group related commands.")
         .addSubcommandGroup((subcommandGroup) =>
             subcommandGroup
-                .setName('admin')
-                .setDescription('Admin commands for groups.')
+                .setName("admin")
+                .setDescription("Admin commands for groups.")
                 .addSubcommand((subcommand) =>
                     subcommand
-                        .setName('setup')
-                        .setDescription('Setup group functionality for the server.')
+                        .setName("setup")
+                        .setDescription("Setup group functionality for the server.")
                         .addChannelOption((option) =>
                             option
-                                .setName('channel')
-                                .setDescription('The category to create the group channels in.')
+                                .setName("channel")
+                                .setDescription("The category to create the group channels in.")
                                 .addChannelTypes(ChannelType.GuildCategory)
                         )
                 )
                 .addSubcommand((subcommand) =>
                     subcommand
-                        .setName('delete')
-                        .setDescription('Delete a group.')
+                        .setName("delete")
+                        .setDescription("Delete a group.")
                         .addChannelOption((option) =>
-                            option.setName('channel').setDescription('The group to delete.').setRequired(true).addChannelTypes(ChannelType.GuildText)
+                            option.setName("channel").setDescription("The group to delete.").setRequired(true).addChannelTypes(ChannelType.GuildText)
                         )
                 )
         )
         .addSubcommand((subcommand) =>
             subcommand
-                .setName('create')
-                .setDescription('Create a group.')
-                .addStringOption((option) => option.setName('name').setDescription('The name of the group.').setRequired(true))
+                .setName("create")
+                .setDescription("Create a group.")
+                .addStringOption((option) => option.setName("name").setDescription("The name of the group.").setRequired(true))
         )
         .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
 
@@ -61,72 +61,72 @@ export default class Fun extends GargoyleCommand {
         if (!client.user?.id) return;
 
         switch (subcommand) {
-        case 'setup': {
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-            if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-                interaction.reply({ content: 'You do not have permission to run this command.', ephemeral: true });
-                return;
-            }
-            let channel = interaction.options.getChannel('channel');
-            if (!channel) {
-                const createdChannel = await interaction.guild?.channels.create({
-                    name: 'Groups',
-                    type: ChannelType.GuildCategory,
-                    permissionOverwrites: [{ id: client.user?.id, allow: ['SendTTSMessages'] }]
-                });
-                if (createdChannel && createdChannel.type === ChannelType.GuildCategory) {
-                    channel = createdChannel;
-                }
-            }
-            if (channel?.type !== ChannelType.GuildCategory) {
-                return;
-            }
-
-            await removeGuildGroupCategories(client, interaction.guild as Guild);
-            await setGroupCategory(client, channel as GuildChannel);
-            interaction.editReply('Group setup complete.');
-
-            break;
-        }
-        case 'delete': {
-            interaction.deferReply({ flags: MessageFlags.Ephemeral });
-            if (!interaction.guild) return;
-            const channel = interaction.options.getChannel('channel');
-            if (!channel) return;
-            if (await isGroup(channel as GuildChannel)) {
-                if (
-                    !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) &&
-                        !(await isGroupOwner(channel as GuildChannel, interaction.member as GuildMember))
-                ) {
-                    interaction.reply({ content: 'You do not have permission to remove this group.', ephemeral: true });
+            case "setup": {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+                    interaction.reply({ content: "You do not have permission to run this command.", ephemeral: true });
                     return;
                 }
-                await (channel as GuildChannel).delete();
-                interaction.editReply('Group deleted.');
-            } else {
-                interaction.editReply('Channel is not a group channel.');
-            }
-            break;
-        }
-        case 'create': {
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-            if (!interaction.guild) return;
-            const name = interaction.options.getString('name');
-            if (!name) return;
+                let channel = interaction.options.getChannel("channel");
+                if (!channel) {
+                    const createdChannel = await interaction.guild?.channels.create({
+                        name: "Groups",
+                        type: ChannelType.GuildCategory,
+                        permissionOverwrites: [{ id: client.user?.id, allow: ["SendTTSMessages"] }]
+                    });
+                    if (createdChannel && createdChannel.type === ChannelType.GuildCategory) {
+                        channel = createdChannel;
+                    }
+                }
+                if (channel?.type !== ChannelType.GuildCategory) {
+                    return;
+                }
 
-            if (await hasGroup(client, interaction.guild as Guild, interaction.member as GuildMember)) {
-                interaction.editReply('You already have a group.');
-                return;
-            }
+                await removeGuildGroupCategories(client, interaction.guild as Guild);
+                await setGroupCategory(client, channel as GuildChannel);
+                interaction.editReply("Group setup complete.");
 
-            const channel = await createGroup(client, interaction.guild as Guild, name, interaction.member as GuildMember);
-            if (!channel) {
-                interaction.editReply('Failed to create group.');
-                return;
+                break;
             }
-            interaction.editReply(`Group ${name} created.`);
-            break;
-        }
+            case "delete": {
+                interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                if (!interaction.guild) return;
+                const channel = interaction.options.getChannel("channel");
+                if (!channel) return;
+                if (await isGroup(channel as GuildChannel)) {
+                    if (
+                        !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) &&
+                        !(await isGroupOwner(channel as GuildChannel, interaction.member as GuildMember))
+                    ) {
+                        interaction.reply({ content: "You do not have permission to remove this group.", ephemeral: true });
+                        return;
+                    }
+                    await (channel as GuildChannel).delete();
+                    interaction.editReply("Group deleted.");
+                } else {
+                    interaction.editReply("Channel is not a group channel.");
+                }
+                break;
+            }
+            case "create": {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                if (!interaction.guild) return;
+                const name = interaction.options.getString("name");
+                if (!name) return;
+
+                if (await hasGroup(client, interaction.guild as Guild, interaction.member as GuildMember)) {
+                    interaction.editReply("You already have a group.");
+                    return;
+                }
+
+                const channel = await createGroup(client, interaction.guild as Guild, name, interaction.member as GuildMember);
+                if (!channel) {
+                    interaction.editReply("Failed to create group.");
+                    return;
+                }
+                interaction.editReply(`Group ${name} created.`);
+                break;
+            }
         }
     }
 }

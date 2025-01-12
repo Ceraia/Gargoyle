@@ -11,8 +11,8 @@ import {
     RoleSelectMenuBuilder,
     StringSelectMenuBuilder,
     UserSelectMenuBuilder
-} from 'discord.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
+} from "discord.js";
+import GargoyleCommand from "../classes/gargoyleCommand.js";
 
 /**
  * A custom string select menu builder that sets a custom ID based on the provided command and argument.
@@ -35,7 +35,7 @@ class GargoyleStringSelectMenuBuilder extends StringSelectMenuBuilder {
                 command.textCommand?.name.toLowerCase() ??
                 command.slashCommands[0].name.toLowerCase() ??
                 command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
+            }-${argument.join("-").toLowerCase()}`
         );
     }
 
@@ -68,7 +68,7 @@ class GargoyleUserSelectMenuBuilder extends UserSelectMenuBuilder {
                 command.textCommand?.name.toLowerCase() ??
                 command.slashCommands[0].name.toLowerCase() ??
                 command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
+            }-${argument.join("-").toLowerCase()}`
         );
     }
 }
@@ -94,7 +94,7 @@ class GargoyleRoleSelectMenuBuilder extends RoleSelectMenuBuilder {
                 command.textCommand?.name.toLowerCase() ??
                 command.slashCommands[0].name.toLowerCase() ??
                 command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
+            }-${argument.join("-").toLowerCase()}`
         );
     }
 }
@@ -120,7 +120,7 @@ class GargoyleMentionableSelectMenuBuilder extends MentionableSelectMenuBuilder 
                 command.textCommand?.name.toLowerCase() ??
                 command.slashCommands[0].name.toLowerCase() ??
                 command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
+            }-${argument.join("-").toLowerCase()}`
         );
     }
 }
@@ -146,7 +146,7 @@ class GargoyleChannelSelectMenuBuilder extends ChannelSelectMenuBuilder {
                 command.textCommand?.name.toLowerCase() ??
                 command.slashCommands[0].name.toLowerCase() ??
                 command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
+            }-${argument.join("-").toLowerCase()}`
         );
     }
 }

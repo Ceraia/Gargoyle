@@ -1,7 +1,7 @@
-import fs from 'fs/promises';
-import path from 'path';
-import GargoyleClient from '../classes/gargoyleClient.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
+import fs from "fs/promises";
+import path from "path";
+import GargoyleClient from "../classes/gargoyleClient.js";
+import GargoyleCommand from "../classes/gargoyleCommand.js";
 
 async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<void> {
     for (const dir of dirs) {
@@ -16,7 +16,7 @@ async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<
             if (stat.isDirectory()) {
                 client.logger.trace(`Loading commands from directory: ${file}`);
                 await loadCommands(client, path.join(dir, file));
-            } else if (file.endsWith('.ts') || file.endsWith('.js')) {
+            } else if (file.endsWith(".ts") || file.endsWith(".js")) {
                 try {
                     const { default: Command } = await import(path.join(__dirname, dir, file));
                     const command: GargoyleCommand = new Command();

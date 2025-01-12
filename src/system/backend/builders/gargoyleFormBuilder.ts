@@ -1,5 +1,5 @@
-import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
+import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from "discord.js";
+import GargoyleCommand from "../classes/gargoyleCommand.js";
 
 class GargoyleFormModalBuilder {
     command: GargoyleCommand;
@@ -29,7 +29,7 @@ class GargoyleFormModalBuilder {
         for (const [index, question] of questions.entries()) {
             const modal = new ModalBuilder()
                 .setCustomId(`form-modal-${this.command.slashCommand?.name || this.command.textCommand?.name}-${index}`)
-                .setTitle(this.command.slashCommand?.name || this.command.textCommand?.name || 'Form');
+                .setTitle(this.command.slashCommand?.name || this.command.textCommand?.name || "Form");
 
             const textInput = new TextInputBuilder().setCustomId(`form-input-${index}`).setLabel(question.question).setStyle(question.style);
 

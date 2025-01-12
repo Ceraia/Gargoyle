@@ -1,5 +1,5 @@
-import { ModalBuilder } from 'discord.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
+import { ModalBuilder } from "discord.js";
+import GargoyleCommand from "../classes/gargoyleCommand.js";
 
 /**
  * A builder class for creating custom modals specific to Gargoyle commands.
@@ -24,7 +24,7 @@ class GargoyleModalBuilder extends ModalBuilder {
                 command.textCommand?.name.toLowerCase() ??
                 command.slashCommands[0].name.toLowerCase() ??
                 command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
+            }-${argument.join("-").toLowerCase()}`
         );
     }
 }

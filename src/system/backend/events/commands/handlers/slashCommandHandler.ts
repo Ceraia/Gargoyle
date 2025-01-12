@@ -1,9 +1,9 @@
-import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
-import { ChatInputCommandInteraction } from 'discord.js';
+import GargoyleClient from "@src/system/backend/classes/gargoyleClient.js";
+import GargoyleEvent from "@src/system/backend/classes/gargoyleEvent.js";
+import { ChatInputCommandInteraction } from "discord.js";
 
 export default class SlashCommandHandler extends GargoyleEvent {
-    public event = 'interactionCreate' as const;
+    public event = "interactionCreate" as const;
 
     public execute(client: GargoyleClient, interaction: ChatInputCommandInteraction): void {
         if (!interaction.isCommand()) return;
@@ -21,7 +21,7 @@ export default class SlashCommandHandler extends GargoyleEvent {
         });
 
         if (!command) {
-            interaction.reply('Command not found!').then((msg) => {
+            interaction.reply("Command not found!").then((msg) => {
                 setTimeout(() => {
                     msg.delete();
                 }, 5000);

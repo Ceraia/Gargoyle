@@ -1,5 +1,5 @@
-import { ButtonBuilder, ButtonStyle } from 'discord.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
+import { ButtonBuilder, ButtonStyle } from "discord.js";
+import GargoyleCommand from "../classes/gargoyleCommand.js";
 
 /**
  * A builder class for creating Gargoyle buttons with specific commands and arguments.
@@ -24,7 +24,7 @@ class GargoyleButtonBuilder extends ButtonBuilder {
                 command.textCommand?.name.toLowerCase() ??
                 command.slashCommands[0].name.toLowerCase() ??
                 command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
+            }-${argument.join("-").toLowerCase()}`
         );
         this.setStyle(ButtonStyle.Primary);
         this.setDisabled(false);

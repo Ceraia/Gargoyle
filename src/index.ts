@@ -1,14 +1,14 @@
-import client from '@src/system/botClient.js';
+import client from "@src/system/botClient.js";
 
 const main = async () => {
     if (!process.env.DISCORD_TOKEN) {
-        client.logger.error('No token provided! Exiting...');
+        client.logger.error("No token provided! Exiting...");
         process.exit(0);
     }
 
     try {
         await client.login(process.env.DISCORD_TOKEN);
-        client.logger.log('Logged in!');
+        client.logger.log("Logged in!");
     } catch (error) {
         client.logger.error(error as string);
         await client.destroy();

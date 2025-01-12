@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 // Log levels mapping
 const LOG_LEVELS = {
@@ -12,15 +12,15 @@ const LOG_LEVELS = {
     TRACE: 6 // Should trace user specific data, such as using commands or events
 };
 
-const currentLogLevel = parseInt(process.env.DEBUG_LEVEL || '4', 10); // Default to INFO (4)
-const logToFile = process.env.LOG_TO_FILE === 'true';
+const currentLogLevel = parseInt(process.env.DEBUG_LEVEL || "4", 10); // Default to INFO (4)
+const logToFile = process.env.LOG_TO_FILE === "true";
 
 function getLogFilePath(): string {
-    if (!fs.existsSync('./log')) {
-        fs.mkdirSync('./log');
+    if (!fs.existsSync("./log")) {
+        fs.mkdirSync("./log");
     }
-    const date = new Date().toISOString().split('T')[0];
-    return path.resolve('./log', `${date}.log`);
+    const date = new Date().toISOString().split("T")[0];
+    return path.resolve("./log", `${date}.log`);
 }
 
 function formatLogMessage(level: string, message: string | Error): string {
@@ -31,12 +31,12 @@ function formatLogMessage(level: string, message: string | Error): string {
 function writeToLogFile(logMessage: string): void {
     if (!logToFile) return;
     const logFilePath = getLogFilePath();
-    fs.appendFileSync(logFilePath, `${logMessage}\n`, 'utf8');
+    fs.appendFileSync(logFilePath, `${logMessage}\n`, "utf8");
 }
 
 function log(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
-        const logMessage = formatLogMessage('INFO', message);
+        const logMessage = formatLogMessage("INFO", message);
         writeToLogFile(logMessage);
         if (currentLogLevel >= LOG_LEVELS.INFO) {
             console.log(`\x1b[32m${logMessage}\x1b[0m`);
@@ -46,7 +46,7 @@ function log(...messages: string[] | Error[]): void {
 
 function debug(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
-        const logMessage = formatLogMessage('DEBUG', message);
+        const logMessage = formatLogMessage("DEBUG", message);
         writeToLogFile(logMessage);
         if (currentLogLevel >= LOG_LEVELS.DEBUG) {
             console.log(`\x1b[33m${logMessage}\x1b[0m`);
@@ -56,7 +56,7 @@ function debug(...messages: string[] | Error[]): void {
 
 function trace(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
-        const logMessage = formatLogMessage('TRACE', message);
+        const logMessage = formatLogMessage("TRACE", message);
         writeToLogFile(logMessage);
         if (currentLogLevel >= LOG_LEVELS.TRACE) {
             console.log(`\x1b[36m${logMessage}\x1b[0m`);
@@ -66,7 +66,7 @@ function trace(...messages: string[] | Error[]): void {
 
 function error(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
-        const logMessage = formatLogMessage('ERROR', message);
+        const logMessage = formatLogMessage("ERROR", message);
         writeToLogFile(logMessage);
         if (currentLogLevel >= LOG_LEVELS.ERROR) {
             console.log(`\x1b[31m${logMessage}\x1b[0m`);
@@ -76,7 +76,7 @@ function error(...messages: string[] | Error[]): void {
 
 function warning(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
-        const logMessage = formatLogMessage('WARNING', message);
+        const logMessage = formatLogMessage("WARNING", message);
         writeToLogFile(logMessage);
         if (currentLogLevel >= LOG_LEVELS.WARNING) {
             console.log(`\x1b[33m${logMessage}\x1b[0m`);
@@ -86,7 +86,7 @@ function warning(...messages: string[] | Error[]): void {
 
 function fatal(...messages: string[] | Error[]): void {
     messages.forEach((message) => {
-        const logMessage = formatLogMessage('FATAL', message);
+        const logMessage = formatLogMessage("FATAL", message);
         writeToLogFile(logMessage);
         if (currentLogLevel >= LOG_LEVELS.FATAL) {
             console.log(`\x1b[31m${logMessage}\x1b[0m`);

@@ -1,4 +1,4 @@
-import { InteractionContextType } from 'discord.js';
+import { InteractionContextType } from "discord.js";
 
 /**
  * A builder class for creating text commands with a name, description, and aliases.
@@ -45,32 +45,32 @@ class GargoyleTextCommandBuilder {
     private _guilds: string[] = [];
 
     setName(name: string): this {
-        if (!name || typeof name !== 'string') {
-            throw new Error('Name must be a non-empty string.');
+        if (!name || typeof name !== "string") {
+            throw new Error("Name must be a non-empty string.");
         }
         this._name = name;
         return this;
     }
 
     setDescription(description: string): this {
-        if (!description || typeof description !== 'string') {
-            throw new Error('Description must be a non-empty string.');
+        if (!description || typeof description !== "string") {
+            throw new Error("Description must be a non-empty string.");
         }
         this._description = description;
         return this;
     }
 
     addAlias(alias: string): this {
-        if (!alias || typeof alias !== 'string') {
-            throw new Error('Alias must be a non-empty string.');
+        if (!alias || typeof alias !== "string") {
+            throw new Error("Alias must be a non-empty string.");
         }
         this._aliases.push(alias);
         return this;
     }
 
     addGuild(guild: string): this {
-        if (!guild || typeof guild !== 'string') {
-            throw new Error('Guild must be a non-empty string.');
+        if (!guild || typeof guild !== "string") {
+            throw new Error("Guild must be a non-empty string.");
         }
         this._guilds.push(guild);
         return this;
@@ -78,7 +78,7 @@ class GargoyleTextCommandBuilder {
 
     addGuilds(...guilds: string[]): this {
         if (!guilds) {
-            throw new Error('Guilds must be a non-empty string list.');
+            throw new Error("Guilds must be a non-empty string list.");
         }
         guilds.forEach((guild) => this._guilds.push(guild));
         return this;
@@ -91,14 +91,14 @@ class GargoyleTextCommandBuilder {
 
     get name(): string {
         if (!this._name) {
-            throw new Error('Command name has not been set.');
+            throw new Error("Command name has not been set.");
         }
         return this._name;
     }
 
     get description(): string {
         if (!this._description) {
-            throw new Error('Command description has not been set.');
+            throw new Error("Command description has not been set.");
         }
         return this._description;
     }

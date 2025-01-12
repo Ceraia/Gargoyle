@@ -1,4 +1,4 @@
-import { Guild, MessageCreateOptions, MessageResolvable, TextChannel } from 'discord.js';
+import { Guild, MessageCreateOptions, MessageResolvable, TextChannel } from "discord.js";
 
 export function sendAsServer(message: MessageCreateOptions, channel: TextChannel, guild?: Guild): Promise<void> {
     return channel
@@ -9,7 +9,7 @@ export function sendAsServer(message: MessageCreateOptions, channel: TextChannel
             if (webhooks.size === 0) {
                 webhook = await channel.createWebhook({
                     name: guild ? guild.name : channel.guild?.name || channel.client.user.username,
-                    reason: 'Server Message'
+                    reason: "Server Message"
                 });
             } else {
                 webhook = webhooks.first();
@@ -22,7 +22,7 @@ export function sendAsServer(message: MessageCreateOptions, channel: TextChannel
             });
         })
         .catch(() => {
-            throw new Error('Failed to send message as server.');
+            throw new Error("Failed to send message as server.");
         });
 }
 
@@ -35,7 +35,7 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
             if (webhooks.size === 0) {
                 webhook = await channel.createWebhook({
                     name: channel.guild?.name || channel.client.user.username,
-                    reason: 'Server Message'
+                    reason: "Server Message"
                 });
             } else {
                 webhook = webhooks.first();
@@ -43,7 +43,7 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
 
             let messageEdit: MessageResolvable;
 
-            if (typeof messageId === 'string') {
+            if (typeof messageId === "string") {
                 messageEdit = await channel.messages.fetch(messageId);
             } else {
                 messageEdit = messageId;

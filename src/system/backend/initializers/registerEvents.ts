@@ -1,7 +1,7 @@
-import fs from 'fs/promises';
-import path from 'path';
-import GargoyleClient from '../classes/gargoyleClient.js';
-import GargoyleEvent from '../classes/gargoyleEvent.js';
+import fs from "fs/promises";
+import path from "path";
+import GargoyleClient from "../classes/gargoyleClient.js";
+import GargoyleEvent from "../classes/gargoyleEvent.js";
 
 async function registerEvents(client: GargoyleClient, ...dirs: string[]): Promise<void> {
     for (const dir of dirs) {
@@ -16,7 +16,7 @@ async function registerEvents(client: GargoyleClient, ...dirs: string[]): Promis
             if (stat.isDirectory()) {
                 client.logger.trace(`Loading events from directory: ${file}`);
                 await registerEvents(client, path.join(dir, file));
-            } else if (file.endsWith('.ts') || file.endsWith('.js')) {
+            } else if (file.endsWith(".ts") || file.endsWith(".js")) {
                 try {
                     const { default: Event } = await import(path.join(__dirname, dir, file));
                     const event: GargoyleEvent = new Event();
