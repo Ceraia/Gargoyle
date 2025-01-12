@@ -3,7 +3,17 @@ import GargoyleCommand from '@classes/gargoyleCommand.js';
 
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
-import { CategoryChannel, Channel, ChannelType, ChatInputCommandInteraction, Guild, GuildChannel, InteractionContextType, MessageFlags, PermissionFlagsBits } from 'discord.js';
+import {
+    CategoryChannel,
+    Channel,
+    ChannelType,
+    ChatInputCommandInteraction,
+    Guild,
+    GuildChannel,
+    InteractionContextType,
+    MessageFlags,
+    PermissionFlagsBits
+} from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
     public override slashCommand = new GargoyleSlashCommandBuilder()
@@ -24,7 +34,13 @@ export default class Fun extends GargoyleCommand {
                                 .addChannelTypes(ChannelType.GuildCategory)
                         )
                 )
-                .addSubcommand((subcommand) => subcommand.setName('delete').setDescription('Delete a group.').addChannelOption((option) => option.setName('channel').setDescription('The group to delete.').setRequired(true).addChannelTypes(ChannelType.GuildText))
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('delete')
+                        .setDescription('Delete a group.')
+                        .addChannelOption((option) =>
+                            option.setName('channel').setDescription('The group to delete.').setRequired(true).addChannelTypes(ChannelType.GuildText)
+                        )
                 )
         )
         .addSubcommand((subcommand) =>
@@ -135,18 +151,13 @@ async function isGroupCategory(channel: Channel): Promise<boolean> {
 
 async function isGroup(channel: GuildChannel): Promise<boolean> {
     const fetchedChannel = await channel.fetch();
-    if (!fetchedChannel)
-        return false;
+    if (!fetchedChannel) return false;
 
-
-    if (fetchedChannel.type !== ChannelType.GuildText)
-        return false;
-
+    if (fetchedChannel.type !== ChannelType.GuildText) return false;
 
     if (!fetchedChannel.parent) return false;
 
-    if (fetchedChannel.parent.type !== ChannelType.GuildCategory)
-        return false;
+    if (fetchedChannel.parent.type !== ChannelType.GuildCategory) return false;
 
     if (!isGroupCategory(fetchedChannel.parent)) return false;
     return true;
