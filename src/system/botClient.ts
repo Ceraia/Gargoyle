@@ -1,8 +1,8 @@
-import GargoyleClient from "@src/system/backend/classes/gargoyleClient.js";
-import { IntentsBitField, Partials } from "discord.js";
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import { IntentsBitField, Partials } from 'discord.js';
 
 const client = new GargoyleClient({
-    shards: "auto",
+    shards: 'auto',
     intents: [
         IntentsBitField.Flags.GuildWebhooks,
         IntentsBitField.Flags.GuildMessageReactions,

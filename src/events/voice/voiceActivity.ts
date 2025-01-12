@@ -1,6 +1,6 @@
-import GargoyleClient from "@src/system/backend/classes/gargoyleClient.js";
-import GargoyleEvent from "@src/system/backend/classes/gargoyleEvent.js";
-import { Events, VoiceState } from "discord.js";
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import { Events, VoiceState } from 'discord.js';
 
 export default class VoiceActivity extends GargoyleEvent {
     public event = Events.VoiceStateUpdate as const;
@@ -78,7 +78,7 @@ export default class VoiceActivity extends GargoyleEvent {
     }
 }
 
-import { Schema, model } from "mongoose";
+import { Schema, model } from 'mongoose';
 
 const guildUserVoiceActivitySchema = new Schema({
     userId: String,
@@ -102,7 +102,7 @@ const guildUserVoiceActivitySchema = new Schema({
     ]
 });
 
-const databaseGuildUserVoiceActivity = model("GuildUserVoiceActivity", guildUserVoiceActivitySchema);
+const databaseGuildUserVoiceActivity = model('GuildUserVoiceActivity', guildUserVoiceActivitySchema);
 
 /**
  * Retrieves the voice activity document for a specific user in a specific guild.

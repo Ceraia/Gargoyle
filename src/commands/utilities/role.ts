@@ -1,8 +1,8 @@
-import GargoyleClient from "@classes/gargoyleClient.js";
-import GargoyleCommand from "@classes/gargoyleCommand.js";
-import GargoyleButtonBuilder from "@builders/gargoyleButtonBuilder.js";
-import { GargoyleRoleSelectMenuBuilder } from "@builders/gargoyleSelectMenuBuilders.js";
-import { sendAsServer } from "@src/system/backend/tools/server.js";
+import GargoyleClient from '@classes/gargoyleClient.js';
+import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
+import { GargoyleRoleSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
@@ -12,34 +12,34 @@ import {
     InteractionContextType,
     MessageFlags,
     TextChannel
-} from "discord.js";
-import GargoyleSlashCommandBuilder from "@src/system/backend/builders/gargoyleSlashCommandBuilder.js";
+} from 'discord.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
 export default class Role extends GargoyleCommand {
-    public override category: string = "utilities";
+    public override category: string = 'utilities';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
-            .setName("role")
-            .setDescription("Role related commands")
-            .addSubcommand((subcommand) => subcommand.setName("button").setDescription("Create a button that gives a role"))
+            .setName('role')
+            .setDescription('Role related commands')
+            .addSubcommand((subcommand) => subcommand.setName('button').setDescription('Create a button that gives a role'))
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (interaction.options.getSubcommand() === "button") {
-            if (!interaction.memberPermissions?.has("ManageRoles")) {
+        if (interaction.options.getSubcommand() === 'button') {
+            if (!interaction.memberPermissions?.has('ManageRoles')) {
                 await interaction.reply({
-                    content: "You do not have the required permissions to use this command.",
+                    content: 'You do not have the required permissions to use this command.',
                     flags: MessageFlags.Ephemeral
                 });
                 return;
             }
             await interaction.reply({
-                content: "What role(s) would you like to give?",
+                content: 'What role(s) would you like to give?',
                 flags: MessageFlags.Ephemeral,
                 components: [
                     new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
-                        new GargoyleRoleSelectMenuBuilder(this, "roles").setMaxValues(25).setMinValues(1).setPlaceholder("Select role(s) to give")
+                        new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
                     )
                 ]
             });
@@ -49,9 +49,9 @@ export default class Role extends GargoyleCommand {
     public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
         if (interaction.channel === null) return;
         if (interaction.isRoleSelectMenu()) {
-            if (args[0] === "roles") {
+            if (args[0] === 'roles') {
                 const roles = interaction.values;
-                interaction.update({ content: "Making the button message...", components: [] });
+                interaction.update({ content: 'Making the button message...', components: [] });
 
                 const member = await interaction.guild?.members.fetch(interaction.user.id);
                 if (!member) return;
@@ -81,7 +81,7 @@ export default class Role extends GargoyleCommand {
                     }
 
                     actionRow.addComponents(
-                        new GargoyleButtonBuilder(this, "addrole", role?.id).setLabel(role?.name).setStyle(ButtonStyle.Secondary)
+                        new GargoyleButtonBuilder(this, 'addrole', role?.id).setLabel(role?.name).setStyle(ButtonStyle.Secondary)
                     );
                     if (roleCount === 5) {
                         roleCount = 0;
@@ -99,7 +99,7 @@ export default class Role extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        if (args[0] === "addrole") {
+        if (args[0] === 'addrole') {
             const role = await interaction.guild?.roles.fetch(args[1]);
             if (!role) return;
 

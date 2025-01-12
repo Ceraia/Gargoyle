@@ -1,11 +1,11 @@
-import GargoyleTextCommandBuilder from "@builders/gargoyleTextCommandBuilder.js";
-import GargoyleClient from "@classes/gargoyleClient.js";
-import GargoyleCommand from "@classes/gargoyleCommand.js";
-import GargoyleButtonBuilder from "@builders/gargoyleButtonBuilder.js";
-import GargoyleEmbedBuilder from "@builders/gargoyleEmbedBuilder.js";
-import GargoyleModalBuilder from "@builders/gargoyleModalBuilder.js";
-import { GargoyleUserSelectMenuBuilder } from "@builders/gargoyleSelectMenuBuilders.js";
-import GargoyleEvent from "@src/system/backend/classes/gargoyleEvent.js";
+import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
+import GargoyleClient from '@classes/gargoyleClient.js';
+import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
+import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
+import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
+import { GargoyleUserSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
@@ -29,53 +29,53 @@ import {
     TextInputStyle,
     VoiceChannel,
     VoiceState
-} from "discord.js";
-import GargoyleSlashCommandBuilder from "@src/system/backend/builders/gargoyleSlashCommandBuilder.js";
-import { editAsServer, sendAsServer } from "@src/system/backend/tools/server.js";
+} from 'discord.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 
 export default class VoicechatCommand extends GargoyleCommand {
-    public override category: string = "utilities";
+    public override category: string = 'utilities';
     public override slashCommand = new GargoyleSlashCommandBuilder()
-        .setName("vc")
-        .setDescription("Voicechat related commands.")
+        .setName('vc')
+        .setDescription('Voicechat related commands.')
         .setContexts([InteractionContextType.Guild])
-        .addSubcommand((subcommand) => subcommand.setName("panel").setDescription("Get the voicechat panel"))
+        .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Get the voicechat panel'))
         .addSubcommand((subcommand) =>
             subcommand
-                .setName("create")
-                .setDescription("Create dynamic vc's")
+                .setName('create')
+                .setDescription('Create dynamic vc\'s')
                 .addChannelOption((option) =>
                     option
-                        .setName("vc")
+                        .setName('vc')
                         .setRequired(false)
-                        .setDescription("The VC that will create the dynamic vcs")
+                        .setDescription('The VC that will create the dynamic vcs')
                         .addChannelTypes(ChannelType.GuildVoice)
                 )
         ) as GargoyleSlashCommandBuilder;
 
     public override textCommand = new GargoyleTextCommandBuilder()
-        .setName("voice")
-        .setDescription("Get voicechat interaction panel")
-        .addAlias("vc")
-        .addAlias("voicechat")
+        .setName('voice')
+        .setDescription('Get voicechat interaction panel')
+        .addAlias('vc')
+        .addAlias('voicechat')
         .setContexts([InteractionContextType.Guild]);
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (interaction.options.getSubcommand() === "panel") {
-            interaction.reply({ content: "Sending the panel!", flags: MessageFlags.Ephemeral });
+        if (interaction.options.getSubcommand() === 'panel') {
+            interaction.reply({ content: 'Sending the panel!', flags: MessageFlags.Ephemeral });
             sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
-        } else if (interaction.options.getSubcommand() === "create") {
+        } else if (interaction.options.getSubcommand() === 'create') {
             if (!interaction.guild) return;
             if (!client.user) return;
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels)) {
-                interaction.reply({ content: "You need the `MANAGE_CHANNELS` permission to use this command!", flags: MessageFlags.Ephemeral });
+                interaction.reply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!', flags: MessageFlags.Ephemeral });
             }
 
-            let vc = interaction.options.getChannel("vc");
+            let vc = interaction.options.getChannel('vc');
 
             if (!vc)
                 vc = await interaction.guild.channels.create({
-                    name: "Join to Create",
+                    name: 'Join to Create',
                     type: ChannelType.GuildVoice,
                     permissionOverwrites: [
                         {
@@ -112,7 +112,7 @@ export default class VoicechatCommand extends GargoyleCommand {
             editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id);
         else interaction.message.delete().then(() => sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
 
-        if (args[0] !== "rename") await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;
         if (client.user === null) return;
 
@@ -120,7 +120,7 @@ export default class VoicechatCommand extends GargoyleCommand {
 
         if (!vc) {
             client.logger.trace(`User ${interaction.user.username} tried to use a vc button without being in a vc.`);
-            await interaction.editReply({ content: "You need to be in a voice channel to use this button!" });
+            await interaction.editReply({ content: 'You need to be in a voice channel to use this button!' });
             return;
         }
 
@@ -129,12 +129,12 @@ export default class VoicechatCommand extends GargoyleCommand {
             !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
         ) {
             client.logger.trace(`User ${interaction.user.username} tried to use a vc button without having the correct permissions.`);
-            interaction.editReply({ content: "This is not a dynamic vc!" });
+            interaction.editReply({ content: 'This is not a dynamic vc!' });
             return;
         }
 
         switch (args[0]) {
-            case "lock": {
+            case 'lock': {
                 client.logger.trace(`User ${interaction.user.username} locked/unlocked their vc.`);
                 // Lock  / Unlock the vc
                 if (
@@ -149,14 +149,14 @@ export default class VoicechatCommand extends GargoyleCommand {
                         }
                     } else vc.permissionOverwrites.edit(interaction.guildId, { Connect: null });
 
-                    interaction.editReply({ content: "Unlocked your vc!" });
+                    interaction.editReply({ content: 'Unlocked your vc!' });
                 } else {
                     vc.permissionOverwrites.edit(interaction.guildId, { Connect: false });
-                    interaction.editReply({ content: "Locked your vc!" });
+                    interaction.editReply({ content: 'Locked your vc!' });
                 }
                 break;
             }
-            case "hide": {
+            case 'hide': {
                 client.logger.trace(`User ${interaction.user.username} hid/unhid their vc.`);
                 // Hide  / Unlock the vc
                 if (
@@ -171,21 +171,21 @@ export default class VoicechatCommand extends GargoyleCommand {
                         }
                     } else vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: null });
 
-                    interaction.editReply({ content: "Unhid your vc!" });
+                    interaction.editReply({ content: 'Unhid your vc!' });
                 } else {
                     vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: false });
-                    interaction.editReply({ content: "Hid your vc!" });
+                    interaction.editReply({ content: 'Hid your vc!' });
                 }
                 break;
             }
-            case "increase": {
+            case 'increase': {
                 client.logger.trace(`User ${interaction.user.username} increased the user limit of their vc.`);
                 // Increase the user limit
                 vc.edit({ userLimit: vc.userLimit + 1 });
                 interaction.editReply({ content: `Increased the user limit to ${vc.userLimit + 1}!` });
                 break;
             }
-            case "decrease": {
+            case 'decrease': {
                 client.logger.trace(`User ${interaction.user.username} decreased the user limit of their vc.`);
                 // Decrease the user limit
 
@@ -193,32 +193,32 @@ export default class VoicechatCommand extends GargoyleCommand {
                 if (vc.userLimit !== 1 && vc.userLimit !== 0) {
                     interaction.editReply({ content: `Decreased the user limit to ${vc.userLimit - 1}!` });
                 } else if (vc.userLimit === 1) {
-                    interaction.editReply({ content: "Disabled the user limit!" });
+                    interaction.editReply({ content: 'Disabled the user limit!' });
                 } else {
-                    interaction.editReply({ content: "The user limit is already at 0!" });
+                    interaction.editReply({ content: 'The user limit is already at 0!' });
                 }
                 break;
             }
-            case "ban": {
+            case 'ban': {
                 client.logger.trace(`User ${interaction.user.username} banned a user from their vc.`);
                 // Send a select menu with all the members
                 interaction.editReply({
                     components: [
                         new ActionRowBuilder<GargoyleUserSelectMenuBuilder>().addComponents(
-                            new GargoyleUserSelectMenuBuilder(this, "ban").setPlaceholder("Select member(s) to ban.").setMaxValues(1).setMinValues(1)
+                            new GargoyleUserSelectMenuBuilder(this, 'ban').setPlaceholder('Select member(s) to ban.').setMaxValues(1).setMinValues(1)
                         )
                     ]
                 });
                 break;
             }
-            case "invite": {
+            case 'invite': {
                 client.logger.trace(`User ${interaction.user.username} invited a user to their vc.`);
                 // Send a select menu with all the members
                 interaction.editReply({
                     components: [
                         new ActionRowBuilder<GargoyleUserSelectMenuBuilder>().addComponents(
-                            new GargoyleUserSelectMenuBuilder(this, "invite")
-                                .setPlaceholder("Select member(s) to invite.")
+                            new GargoyleUserSelectMenuBuilder(this, 'invite')
+                                .setPlaceholder('Select member(s) to invite.')
                                 .setMaxValues(1)
                                 .setMinValues(1)
                         )
@@ -226,29 +226,29 @@ export default class VoicechatCommand extends GargoyleCommand {
                 });
                 break;
             }
-            case "rename": {
+            case 'rename': {
                 client.logger.trace(`User ${interaction.user.username} tried to rename their vc.`);
                 // Send a modal with a text input to choose the name.
                 const maxLength = 25; // - client.db.guilds.get(interaction.guild.id).dynvcs.prefix.length;
                 interaction.showModal(
-                    new GargoyleModalBuilder(this, "rename")
-                        .setTitle("Rename the VC")
+                    new GargoyleModalBuilder(this, 'rename')
+                        .setTitle('Rename the VC')
                         .setComponents(
                             new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
                                 new TextInputBuilder()
-                                    .setCustomId("name")
-                                    .setPlaceholder("Cool VC!")
+                                    .setCustomId('name')
+                                    .setPlaceholder('Cool VC!')
                                     .setMaxLength(maxLength)
                                     .setMinLength(1)
                                     .setRequired(true)
-                                    .setLabel("New name for the VC.")
+                                    .setLabel('New name for the VC.')
                                     .setStyle(TextInputStyle.Short)
                             )
                         )
                 );
                 break;
             }
-            case "claim": {
+            case 'claim': {
                 client.logger.trace(`User ${interaction.user.username} claimed a vc.`);
                 // Claim the vc
                 // Check if any of the members in the vc are the owner
@@ -263,7 +263,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                 });
 
                 if (owner) {
-                    interaction.editReply({ content: "The owner is still in the vc!" });
+                    interaction.editReply({ content: 'The owner is still in the vc!' });
                     return;
                 }
 
@@ -273,7 +273,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                     Connect: true
                 });
 
-                interaction.editReply({ content: "You have claimed the vc!" });
+                interaction.editReply({ content: 'You have claimed the vc!' });
                 break;
             }
         }
@@ -286,7 +286,7 @@ export default class VoicechatCommand extends GargoyleCommand {
         const vc = client.guilds.cache.get(interaction.guildId)?.members.cache.get(interaction.user.id)?.voice.channel;
 
         if (!vc) {
-            interaction.reply({ content: "You need to be in a voice channel to use this button!", flags: MessageFlags.Ephemeral });
+            interaction.reply({ content: 'You need to be in a voice channel to use this button!', flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -294,19 +294,19 @@ export default class VoicechatCommand extends GargoyleCommand {
             !vc.permissionOverwrites.resolve(client.user.id) ||
             !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
         ) {
-            interaction.reply({ content: "This is not a dynamic vc!", flags: MessageFlags.Ephemeral });
+            interaction.reply({ content: 'This is not a dynamic vc!', flags: MessageFlags.Ephemeral });
             return;
         }
 
         switch (args[0]) {
-            case "rename": {
-                vc.edit({ name: interaction.fields.getTextInputValue("name") })
+            case 'rename': {
+                vc.edit({ name: interaction.fields.getTextInputValue('name') })
                     .catch(() => {
-                        interaction.reply({ content: "Failed to rename the vc!", flags: MessageFlags.Ephemeral });
+                        interaction.reply({ content: 'Failed to rename the vc!', flags: MessageFlags.Ephemeral });
                     })
                     .then(() => {
                         interaction.reply({
-                            content: `Renamed the vc to ${interaction.fields.getTextInputValue("name")}`,
+                            content: `Renamed the vc to ${interaction.fields.getTextInputValue('name')}`,
                             flags: MessageFlags.Ephemeral
                         });
                     });
@@ -324,7 +324,7 @@ export default class VoicechatCommand extends GargoyleCommand {
         const vc = client.guilds.cache.get(interaction.guildId)?.members.cache.get(interaction.user.id)?.voice.channel;
 
         if (!vc) {
-            interaction.reply({ content: "You need to be in a voice channel to use this button!", flags: MessageFlags.Ephemeral });
+            interaction.reply({ content: 'You need to be in a voice channel to use this button!', flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -332,12 +332,12 @@ export default class VoicechatCommand extends GargoyleCommand {
             !vc.permissionOverwrites.resolve(client.user.id) ||
             !vc.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
         ) {
-            interaction.reply({ content: "This is not a dynamic vc!", flags: MessageFlags.Ephemeral });
+            interaction.reply({ content: 'This is not a dynamic vc!', flags: MessageFlags.Ephemeral });
             return;
         }
 
         switch (args[0]) {
-            case "ban": {
+            case 'ban': {
                 interaction.values.forEach((value) => {
                     if (!interaction.guildId) return;
 
@@ -350,7 +350,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                 });
                 break;
             }
-            case "invite": {
+            case 'invite': {
                 interaction.values.forEach((value) => {
                     if (!interaction.guildId) return;
 
@@ -369,31 +369,31 @@ export default class VoicechatCommand extends GargoyleCommand {
         content: null,
         embeds: [
             new GargoyleEmbedBuilder()
-                .setTitle("Voicechat Commands")
+                .setTitle('Voicechat Commands')
                 .setDescription(
-                    "Create a new VC to use this.\n\n**Buttons**\n" +
-                        "<:Lock:1206326940324331531> Lock/Unlock the VC\n" +
-                        "<:Eye:1206326935303749722> Hide/Show the VC\n" +
-                        "<:Plus:1206326946586300476> Increase the VC limit\n" +
-                        "<:Minus:1206326944979877990> Decrease the VC limit\n" +
-                        "<:Hammer:1206326936612114472> Ban from the VC\n" +
-                        "<:Mail:1206667313609187330> Unban / Invite to the VC\n" +
-                        "<:I_:1206326937748905985> Rename the VC\n" +
-                        "<:Mic:1206326943201362060> Claim the VC\n"
+                    'Create a new VC to use this.\n\n**Buttons**\n' +
+                        '<:Lock:1206326940324331531> Lock/Unlock the VC\n' +
+                        '<:Eye:1206326935303749722> Hide/Show the VC\n' +
+                        '<:Plus:1206326946586300476> Increase the VC limit\n' +
+                        '<:Minus:1206326944979877990> Decrease the VC limit\n' +
+                        '<:Hammer:1206326936612114472> Ban from the VC\n' +
+                        '<:Mail:1206667313609187330> Unban / Invite to the VC\n' +
+                        '<:I_:1206326937748905985> Rename the VC\n' +
+                        '<:Mic:1206326943201362060> Claim the VC\n'
                 )
         ],
         components: [
             new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
-                new GargoyleButtonBuilder(this, "lock").setEmoji("<:Lock:1206326940324331531>").setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, "hide").setEmoji("<:Eye:1206326935303749722>").setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, "increase").setEmoji("<:Plus:1206326946586300476>").setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, "decrease").setEmoji("<:Minus:1206326944979877990>").setStyle(ButtonStyle.Secondary)
+                new GargoyleButtonBuilder(this, 'lock').setEmoji('<:Lock:1206326940324331531>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'hide').setEmoji('<:Eye:1206326935303749722>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'increase').setEmoji('<:Plus:1206326946586300476>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'decrease').setEmoji('<:Minus:1206326944979877990>').setStyle(ButtonStyle.Secondary)
             ]),
             new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
-                new GargoyleButtonBuilder(this, "ban").setEmoji("<:Hammer:1206326936612114472>").setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, "invite").setEmoji("<:Mail:1206667313609187330>").setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, "rename").setEmoji("<:I_:1206326937748905985>").setStyle(ButtonStyle.Secondary),
-                new GargoyleButtonBuilder(this, "claim").setEmoji("<:Mic:1206326943201362060>").setStyle(ButtonStyle.Secondary)
+                new GargoyleButtonBuilder(this, 'ban').setEmoji('<:Hammer:1206326936612114472>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'invite').setEmoji('<:Mail:1206667313609187330>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'rename').setEmoji('<:I_:1206326937748905985>').setStyle(ButtonStyle.Secondary),
+                new GargoyleButtonBuilder(this, 'claim').setEmoji('<:Mic:1206326943201362060>').setStyle(ButtonStyle.Secondary)
             ])
         ]
     };
@@ -469,7 +469,7 @@ class VoiceUpdate extends GargoyleEvent {
                                 .lockPermissions()
                                 .then((channel) => {
                                     channel.permissionOverwrites
-                                        .create(newState.member?.id ?? "", {
+                                        .create(newState.member?.id ?? '', {
                                             AddReactions: true,
                                             Connect: true
                                         })
@@ -481,7 +481,7 @@ class VoiceUpdate extends GargoyleEvent {
                                 })
                                 .catch(() => {
                                     channel.permissionOverwrites
-                                        .create(newState.member?.id ?? "", {
+                                        .create(newState.member?.id ?? '', {
                                             AddReactions: true,
                                             Connect: true
                                         })

@@ -1,15 +1,15 @@
-import { Schema, model } from "mongoose";
+import { Schema, model } from 'mongoose';
 
 const guildSchema = new Schema({
     guildId: String,
     prefix: {
         type: String,
-        default: ","
+        default: ','
     },
     dynamicVCs: {
         prefix: {
             type: String,
-            default: ""
+            default: ''
         }
     },
     autoRoles: {
@@ -18,7 +18,7 @@ const guildSchema = new Schema({
     }
 });
 
-const databaseGuilds = model("Guild", guildSchema);
+const databaseGuilds = model('Guild', guildSchema);
 
 async function getGuild(guildId: string) {
     let databaseGuild = await databaseGuilds.findOne({ guildId });

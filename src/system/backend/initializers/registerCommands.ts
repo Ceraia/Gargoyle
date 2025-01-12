@@ -1,6 +1,6 @@
-import { ContextMenuCommandBuilder } from "discord.js";
-import GargoyleSlashCommandBuilder from "../builders/gargoyleSlashCommandBuilder.js";
-import GargoyleClient from "../classes/gargoyleClient.js";
+import { ContextMenuCommandBuilder } from 'discord.js';
+import GargoyleSlashCommandBuilder from '../builders/gargoyleSlashCommandBuilder.js';
+import GargoyleClient from '../classes/gargoyleClient.js';
 
 async function registerCommands(client: GargoyleClient): Promise<void> {
     const slashCommands: GargoyleSlashCommandBuilder[] = [];
@@ -40,10 +40,10 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
             client.logger.debug(`Registering slash command: ${slashCommand.name}`);
             await client.application?.commands.create(slashCommand);
         } else {
-            client.logger.trace(`Slashcommand has guilds: ${slashCommand.guilds.join(",")}`);
+            client.logger.trace(`Slashcommand has guilds: ${slashCommand.guilds.join(',')}`);
 
             slashCommand.guilds.forEach((guildId) => {
-                if (slashCommand === null) return client.logger.error("Slash command has guilds defined but no slash command.");
+                if (slashCommand === null) return client.logger.error('Slash command has guilds defined but no slash command.');
                 const guild = client.guilds.cache.get(guildId);
                 if (!guild) return client.logger.warning(`Cannot find guild ${guildId}`);
 

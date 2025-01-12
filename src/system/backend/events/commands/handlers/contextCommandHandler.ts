@@ -1,9 +1,9 @@
-import GargoyleClient from "@src/system/backend/classes/gargoyleClient.js";
-import GargoyleEvent from "@src/system/backend/classes/gargoyleEvent.js";
-import { ContextMenuCommandInteraction, MessageContextMenuCommandInteraction, UserContextMenuCommandInteraction } from "discord.js";
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import { ContextMenuCommandInteraction, MessageContextMenuCommandInteraction, UserContextMenuCommandInteraction } from 'discord.js';
 
 export default class ContextCommandHandler extends GargoyleEvent {
-    public event = "interactionCreate" as const;
+    public event = 'interactionCreate' as const;
 
     public execute(
         client: GargoyleClient,
@@ -19,14 +19,14 @@ export default class ContextCommandHandler extends GargoyleEvent {
         if (!command) {
             client.logger.error(`Context command not found: ${interaction.commandName}`);
             interaction
-                .reply("Context command not found!")
+                .reply('Context command not found!')
                 .then((msg) => {
                     setTimeout(() => {
                         msg.delete();
                     }, 5000);
                 })
                 .catch(() => {
-                    client.logger.error("Failed to send context command not found message.");
+                    client.logger.error('Failed to send context command not found message.');
                 });
 
             client.logger.warning(`Command not found: ${interaction.commandName}, deleting command.`);

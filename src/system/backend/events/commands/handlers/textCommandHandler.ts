@@ -1,16 +1,16 @@
-import GargoyleClient from "@src/system/backend/classes/gargoyleClient.js";
-import GargoyleEvent from "@src/system/backend/classes/gargoyleEvent.js";
-import { ChannelType, InteractionContextType, Message } from "discord.js";
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import { ChannelType, InteractionContextType, Message } from 'discord.js';
 
 export default class TextCommandHandler extends GargoyleEvent {
-    public event = "messageCreate" as const;
+    public event = 'messageCreate' as const;
 
     public execute(client: GargoyleClient, message: Message): void {
         if (message.author.bot) return;
 
         if (!message.content.toLowerCase().startsWith(client.prefix.toLowerCase())) return;
 
-        const commandName = message.content.slice(client.prefix.length).split(" ")[0].toLowerCase();
+        const commandName = message.content.slice(client.prefix.length).split(' ')[0].toLowerCase();
 
         const command = client.commands.find((command) => {
             return (
@@ -29,7 +29,7 @@ export default class TextCommandHandler extends GargoyleEvent {
         if (!textCommand) textCommand = command?.textCommand ?? undefined;
 
         if (!command || !textCommand) {
-            message.reply("Command not found!").then((msg) => {
+            message.reply('Command not found!').then((msg) => {
                 setTimeout(() => {
                     msg.delete();
                 }, 5000);
@@ -37,7 +37,7 @@ export default class TextCommandHandler extends GargoyleEvent {
         } else {
             if (message.guild && !textCommand.contexts.includes(InteractionContextType.Guild)) {
                 client.logger.trace(`${message.author.tag} tried to use the ${textCommand.name} command in a guild.`);
-                message.reply("This command cannot be used in Guilds!").then((msg) => {
+                message.reply('This command cannot be used in Guilds!').then((msg) => {
                     setTimeout(() => {
                         msg.delete();
                     }, 5000);
@@ -47,7 +47,7 @@ export default class TextCommandHandler extends GargoyleEvent {
 
             if (message.channel.type === ChannelType.DM && !textCommand.contexts.includes(InteractionContextType.PrivateChannel)) {
                 client.logger.trace(`${message.author.tag} tried to use the ${textCommand.name} command in a DM.`);
-                message.reply("This command cannot be used in DMs!").then((msg) => {
+                message.reply('This command cannot be used in DMs!').then((msg) => {
                     setTimeout(() => {
                         msg.delete();
                     }, 5000);
@@ -62,7 +62,7 @@ export default class TextCommandHandler extends GargoyleEvent {
                 !textCommand.guilds.includes(message.guild.id) // but the guild is not in the guld requirements
             ) {
                 client.logger.trace(`${message.author.tag} tried to use the ${textCommand.name} command in a guild.`);
-                message.reply("This command cannot be used in this guild!").then((msg) => {
+                message.reply('This command cannot be used in this guild!').then((msg) => {
                     setTimeout(() => {
                         msg.delete();
                     }, 5000);

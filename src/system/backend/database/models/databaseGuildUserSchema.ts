@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model } from 'mongoose';
 
 const guildUserSchema = new Schema({
     userId: String,
@@ -15,7 +15,7 @@ const guildUserSchema = new Schema({
     }
 });
 
-const databaseGuildUsers = model("GuildUser", guildUserSchema);
+const databaseGuildUsers = model('GuildUser', guildUserSchema);
 
 async function getGuildUser(userId: string, guildId: string) {
     let databaseGuildUser = await databaseGuildUsers.findOne({

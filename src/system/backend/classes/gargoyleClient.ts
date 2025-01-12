@@ -1,10 +1,10 @@
-import { Client, ClientOptions } from "discord.js";
-import Database from "@src/system/backend/database/database.js";
-import { Logger } from "../tools/logger.js";
-import registerEvents from "../initializers/registerEvents.js";
-import GargoyleCommand from "./gargoyleCommand.js";
-import loadCommands from "../initializers/loadCommands.js";
-import http from "http";
+import { Client, ClientOptions } from 'discord.js';
+import Database from '@src/system/backend/database/database.js';
+import { Logger } from '../tools/logger.js';
+import registerEvents from '../initializers/registerEvents.js';
+import GargoyleCommand from './gargoyleCommand.js';
+import loadCommands from '../initializers/loadCommands.js';
+import http from 'http';
 
 /**
  * Represents a client for the Gargoyle system, extending the base Client class.
@@ -44,7 +44,7 @@ class GargoyleClient extends Client {
     constructor(options: ClientOptions) {
         super(options);
         this.startTime = new Date();
-        this.prefix = process.env.PREFIX ?? ",";
+        this.prefix = process.env.PREFIX ?? ',';
         this.commands = [];
     }
 
@@ -61,8 +61,8 @@ class GargoyleClient extends Client {
      * @returns {Promise<void>}
      */
     public async loadSystemEvents() {
-        this.logger.log("Loading system events...");
-        await registerEvents(this, "../events");
+        this.logger.log('Loading system events...');
+        await registerEvents(this, '../events');
     }
 
     /**
@@ -72,8 +72,8 @@ class GargoyleClient extends Client {
      * @returns {Promise<void>}
      */
     public async loadEvents() {
-        this.logger.log("Loading events...");
-        await registerEvents(this, "../../../events");
+        this.logger.log('Loading events...');
+        await registerEvents(this, '../../../events');
     }
 
     /**
@@ -83,10 +83,10 @@ class GargoyleClient extends Client {
      * @returns {Promise<void>}
      */
     public async loadCommands() {
-        this.logger.log("Loading system commands...");
-        await loadCommands(this, "../../commands");
-        this.logger.log("Loading commands...");
-        await loadCommands(this, "../../../commands");
+        this.logger.log('Loading system commands...');
+        await loadCommands(this, '../../commands');
+        this.logger.log('Loading commands...');
+        await loadCommands(this, '../../../commands');
         this.logger.log(`Loaded ${this.commands.length} commands!`);
     }
 
@@ -103,16 +103,16 @@ class GargoyleClient extends Client {
 
         this.db = new Database(this);
 
-        this.logger.debug("Awaiting promises for system events and events...");
+        this.logger.debug('Awaiting promises for system events and events...');
         await Promise.all([
             this.loadSystemEvents(), // comment for autoformat
             this.loadEvents(), // -
             this.loadCommands()
         ]);
-        this.logger.debug("Promises resolved...");
+        this.logger.debug('Promises resolved...');
 
         const loginResult = await super.login(token ?? process.env.DISCORD_TOKEN).catch((err) => {
-            this.logger.error(err, "Error logging in");
+            this.logger.error(err, 'Error logging in');
             process.exit(0);
         });
 
@@ -120,7 +120,7 @@ class GargoyleClient extends Client {
 
         if (!this.db?.willConnect) {
             this.db = null;
-            this.logger.warning("Database connection won't be established, setting db to null");
+            this.logger.warning('Database connection won\'t be established, setting db to null');
         }
 
         return loginResult;
@@ -133,17 +133,17 @@ class GargoyleClient extends Client {
      */
     private startHealthCheckServer() {
         const server = http.createServer((req, res) => {
-            if (req.url === "/health" && this.isReady() && this.ws.status === 0) {
-                res.writeHead(200, { "Content-Type": "text/plain" });
-                res.end("OK");
+            if (req.url === '/health' && this.isReady() && this.ws.status === 0) {
+                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.end('OK');
             } else {
-                res.writeHead(404, { "Content-Type": "text/plain" });
-                res.end("Not Found");
+                res.writeHead(404, { 'Content-Type': 'text/plain' });
+                res.end('Not Found');
             }
         });
 
         server.listen(3000, () => {
-            this.logger.log("Health check server is running on port 3000");
+            this.logger.log('Health check server is running on port 3000');
         });
     }
 }

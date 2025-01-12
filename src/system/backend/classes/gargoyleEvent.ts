@@ -1,5 +1,5 @@
-import GargoyleClient from "@src/system/backend/classes/gargoyleClient.js";
-import { ClientEvents } from "discord.js";
+import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import { ClientEvents } from 'discord.js';
 
 abstract class GargoyleEvent {
     public abstract event: keyof ClientEvents;

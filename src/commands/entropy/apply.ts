@@ -1,10 +1,10 @@
-import GargoyleClient from "@classes/gargoyleClient.js";
-import GargoyleCommand from "@classes/gargoyleCommand.js";
-import GargoyleButtonBuilder from "@builders/gargoyleButtonBuilder.js";
-import GargoyleEmbedBuilder from "@builders/gargoyleEmbedBuilder.js";
-import GargoyleModalBuilder from "@builders/gargoyleModalBuilder.js";
-import GargoyleEvent from "@src/system/backend/classes/gargoyleEvent.js";
-import { sendAsServer } from "@src/system/backend/tools/server.js";
+import GargoyleClient from '@classes/gargoyleClient.js';
+import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
+import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
+import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -22,31 +22,31 @@ import {
     TextChannel,
     TextInputBuilder,
     TextInputStyle
-} from "discord.js";
-import { getUserVoiceActivity } from "@src/events/voice/voiceActivity.js";
-import GargoyleTextCommandBuilder from "@src/system/backend/builders/gargoyleTextCommandBuilder.js";
-import GargoyleSlashCommandBuilder from "@src/system/backend/builders/gargoyleSlashCommandBuilder.js";
-import client from "@src/system/botClient.js";
+} from 'discord.js';
+import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
+import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
+import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import client from '@src/system/botClient.js';
 
 export default class Entropy extends GargoyleCommand {
-    public override category: string = "utilities";
+    public override category: string = 'utilities';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
-            .setName("entropy")
-            .setDescription("Entropy related commands")
-            .addGuild("1009048008857493624")
-            .addSubcommand((subcommand) => subcommand.setName("activity").setDescription("Calculate voice activity"))
+            .setName('entropy')
+            .setDescription('Entropy related commands')
+            .addGuild('1009048008857493624')
+            .addSubcommand((subcommand) => subcommand.setName('activity').setDescription('Calculate voice activity'))
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
     public override textCommands = [
         new GargoyleTextCommandBuilder()
-            .setName("entropy")
-            .setDescription("Open an entropy application panel")
+            .setName('entropy')
+            .setDescription('Open an entropy application panel')
             .setContexts([InteractionContextType.Guild])
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
-        if (interaction.options.getSubcommand() === "activity") {
+        if (interaction.options.getSubcommand() === 'activity') {
             if (!interaction.guild) return;
 
             await interaction.reply({
@@ -58,22 +58,22 @@ export default class Entropy extends GargoyleCommand {
 
             await this.setMemberRoles(rankedMembers);
 
-            await interaction.editReply("Finished calculating all VC statistics for the past 7 days. Roles applied.");
+            await interaction.editReply('Finished calculating all VC statistics for the past 7 days. Roles applied.');
         }
     }
 
     public override async executeTextCommand(client: GargoyleClient, message: Message): Promise<void> {
-        if (message.author.username !== "axodouble") return;
+        if (message.author.username !== 'axodouble') return;
         await message.delete();
-        const entropyGuild = client.guilds.cache.get("1009048008857493624");
+        const entropyGuild = client.guilds.cache.get('1009048008857493624');
         await sendAsServer(
             {
                 embeds: [
-                    new GargoyleEmbedBuilder().setTitle("Entropy Application").setDescription("Gen.4 Entropy. Apply now, you will be notified.")
+                    new GargoyleEmbedBuilder().setTitle('Entropy Application').setDescription('Gen.4 Entropy. Apply now, you will be notified.')
                 ],
                 components: [
                     new ActionRowBuilder<ButtonBuilder>().addComponents(
-                        new GargoyleButtonBuilder(this, "apply").setLabel("Apply").setStyle(ButtonStyle.Secondary)
+                        new GargoyleButtonBuilder(this, 'apply').setLabel('Apply').setStyle(ButtonStyle.Secondary)
                     )
                 ]
             },
@@ -83,55 +83,55 @@ export default class Entropy extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        if (args[0] === "apply") {
+        if (args[0] === 'apply') {
             interaction.showModal(
-                new GargoyleModalBuilder(this, "application")
-                    .setTitle("Entropy Gen.4 Application")
+                new GargoyleModalBuilder(this, 'application')
+                    .setTitle('Entropy Gen.4 Application')
                     .setComponents(
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
                             new TextInputBuilder()
-                                .setCustomId("steam")
-                                .setLabel("Steam Account Link")
-                                .setPlaceholder("https://steamcommunity.com/id/axodouble")
+                                .setCustomId('steam')
+                                .setLabel('Steam Account Link')
+                                .setPlaceholder('https://steamcommunity.com/id/axodouble')
                                 .setMinLength(30)
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(true)
                         ),
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
                             new TextInputBuilder()
-                                .setCustomId("motivation")
-                                .setLabel("What is your motivation to join?")
-                                .setPlaceholder("Your motivation for joining Entropy Gen.4")
+                                .setCustomId('motivation')
+                                .setLabel('What is your motivation to join?')
+                                .setPlaceholder('Your motivation for joining Entropy Gen.4')
                                 .setMinLength(10)
                                 .setStyle(TextInputStyle.Paragraph)
                                 .setRequired(true)
                         ),
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
                             new TextInputBuilder()
-                                .setCustomId("position")
-                                .setLabel("Desired / Expected Position")
-                                .setPlaceholder("Leadership / Volunteer / Officer")
+                                .setCustomId('position')
+                                .setLabel('Desired / Expected Position')
+                                .setPlaceholder('Leadership / Volunteer / Officer')
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(true)
                         ),
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
                             new TextInputBuilder()
-                                .setCustomId("skills")
-                                .setLabel("What are you good at?")
-                                .setPlaceholder("Making propaganda, pvp, etc etc...")
+                                .setCustomId('skills')
+                                .setLabel('What are you good at?')
+                                .setPlaceholder('Making propaganda, pvp, etc etc...')
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(true)
                         ),
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
                             new TextInputBuilder()
-                                .setCustomId("friends")
-                                .setLabel("Do you have any friends in Entropy?")
+                                .setCustomId('friends')
+                                .setLabel('Do you have any friends in Entropy?')
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(false)
                         )
                     )
             );
-        } else if (args[0] === "recruit") {
+        } else if (args[0] === 'recruit') {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const inviteLink = await (interaction.channel as TextChannel)
                 .createInvite({
@@ -148,13 +148,13 @@ export default class Entropy extends GargoyleCommand {
                 .then((user) => {
                     user.send({ content: `You have been recruited to Entropy Gen.4, invite link: ${inviteLink}` })
                         .catch(() => {
-                            interaction.editReply({ content: "Failed to send DM to user" });
+                            interaction.editReply({ content: 'Failed to send DM to user' });
                         })
                         .then(() => {
                             interaction.message.edit({
                                 components: [
                                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                                        new GargoyleButtonBuilder(this, "recruit", args[1]).setLabel("Recruited").setStyle(ButtonStyle.Success)
+                                        new GargoyleButtonBuilder(this, 'recruit', args[1]).setLabel('Recruited').setStyle(ButtonStyle.Success)
                                     )
                                 ]
                             });
@@ -162,14 +162,14 @@ export default class Entropy extends GargoyleCommand {
                         });
                 })
                 .catch(() => {
-                    interaction.editReply({ content: "Failed to fetch user" });
+                    interaction.editReply({ content: 'Failed to fetch user' });
                 });
         }
     }
 
     public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
-        if (args[0] === "application") {
-            (client.channels.cache.get("1323518160678424647") as TextChannel)
+        if (args[0] === 'application') {
+            (client.channels.cache.get('1323518160678424647') as TextChannel)
                 .send({
                     content: `New application by ${interaction.user.username}`,
                     embeds: [
@@ -177,21 +177,21 @@ export default class Entropy extends GargoyleCommand {
                             .setThumbnail(interaction.user.avatarURL())
                             .setTitle(`Application by ${interaction.user.username}`)
                             .setDescription(
-                                `**Steam Account Link:** ${interaction.fields.getTextInputValue("steam") || ""}\n` +
-                                    `**Motivation:** ${interaction.fields.getTextInputValue("motivation") || ""}\n` +
-                                    `**Desired / Expected Position:** ${interaction.fields.getTextInputValue("position") || ""}\n` +
-                                    `**Skills:** ${interaction.fields.getTextInputValue("skills") || ""}\n` +
-                                    `**Friends in Entropy:** ${interaction.fields.getTextInputValue("friends") || ""}`
+                                `**Steam Account Link:** ${interaction.fields.getTextInputValue('steam') || ''}\n` +
+                                    `**Motivation:** ${interaction.fields.getTextInputValue('motivation') || ''}\n` +
+                                    `**Desired / Expected Position:** ${interaction.fields.getTextInputValue('position') || ''}\n` +
+                                    `**Skills:** ${interaction.fields.getTextInputValue('skills') || ''}\n` +
+                                    `**Friends in Entropy:** ${interaction.fields.getTextInputValue('friends') || ''}`
                             )
                     ],
                     components: [
                         new ActionRowBuilder<ButtonBuilder>().addComponents(
-                            new GargoyleButtonBuilder(this, "recruit", interaction.user.id).setLabel("Recruit").setStyle(ButtonStyle.Secondary)
+                            new GargoyleButtonBuilder(this, 'recruit', interaction.user.id).setLabel('Recruit').setStyle(ButtonStyle.Secondary)
                         )
                     ]
                 })
                 .then(() => {
-                    interaction.reply({ content: "Application submitted, you will hear back from us.", flags: MessageFlags.Ephemeral });
+                    interaction.reply({ content: 'Application submitted, you will hear back from us.', flags: MessageFlags.Ephemeral });
                 });
         }
     }
@@ -259,19 +259,19 @@ class RolePrefix extends GargoyleEvent {
     public event = Events.GuildMemberUpdate as const;
 
     public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
-        if (member.guild.id !== "1009048008857493624") return;
+        if (member.guild.id !== '1009048008857493624') return;
 
         const updatedMember = await member.fetch(true);
-        let namePrefix = "[";
+        let namePrefix = '[';
 
         const roles = updatedMember.roles.cache.sort((a, b) => b.position - a.position);
 
         roles.forEach((role) => {
-            if (role.name === "@everyone") return;
-            namePrefix += role.name.split("")[0].toUpperCase();
+            if (role.name === '@everyone') return;
+            namePrefix += role.name.split('')[0].toUpperCase();
         });
 
-        namePrefix += `] ${updatedMember.nickname?.split(" ").slice(1).join(" ") || updatedMember.user.username}`;
+        namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
 
         updatedMember.setNickname(namePrefix).catch(() => {});
     }
