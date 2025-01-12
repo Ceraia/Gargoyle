@@ -3,7 +3,7 @@ import GargoyleCommand from '@classes/gargoyleCommand.js';
 
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
-import { CategoryChannel, ChannelType, ChatInputCommandInteraction, Guild, GuildChannel, InteractionContextType } from 'discord.js';
+import { CategoryChannel, ChannelType, ChatInputCommandInteraction, Guild, GuildChannel, InteractionContextType, MessageFlags, PermissionFlagsBits } from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
     public override slashCommand = new GargoyleSlashCommandBuilder()
@@ -24,7 +24,8 @@ export default class Fun extends GargoyleCommand {
                                 .addChannelTypes(ChannelType.GuildCategory)
                         )
                 )
-                .addSubcommand((subcommand) => subcommand.setName('delete').setDescription('Delete a group.'))
+                .addSubcommand((subcommand) => subcommand.setName('delete').setDescription('Delete a group.').addChannelOption((option) => option.setName('channel').setDescription('The group to delete.').setRequired(true).addChannelTypes(ChannelType.GuildText))
+                )
         )
         .addSubcommand((subcommand) =>
             subcommand
@@ -62,6 +63,18 @@ export default class Fun extends GargoyleCommand {
             await setGroupCategory(client, channel as GuildChannel);
 
             break;
+        }
+        case 'delete': {
+            interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            if (!interaction.guild) return;
+            const channel = interaction.options.getChannel('channel');
+            if (!channel) return;
+            if (await isGroup(channel as GuildChannel)) {
+                await (channel as GuildChannel).delete();
+                interaction.editReply('Group deleted.');
+            } else {
+                interaction.editReply('Channel is not a group channel.');
+            }
         }
         }
     }
@@ -105,5 +118,35 @@ async function removeGuildGroupCategories(client: GargoyleClient, guild: Guild):
         (fetchedChannel as CategoryChannel).permissionOverwrites.create(client.user, { SendTTSMessages: false });
     }
 
+    return true;
+}
+
+async function isGroupCategory(channel: GuildChannel): Promise<boolean> {
+    const fetchedChannel = await channel.fetch();
+    if (fetchedChannel.type !== ChannelType.GuildCategory) return false;
+
+    // Check if the channel has tts permissions for the bot
+    if (!fetchedChannel.permissionOverwrites.cache.get(fetchedChannel.guild.id)) return false;
+    const permissions = fetchedChannel.permissionOverwrites.cache.get(fetchedChannel.guild.id);
+    if (permissions && permissions.allow.has(PermissionFlagsBits.SendTTSMessages)) return true;
+    return false;
+}
+
+async function isGroup(channel: GuildChannel): Promise<boolean> {
+    const fetchedChannel = await channel.fetch();
+    if (!fetchedChannel)
+        return false;
+
+
+    if (fetchedChannel.type !== ChannelType.GuildText)
+        return false;
+
+
+    if (!fetchedChannel.parent) return false;
+
+    if (fetchedChannel.parent.type !== ChannelType.GuildCategory)
+        return false;
+
+    if (!isGroupCategory(fetchedChannel.parent)) return false;
     return true;
 }
