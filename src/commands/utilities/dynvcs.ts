@@ -65,7 +65,7 @@ export default class VoicechatCommand extends GargoyleCommand {
             interaction.reply({ content: 'Sending the panel!', flags: MessageFlags.Ephemeral });
             sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
         } else if (interaction.options.getSubcommand() === 'create') {
-            interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             if (!interaction.guild) return;
             if (!client.user) return;
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels)) {
@@ -90,7 +90,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                     ]
                 });
             else
-                client.channels.fetch(vc.id).then((channel) => {
+                await client.channels.fetch(vc.id).then((channel) => {
                     if (!channel) return;
                     if (!interaction.guild) return;
 
