@@ -91,13 +91,14 @@ export default class VoicechatCommand extends GargoyleCommand {
                 });
             else
                 await client.channels.fetch(vc.id).then((channel) => {
+                    console.log(channel?.toJSON());
                     if (!channel) return;
                     if (!interaction.guild) return;
 
-                    (channel as VoiceChannel).permissionOverwrites.edit(interaction.guild.id, { Connect: true, PrioritySpeaker: true });
+                    (channel as VoiceChannel).permissionOverwrites.edit(interaction.guild.id, { Connect: true, PrioritySpeaker: true, UseExternalStickers: true }).then(() => {
+                        interaction.editReply({ content: 'Created the dynamic vc, use `/vc panel` or `/vc` to get the vc panel!' });
+                    });
                 });
-
-            interaction.editReply({ content: `Created the dynamic vc, use \`/vc panel\` or \`${client.prefix}vc\` to get the vc panel!` });
         }
     }
 
