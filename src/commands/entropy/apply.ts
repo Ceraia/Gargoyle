@@ -200,13 +200,13 @@ export default class Entropy extends GargoyleCommand {
 
     private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
         let i = 0;
-        let j = 0;
+        let j = 9;
 
         for (const rankedMember of members) {
             const member = rankedMember.guildMember;
 
             if (rankedMember.activity === 0) {
-                const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${9}`));
+                const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${0}`));
                 if (!role) continue;
                 if (!member.roles.cache.has(role.id)) {
                     await this.removeMemberActivityRoles(member);
@@ -225,9 +225,9 @@ export default class Entropy extends GargoyleCommand {
             }
 
             i++;
-            if (i >= j + 1) {
+            if (i >= j - 1) {
                 i = 0;
-                if (j !== 9) j++;
+                if (j !== 9) j--;
             }
         }
     }
