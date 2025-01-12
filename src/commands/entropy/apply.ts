@@ -199,7 +199,7 @@ export default class Entropy extends GargoyleCommand {
     }
 
     private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
-        let i = 0;
+        let i = 9;
         let j = 9;
 
         for (const rankedMember of members) {
@@ -224,10 +224,10 @@ export default class Entropy extends GargoyleCommand {
                 await member.roles.add(role);
             }
 
-            i++;
-            if (i >= j - 1) {
-                i = 0;
-                if (j !== 9) j--;
+            i--;
+            if (i < j) {
+                j--;
+                i = 9;
             }
         }
     }
