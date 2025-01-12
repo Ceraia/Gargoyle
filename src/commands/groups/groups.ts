@@ -3,7 +3,7 @@ import GargoyleCommand from '@classes/gargoyleCommand.js';
 
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
-import { CategoryChannel, ChannelType, ChatInputCommandInteraction, Guild, GuildChannel, InteractionContextType, MessageFlags, PermissionFlagsBits } from 'discord.js';
+import { CategoryChannel, Channel, ChannelType, ChatInputCommandInteraction, Guild, GuildChannel, InteractionContextType, MessageFlags, PermissionFlagsBits } from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
     public override slashCommand = new GargoyleSlashCommandBuilder()
@@ -113,7 +113,8 @@ async function removeGuildGroupCategories(client: GargoyleClient, guild: Guild):
         const fetchedChannel = await client.channels.fetch(channel[0]);
 
         if (!fetchedChannel) continue;
-        if (fetchedChannel.type !== ChannelType.GuildCategory) continue;
+
+        if (!isGroupCategory(fetchedChannel)) continue;
 
         (fetchedChannel as CategoryChannel).permissionOverwrites.create(client.user, { SendTTSMessages: false });
     }
@@ -121,7 +122,7 @@ async function removeGuildGroupCategories(client: GargoyleClient, guild: Guild):
     return true;
 }
 
-async function isGroupCategory(channel: GuildChannel): Promise<boolean> {
+async function isGroupCategory(channel: Channel): Promise<boolean> {
     const fetchedChannel = await channel.fetch();
     if (fetchedChannel.type !== ChannelType.GuildCategory) return false;
 
