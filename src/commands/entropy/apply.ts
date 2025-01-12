@@ -151,6 +151,13 @@ export default class Entropy extends GargoyleCommand {
                             interaction.editReply({ content: 'Failed to send DM to user' });
                         })
                         .then(() => {
+                            interaction.message.edit({
+                                components: [
+                                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                                        new GargoyleButtonBuilder(this, 'recruit', args[1]).setLabel('Recruited').setStyle(ButtonStyle.Success)
+                                    )
+                                ]
+                            });
                             interaction.editReply({ content: `User recruited, invite link: ${inviteLink}` });
                         });
                 })
