@@ -13,7 +13,8 @@ import {
     GuildMember,
     InteractionContextType,
     MessageFlags,
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    TextChannel
 } from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
@@ -107,6 +108,12 @@ export default class Fun extends GargoyleCommand {
             if (!interaction.guild) return;
             const name = interaction.options.getString('name');
             if (!name) return;
+
+            if (await hasGroup(client, interaction.guild as Guild, interaction.member as GuildMember)) {
+                interaction.editReply('You already have a group.');
+                return;
+            }
+
             const channel = await createGroup(client, interaction.guild as Guild, name, interaction.member as GuildMember);
             if (!channel) {
                 interaction.editReply('Failed to create group.');
@@ -219,6 +226,24 @@ async function isGroupOwner(channel: GuildChannel, member: GuildMember): Promise
     if (!fetchedChannel.permissionOverwrites.cache.get(member.id)) return false;
     const permissions = fetchedChannel.permissionOverwrites.cache.get(member.id);
     if (permissions && permissions.allow.has(PermissionFlagsBits.SendTTSMessages)) return true;
+    return false;
+}
+
+async function hasGroup(client: GargoyleClient, guild: Guild, member: GuildMember): Promise<boolean> {
+    const fetchedChannels = await guild.channels.fetch();
+    if (!fetchedChannels) return false;
+
+    for (const channel of fetchedChannels) {
+        if (!channel) continue;
+        const fetchedChannel = await client.channels.fetch(channel[0]);
+
+        if (!fetchedChannel) continue;
+
+        if (!isGroup(fetchedChannel as TextChannel)) continue;
+
+        if (await isGroupOwner(fetchedChannel as TextChannel, member)) return true;
+    }
+
     return false;
 }
 
