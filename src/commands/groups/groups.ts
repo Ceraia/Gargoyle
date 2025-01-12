@@ -266,7 +266,7 @@ export default class Groups extends GargoyleCommand {
             channel.send({
                 content: `Welcome to ${name}!`,
                 embeds: [
-                    new GargoyleEmbedBuilder().setTitle(`${name} - ${owner.nickname}`).setDescription(`This group was created by <@!${owner.id}>\n`)
+                    new GargoyleEmbedBuilder().setTitle(`${name}`).setDescription(`This group was created by <@!${owner.id}>\n`)
                 ],
                 components: [
                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
