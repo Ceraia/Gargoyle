@@ -62,6 +62,7 @@ export default class Fun extends GargoyleCommand {
 
         switch (subcommand) {
         case 'setup': {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
                 interaction.reply({ content: 'You do not have permission to run this command.', ephemeral: true });
                 return;
@@ -83,6 +84,7 @@ export default class Fun extends GargoyleCommand {
 
             await removeGuildGroupCategories(client, interaction.guild as Guild);
             await setGroupCategory(client, channel as GuildChannel);
+            interaction.editReply('Group setup complete.');
 
             break;
         }
@@ -92,7 +94,10 @@ export default class Fun extends GargoyleCommand {
             const channel = interaction.options.getChannel('channel');
             if (!channel) return;
             if (await isGroup(channel as GuildChannel)) {
-                if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) && !await isGroupOwner(channel as GuildChannel, interaction.member as GuildMember)) {
+                if (
+                    !interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) &&
+                        !(await isGroupOwner(channel as GuildChannel, interaction.member as GuildMember))
+                ) {
                     interaction.reply({ content: 'You do not have permission to remove this group.', ephemeral: true });
                     return;
                 }
