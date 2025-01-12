@@ -1,9 +1,13 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
+import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
 import {
+    ActionRowBuilder,
+    ButtonStyle,
     CategoryChannel,
     Channel,
     ChannelType,
@@ -21,6 +25,7 @@ export default class Groups extends GargoyleCommand {
     public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('group')
         .setDescription('Group related commands.')
+        .addGuild('1009048008857493624')
         .addSubcommandGroup((subcommandGroup) =>
             subcommandGroup
                 .setName('admin')
@@ -51,6 +56,7 @@ export default class Groups extends GargoyleCommand {
                 .setDescription('Create a group.')
                 .addStringOption((option) => option.setName('name').setDescription('The name of the group.').setRequired(true))
         )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
@@ -240,12 +246,39 @@ export default class Groups extends GargoyleCommand {
             const category = await this.getGroupCategory(client, guild);
             if (!category) return null;
 
-            return await guild.channels.create({
+            const permissionOverwrites = category.permissionOverwrites.cache.map((permission) => ({
+                id: permission.id,
+                allow: permission.allow.toArray(),
+                deny: permission.deny.toArray()
+            }));
+
+            const channel = await guild.channels.create({
                 name,
                 type: ChannelType.GuildText,
                 parent: category.id,
-                permissionOverwrites: [{ id: owner.id, allow: [PermissionFlagsBits.UseExternalStickers] }]
+                permissionOverwrites: [
+                    { id: owner.id, allow: [PermissionFlagsBits.UseExternalStickers] },
+                    ...permissionOverwrites,
+                    { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }
+                ]
             });
+
+            channel.send({
+                content: `Welcome to ${name}!`,
+                embeds: [
+                    new GargoyleEmbedBuilder().setTitle(`${name} - ${owner.nickname}`).setDescription(`This group was created by <@!${owner.id}>\n`)
+                ],
+                components: [
+                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                        new GargoyleButtonBuilder(this, 'invite').setLabel('Invite').setStyle(ButtonStyle.Secondary),
+                        new GargoyleButtonBuilder(this, 'kick').setLabel('Kick').setStyle(ButtonStyle.Secondary),
+                        new GargoyleButtonBuilder(this, 'promote').setLabel('Promote').setStyle(ButtonStyle.Secondary),
+                        new GargoyleButtonBuilder(this, 'leave').setLabel('Leave').setStyle(ButtonStyle.Secondary)
+                    )
+                ]
+            });
+
+            return channel;
         } catch (error) {
             client.logger.error(`Failed to create group ${name}:`, error as string);
             return null;
