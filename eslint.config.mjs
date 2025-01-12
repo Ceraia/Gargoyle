@@ -33,7 +33,6 @@ export default [
             '@typescript-eslint/ban-ts-comment': 'off',
             '@typescript-eslint/ban-types': 'off',
             '@typescript-eslint/no-require-imports': 'off',
-            indent: ['error', 4],
             quotes: ['error', 'single'],
             semi: ['error', 'always'],
             'no-loss-of-precision': 'error',

@@ -49,11 +49,14 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
                 messageEdit = messageId;
             }
 
-            await webhook?.editMessage(messageEdit, { ...message }).then(() => {
-                return true;
-            }).catch(() => {
-                return false;
-            });
+            await webhook
+                ?.editMessage(messageEdit, { ...message })
+                .then(() => {
+                    return true;
+                })
+                .catch(() => {
+                    return false;
+                });
             return false;
         })
         .catch(() => {

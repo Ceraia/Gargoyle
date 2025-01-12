@@ -65,10 +65,11 @@ export default class VoicechatCommand extends GargoyleCommand {
             interaction.reply({ content: 'Sending the panel!', flags: MessageFlags.Ephemeral });
             sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
         } else if (interaction.options.getSubcommand() === 'create') {
+            interaction.deferReply({ flags: MessageFlags.Ephemeral });
             if (!interaction.guild) return;
             if (!client.user) return;
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels)) {
-                interaction.reply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!', flags: MessageFlags.Ephemeral });
+                interaction.editReply({ content: 'You need the `MANAGE_CHANNELS` permission to use this command!' });
             }
 
             let vc = interaction.options.getChannel('vc');
@@ -96,10 +97,7 @@ export default class VoicechatCommand extends GargoyleCommand {
                     (channel as VoiceChannel).permissionOverwrites.edit(interaction.guild.id, { Connect: true, PrioritySpeaker: true });
                 });
 
-            interaction.reply({
-                content: `Created the dynamic vc, use \`/vc panel\` or \`${client.prefix}vc\` to get the vc panel!`,
-                flags: MessageFlags.Ephemeral
-            });
+            interaction.editReply({ content: `Created the dynamic vc, use \`/vc panel\` or \`${client.prefix}vc\` to get the vc panel!` });
         }
     }
 
@@ -108,7 +106,8 @@ export default class VoicechatCommand extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        if (interaction.message.webhookId) editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id);
+        if (interaction.message.webhookId)
+            editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id);
         else interaction.message.delete().then(() => sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
 
         if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -133,148 +132,148 @@ export default class VoicechatCommand extends GargoyleCommand {
         }
 
         switch (args[0]) {
-        case 'lock': {
-            client.logger.trace(`User ${interaction.user.username} locked/unlocked their vc.`);
-            // Lock  / Unlock the vc
-            if (
-                vc.permissionOverwrites.resolve(interaction.guildId) &&
-                    vc.permissionOverwrites.resolve(interaction.guildId)?.deny.has(PermissionFlagsBits.Connect)
-            ) {
-                if (vc.parent && vc.parent.permissionOverwrites.resolve(interaction.guildId)) {
-                    if (vc.parent.permissionOverwrites.resolve(interaction.guildId)?.allow.has(PermissionFlagsBits.Connect)) {
-                        vc.permissionOverwrites.edit(interaction.guildId, { Connect: true });
-                    } else {
-                        vc.permissionOverwrites.edit(interaction.guildId, { Connect: null });
-                    }
-                } else vc.permissionOverwrites.edit(interaction.guildId, { Connect: null });
-
-                interaction.editReply({ content: 'Unlocked your vc!' });
-            } else {
-                vc.permissionOverwrites.edit(interaction.guildId, { Connect: false });
-                interaction.editReply({ content: 'Locked your vc!' });
-            }
-            break;
-        }
-        case 'hide': {
-            client.logger.trace(`User ${interaction.user.username} hid/unhid their vc.`);
-            // Hide  / Unlock the vc
-            if (
-                vc.permissionOverwrites.resolve(interaction.guildId) &&
-                    vc.permissionOverwrites.resolve(interaction.guildId)?.deny.has(PermissionFlagsBits.ViewChannel)
-            ) {
-                if (vc.parent && vc.parent.permissionOverwrites.resolve(interaction.guildId)) {
-                    if (vc.parent.permissionOverwrites.resolve(interaction.guildId)?.allow.has(PermissionFlagsBits.ViewChannel)) {
-                        vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: true });
-                    } else {
-                        vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: null });
-                    }
-                } else vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: null });
-
-                interaction.editReply({ content: 'Unhid your vc!' });
-            } else {
-                vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: false });
-                interaction.editReply({ content: 'Hid your vc!' });
-            }
-            break;
-        }
-        case 'increase': {
-            client.logger.trace(`User ${interaction.user.username} increased the user limit of their vc.`);
-            // Increase the user limit
-            vc.edit({ userLimit: vc.userLimit + 1 });
-            interaction.editReply({ content: `Increased the user limit to ${vc.userLimit + 1}!` });
-            break;
-        }
-        case 'decrease': {
-            client.logger.trace(`User ${interaction.user.username} decreased the user limit of their vc.`);
-            // Decrease the user limit
-
-            await vc.edit({ userLimit: vc.userLimit - 1 }).catch(() => {});
-            if (vc.userLimit !== 1 && vc.userLimit !== 0) {
-                interaction.editReply({ content: `Decreased the user limit to ${vc.userLimit - 1}!` });
-            } else if (vc.userLimit === 1) {
-                interaction.editReply({ content: 'Disabled the user limit!' });
-            } else {
-                interaction.editReply({ content: 'The user limit is already at 0!' });
-            }
-            break;
-        }
-        case 'ban': {
-            client.logger.trace(`User ${interaction.user.username} banned a user from their vc.`);
-            // Send a select menu with all the members
-            interaction.editReply({
-                components: [
-                    new ActionRowBuilder<GargoyleUserSelectMenuBuilder>().addComponents(
-                        new GargoyleUserSelectMenuBuilder(this, 'ban').setPlaceholder('Select member(s) to ban.').setMaxValues(1).setMinValues(1)
-                    )
-                ]
-            });
-            break;
-        }
-        case 'invite': {
-            client.logger.trace(`User ${interaction.user.username} invited a user to their vc.`);
-            // Send a select menu with all the members
-            interaction.editReply({
-                components: [
-                    new ActionRowBuilder<GargoyleUserSelectMenuBuilder>().addComponents(
-                        new GargoyleUserSelectMenuBuilder(this, 'invite')
-                            .setPlaceholder('Select member(s) to invite.')
-                            .setMaxValues(1)
-                            .setMinValues(1)
-                    )
-                ]
-            });
-            break;
-        }
-        case 'rename': {
-            client.logger.trace(`User ${interaction.user.username} tried to rename their vc.`);
-            // Send a modal with a text input to choose the name.
-            const maxLength = 25; // - client.db.guilds.get(interaction.guild.id).dynvcs.prefix.length;
-            interaction.showModal(
-                new GargoyleModalBuilder(this, 'rename')
-                    .setTitle('Rename the VC')
-                    .setComponents(
-                        new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
-                            new TextInputBuilder()
-                                .setCustomId('name')
-                                .setPlaceholder('Cool VC!')
-                                .setMaxLength(maxLength)
-                                .setMinLength(1)
-                                .setRequired(true)
-                                .setLabel('New name for the VC.')
-                                .setStyle(TextInputStyle.Short)
-                        )
-                    )
-            );
-            break;
-        }
-        case 'claim': {
-            client.logger.trace(`User ${interaction.user.username} claimed a vc.`);
-            // Claim the vc
-            // Check if any of the members in the vc are the owner
-            let owner;
-
-            vc.members.forEach((member) => {
+            case 'lock': {
+                client.logger.trace(`User ${interaction.user.username} locked/unlocked their vc.`);
+                // Lock  / Unlock the vc
                 if (
-                    vc.permissionOverwrites.resolve(member.id) &&
-                        vc.permissionOverwrites.resolve(member.id)?.allow.has(PermissionFlagsBits.AddReactions)
-                )
-                    owner = member;
-            });
+                    vc.permissionOverwrites.resolve(interaction.guildId) &&
+                    vc.permissionOverwrites.resolve(interaction.guildId)?.deny.has(PermissionFlagsBits.Connect)
+                ) {
+                    if (vc.parent && vc.parent.permissionOverwrites.resolve(interaction.guildId)) {
+                        if (vc.parent.permissionOverwrites.resolve(interaction.guildId)?.allow.has(PermissionFlagsBits.Connect)) {
+                            vc.permissionOverwrites.edit(interaction.guildId, { Connect: true });
+                        } else {
+                            vc.permissionOverwrites.edit(interaction.guildId, { Connect: null });
+                        }
+                    } else vc.permissionOverwrites.edit(interaction.guildId, { Connect: null });
 
-            if (owner) {
-                interaction.editReply({ content: 'The owner is still in the vc!' });
-                return;
+                    interaction.editReply({ content: 'Unlocked your vc!' });
+                } else {
+                    vc.permissionOverwrites.edit(interaction.guildId, { Connect: false });
+                    interaction.editReply({ content: 'Locked your vc!' });
+                }
+                break;
             }
+            case 'hide': {
+                client.logger.trace(`User ${interaction.user.username} hid/unhid their vc.`);
+                // Hide  / Unlock the vc
+                if (
+                    vc.permissionOverwrites.resolve(interaction.guildId) &&
+                    vc.permissionOverwrites.resolve(interaction.guildId)?.deny.has(PermissionFlagsBits.ViewChannel)
+                ) {
+                    if (vc.parent && vc.parent.permissionOverwrites.resolve(interaction.guildId)) {
+                        if (vc.parent.permissionOverwrites.resolve(interaction.guildId)?.allow.has(PermissionFlagsBits.ViewChannel)) {
+                            vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: true });
+                        } else {
+                            vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: null });
+                        }
+                    } else vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: null });
 
-            // Claim the vc
-            vc.permissionOverwrites.edit(interaction.user.id, {
-                AddReactions: true,
-                Connect: true
-            });
+                    interaction.editReply({ content: 'Unhid your vc!' });
+                } else {
+                    vc.permissionOverwrites.edit(interaction.guildId, { ViewChannel: false });
+                    interaction.editReply({ content: 'Hid your vc!' });
+                }
+                break;
+            }
+            case 'increase': {
+                client.logger.trace(`User ${interaction.user.username} increased the user limit of their vc.`);
+                // Increase the user limit
+                vc.edit({ userLimit: vc.userLimit + 1 });
+                interaction.editReply({ content: `Increased the user limit to ${vc.userLimit + 1}!` });
+                break;
+            }
+            case 'decrease': {
+                client.logger.trace(`User ${interaction.user.username} decreased the user limit of their vc.`);
+                // Decrease the user limit
 
-            interaction.editReply({ content: 'You have claimed the vc!' });
-            break;
-        }
+                await vc.edit({ userLimit: vc.userLimit - 1 }).catch(() => {});
+                if (vc.userLimit !== 1 && vc.userLimit !== 0) {
+                    interaction.editReply({ content: `Decreased the user limit to ${vc.userLimit - 1}!` });
+                } else if (vc.userLimit === 1) {
+                    interaction.editReply({ content: 'Disabled the user limit!' });
+                } else {
+                    interaction.editReply({ content: 'The user limit is already at 0!' });
+                }
+                break;
+            }
+            case 'ban': {
+                client.logger.trace(`User ${interaction.user.username} banned a user from their vc.`);
+                // Send a select menu with all the members
+                interaction.editReply({
+                    components: [
+                        new ActionRowBuilder<GargoyleUserSelectMenuBuilder>().addComponents(
+                            new GargoyleUserSelectMenuBuilder(this, 'ban').setPlaceholder('Select member(s) to ban.').setMaxValues(1).setMinValues(1)
+                        )
+                    ]
+                });
+                break;
+            }
+            case 'invite': {
+                client.logger.trace(`User ${interaction.user.username} invited a user to their vc.`);
+                // Send a select menu with all the members
+                interaction.editReply({
+                    components: [
+                        new ActionRowBuilder<GargoyleUserSelectMenuBuilder>().addComponents(
+                            new GargoyleUserSelectMenuBuilder(this, 'invite')
+                                .setPlaceholder('Select member(s) to invite.')
+                                .setMaxValues(1)
+                                .setMinValues(1)
+                        )
+                    ]
+                });
+                break;
+            }
+            case 'rename': {
+                client.logger.trace(`User ${interaction.user.username} tried to rename their vc.`);
+                // Send a modal with a text input to choose the name.
+                const maxLength = 25; // - client.db.guilds.get(interaction.guild.id).dynvcs.prefix.length;
+                interaction.showModal(
+                    new GargoyleModalBuilder(this, 'rename')
+                        .setTitle('Rename the VC')
+                        .setComponents(
+                            new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('name')
+                                    .setPlaceholder('Cool VC!')
+                                    .setMaxLength(maxLength)
+                                    .setMinLength(1)
+                                    .setRequired(true)
+                                    .setLabel('New name for the VC.')
+                                    .setStyle(TextInputStyle.Short)
+                            )
+                        )
+                );
+                break;
+            }
+            case 'claim': {
+                client.logger.trace(`User ${interaction.user.username} claimed a vc.`);
+                // Claim the vc
+                // Check if any of the members in the vc are the owner
+                let owner;
+
+                vc.members.forEach((member) => {
+                    if (
+                        vc.permissionOverwrites.resolve(member.id) &&
+                        vc.permissionOverwrites.resolve(member.id)?.allow.has(PermissionFlagsBits.AddReactions)
+                    )
+                        owner = member;
+                });
+
+                if (owner) {
+                    interaction.editReply({ content: 'The owner is still in the vc!' });
+                    return;
+                }
+
+                // Claim the vc
+                vc.permissionOverwrites.edit(interaction.user.id, {
+                    AddReactions: true,
+                    Connect: true
+                });
+
+                interaction.editReply({ content: 'You have claimed the vc!' });
+                break;
+            }
         }
     }
 
@@ -298,20 +297,20 @@ export default class VoicechatCommand extends GargoyleCommand {
         }
 
         switch (args[0]) {
-        case 'rename': {
-            vc.edit({ name: interaction.fields.getTextInputValue('name') })
-                .catch(() => {
-                    interaction.reply({ content: 'Failed to rename the vc!', flags: MessageFlags.Ephemeral });
-                })
-                .then(() => {
-                    interaction.reply({
-                        content: `Renamed the vc to ${interaction.fields.getTextInputValue('name')}`,
-                        flags: MessageFlags.Ephemeral
+            case 'rename': {
+                vc.edit({ name: interaction.fields.getTextInputValue('name') })
+                    .catch(() => {
+                        interaction.reply({ content: 'Failed to rename the vc!', flags: MessageFlags.Ephemeral });
+                    })
+                    .then(() => {
+                        interaction.reply({
+                            content: `Renamed the vc to ${interaction.fields.getTextInputValue('name')}`,
+                            flags: MessageFlags.Ephemeral
+                        });
                     });
-                });
 
-            break;
-        }
+                break;
+            }
         }
     }
 
@@ -336,31 +335,31 @@ export default class VoicechatCommand extends GargoyleCommand {
         }
 
         switch (args[0]) {
-        case 'ban': {
-            interaction.values.forEach((value) => {
-                if (!interaction.guildId) return;
+            case 'ban': {
+                interaction.values.forEach((value) => {
+                    if (!interaction.guildId) return;
 
-                const member = client.guilds.cache.get(interaction.guildId)?.members.cache.get(value);
-                if (member) {
-                    vc.permissionOverwrites.edit(member.id, { Connect: false });
-                    interaction.reply({ content: `Banned ${member.user.tag} from the vc!`, flags: MessageFlags.Ephemeral });
-                    vc.members.get(member.id)?.voice.setChannel(null);
-                }
-            });
-            break;
-        }
-        case 'invite': {
-            interaction.values.forEach((value) => {
-                if (!interaction.guildId) return;
+                    const member = client.guilds.cache.get(interaction.guildId)?.members.cache.get(value);
+                    if (member) {
+                        vc.permissionOverwrites.edit(member.id, { Connect: false });
+                        interaction.reply({ content: `Banned ${member.user.tag} from the vc!`, flags: MessageFlags.Ephemeral });
+                        vc.members.get(member.id)?.voice.setChannel(null);
+                    }
+                });
+                break;
+            }
+            case 'invite': {
+                interaction.values.forEach((value) => {
+                    if (!interaction.guildId) return;
 
-                const member = client.guilds.cache.get(interaction.guildId)?.members.cache.get(value);
-                if (member) {
-                    vc.permissionOverwrites.edit(member.id, { Connect: true });
-                    interaction.reply({ content: `Invited ${member.user.tag} to the vc!`, flags: MessageFlags.Ephemeral });
-                }
-            });
-            break;
-        }
+                    const member = client.guilds.cache.get(interaction.guildId)?.members.cache.get(value);
+                    if (member) {
+                        vc.permissionOverwrites.edit(member.id, { Connect: true });
+                        interaction.reply({ content: `Invited ${member.user.tag} to the vc!`, flags: MessageFlags.Ephemeral });
+                    }
+                });
+                break;
+            }
         }
     }
 

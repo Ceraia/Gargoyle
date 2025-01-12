@@ -48,12 +48,17 @@ export default class Entropy extends GargoyleCommand {
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.options.getSubcommand() === 'activity') {
             if (!interaction.guild) return;
+
             await interaction.reply({
-                content: `Calculating all VC statistics for past 7 days for ${interaction.guild.memberCount}`,
+                content: `Calculating all VC statistics for the past 7 days for ${interaction.guild.memberCount} members...`,
                 flags: MessageFlags.Ephemeral
             });
-            this.setMemberRoles(await this.getGuildVoiceActivity(interaction.guild));
-            await interaction.editReply('Finished calculating all VC statistics for past 7 days, roles applied.');
+
+            const rankedMembers = await this.getGuildVoiceActivity(interaction.guild);
+
+            await this.setMemberRoles(rankedMembers);
+
+            await interaction.editReply('Finished calculating all VC statistics for the past 7 days. Roles applied.');
         }
     }
 
@@ -146,6 +151,13 @@ export default class Entropy extends GargoyleCommand {
                             interaction.editReply({ content: 'Failed to send DM to user' });
                         })
                         .then(() => {
+                            interaction.message.edit({
+                                components: [
+                                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                                        new GargoyleButtonBuilder(this, 'recruit', args[1]).setLabel('Recruited').setStyle(ButtonStyle.Success)
+                                    )
+                                ]
+                            });
                             interaction.editReply({ content: `User recruited, invite link: ${inviteLink}` });
                         });
                 })
@@ -199,14 +211,14 @@ export default class Entropy extends GargoyleCommand {
     }
 
     private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
-        let i = 0;
-        let j = 0;
+        let i = 9;
+        let j = 9;
 
         for (const rankedMember of members) {
             const member = rankedMember.guildMember;
 
             if (rankedMember.activity === 0) {
-                const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${9}`));
+                const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${0}`));
                 if (!role) continue;
                 if (!member.roles.cache.has(role.id)) {
                     await this.removeMemberActivityRoles(member);
@@ -224,10 +236,10 @@ export default class Entropy extends GargoyleCommand {
                 await member.roles.add(role);
             }
 
-            i++;
-            if (i >= j + 1) {
-                i = 0;
-                if (j !== 9) j++;
+            i--;
+            if (i < j) {
+                j--;
+                i = 9;
             }
         }
     }
