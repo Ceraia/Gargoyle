@@ -326,7 +326,7 @@ class RolePrefix extends GargoyleEvent {
     public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
         if (member.guild.id !== '1009048008857493624') return;
 
-        if (this.lastChanged.has(member.id) && Date.now() - this.lastChanged.get(member.id)! < 5000) return;
+        if (this.lastChanged.has(member.id) && Date.now() - this.lastChanged.get(member.id)! < 10000) return;
 
         const updatedMember = await member.fetch(true);
         let namePrefix = '[';
