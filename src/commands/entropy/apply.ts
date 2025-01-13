@@ -332,7 +332,8 @@ class RolePrefix extends GargoyleEvent {
 
         roles.forEach((role) => {
             if (role.name === '@everyone') return;
-            namePrefix += role.name.split('')[0].toUpperCase();
+            // If role starts with a single letter and then a space
+            if (role.name.match(/^[a-zA-Z] /)) namePrefix += role.name.split('')[0].toUpperCase();
         });
 
         namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
