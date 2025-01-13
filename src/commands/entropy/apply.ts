@@ -347,18 +347,12 @@ class LeaveLog extends GargoyleEvent {
     public execute(_client: GargoyleClient, member: GuildMember): void {
         if (member.guild.id !== '1009048008857493624') return;
 
-        const channel = member.guild.channels.cache.get('1323518160678424647') as TextChannel;
+        const channel = member.guild.systemChannel as TextChannel;
         if (!channel) return;
 
-        channel.send({
-            embeds: [
-                new GargoyleEmbedBuilder()
-                    .setDescription(`User ${member.user.tag} (<@!${member.user.id}>) has left the server.`)
-            ]
-        });
+        channel.send({ embeds: [new GargoyleEmbedBuilder().setDescription(`User ${member.user.tag} (<@!${member.user.id}>) has left the server.`)] });
     }
 }
-
 
 class RankedGuildMember {
     public guildMember: GuildMember;
