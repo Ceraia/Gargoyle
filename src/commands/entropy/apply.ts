@@ -275,8 +275,8 @@ export default class Entropy extends GargoyleCommand {
     }
 
     private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
-        let i = 9;
-        let j = 9;
+        let roleCapacity = 1;
+        let currentRoleLevel = 9;
 
         for (const rankedMember of members) {
             const member = rankedMember.guildMember;
@@ -291,8 +291,8 @@ export default class Entropy extends GargoyleCommand {
                 continue;
             }
 
-            const currentRoleLevel = j;
-            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${currentRoleLevel}`));
+            const currentLevel = currentRoleLevel;
+            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${currentLevel}`));
             if (!role) continue;
 
             if (!member.roles.cache.has(role.id)) {
@@ -300,10 +300,10 @@ export default class Entropy extends GargoyleCommand {
                 await member.roles.add(role);
             }
 
-            i--;
-            if (i < j) {
-                j--;
-                i = 9;
+            roleCapacity--;
+            if (roleCapacity <= 0) {
+                currentRoleLevel--;
+                roleCapacity = 2 ** (9 - currentRoleLevel); // Double the capacity for the next role
             }
         }
     }
