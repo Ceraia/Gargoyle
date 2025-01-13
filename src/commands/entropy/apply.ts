@@ -12,7 +12,6 @@ import {
     ButtonStyle,
     ChatInputCommandInteraction,
     Events,
-    Guild,
     GuildMember,
     InteractionContextType,
     Message,
@@ -49,16 +48,18 @@ export default class Entropy extends GargoyleCommand {
         if (interaction.options.getSubcommand() === 'activity') {
             if (!interaction.guild) return;
 
+            const guildMembers = await interaction.guild.members.fetch();
+
             await interaction.reply({
-                content: `Calculating all VC statistics for the past 7 days for ${interaction.guild.memberCount} members...`,
+                content: `Calculating all VC statistics for the past 7 days for ${guildMembers.size} members...`,
                 flags: MessageFlags.Ephemeral
             });
 
-            const rankedMembers = await this.getGuildVoiceActivity(interaction.guild);
+            const rankedMembers = await this.getGuildVoiceActivity(Array.from(guildMembers.values()));
 
             await this.setMemberRoles(rankedMembers);
 
-            await interaction.editReply('Finished calculating all VC statistics for the past 7 days. Roles applied.');
+            await interaction.editReply(`Finished calculating VC statistics for ${guildMembers.size} members for the past 7 days. Roles applied.`);
         }
     }
 
@@ -260,13 +261,12 @@ export default class Entropy extends GargoyleCommand {
         }
     }
 
-    private async getGuildVoiceActivity(guild: Guild): Promise<RankedGuildMember[]> {
-        const guildMembers = await guild.members.fetch();
+    private async getGuildVoiceActivity(guildMembers: GuildMember[]): Promise<RankedGuildMember[]> {
         const guildMembersVoiceActivity: RankedGuildMember[] = [];
 
         for (const guildMember of guildMembers.values()) {
             if (guildMember.user.bot) continue;
-            const userVoiceActivity = await getUserVoiceActivity(guildMember.id, guild.id, 7 * 24 * 60);
+            const userVoiceActivity = await getUserVoiceActivity(guildMember.id, guildMember.guild.id, 7 * 24 * 60);
             const user = new RankedGuildMember(guildMember, userVoiceActivity);
             guildMembersVoiceActivity.push(user);
         }
@@ -326,7 +326,7 @@ class RolePrefix extends GargoyleEvent {
     public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
         if (member.guild.id !== '1009048008857493624') return;
 
-        if (this.lastChanged.has(member.id) && Date.now() - this.lastChanged.get(member.id)! < 5000) return;
+        if (this.lastChanged.has(member.id) && Date.now() - this.lastChanged.get(member.id)! < 10000) return;
 
         const updatedMember = await member.fetch(true);
         let namePrefix = '[';
