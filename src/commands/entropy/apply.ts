@@ -150,15 +150,70 @@ export default class Entropy extends GargoyleCommand {
                         .catch(() => {
                             interaction.editReply({ content: 'Failed to send DM to user' });
                         })
-                        .then(() => {
-                            interaction.message.edit({
+                        .then(async () => {
+                            const message = await interaction.message.fetch();
+                            message.edit({
                                 components: [
                                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                                        new GargoyleButtonBuilder(this, 'recruit', args[1]).setLabel('Recruited').setStyle(ButtonStyle.Success)
+                                        new GargoyleButtonBuilder(this, 'upvote')
+                                            .setDisabled(true)
+                                            .setLabel(`${message.reactions.cache.get('👍')?.count.toString() || 69}`)
+                                            .setStyle(ButtonStyle.Success),
+                                        new GargoyleButtonBuilder(this, 'recruit', args[1])
+                                            .setLabel(`Recruited by ${interaction.user.username}`)
+                                            .setStyle(ButtonStyle.Success),
+                                        new GargoyleButtonBuilder(this, 'downvote')
+                                            .setDisabled(true)
+                                            .setLabel(`${message.reactions.cache.get('👎')?.count.toString() || 69}`)
+                                            .setStyle(ButtonStyle.Danger)
                                     )
                                 ]
                             });
                             interaction.editReply({ content: `User recruited, invite link: ${inviteLink}` });
+                        });
+                })
+                .catch(() => {
+                    interaction.editReply({ content: 'Failed to fetch user' });
+                });
+        } else if (args[0] === 'vouch') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            if (interaction.message.content.includes(`\nVouched by <@!${interaction.user.id}>`)) {
+                await interaction.message.edit(interaction.message.content.replace(`\nVouched by <@!${interaction.user.id}>`, ''));
+            } else {
+                await interaction.message.edit({ content: `${interaction.message.content}\nVouched by <@!${interaction.user.id}>` });
+            }
+            interaction.editReply({ content: 'Adjusted your vouch for the user.' });
+        } else if (args[0] === 'reject') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            client.users
+                .fetch(args[1])
+                .then((user) => {
+                    user.send({ content: 'Your application to Entropy has been rejected, you may reapply if you feel necessary.' })
+                        .catch(() => {
+                            interaction.editReply({ content: 'Failed to send DM to user' });
+                        })
+                        .then(async () => {
+                            const message = await interaction.message.fetch();
+                            message.thread?.setArchived(true);
+                            message.edit({
+                                components: [
+                                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                                        new GargoyleButtonBuilder(this, 'upvote')
+                                            .setDisabled(true)
+                                            .setLabel(`${message.reactions.cache.get('👍')?.count.toString() || 69}`)
+                                            .setStyle(ButtonStyle.Success),
+                                        new GargoyleButtonBuilder(this, 'reject', args[1])
+                                            .setLabel(`Denied by ${interaction.user.username}`)
+                                            .setStyle(ButtonStyle.Danger)
+                                            .setDisabled(true),
+                                        new GargoyleButtonBuilder(this, 'downvote')
+                                            .setDisabled(true)
+                                            .setLabel(`${message.reactions.cache.get('👎')?.count.toString() || 69}`)
+                                            .setStyle(ButtonStyle.Danger)
+                                    )
+                                ]
+                            });
+                            interaction.editReply({ content: 'User rejected.' });
                         });
                 })
                 .catch(() => {
@@ -171,7 +226,7 @@ export default class Entropy extends GargoyleCommand {
         if (args[0] === 'application') {
             (client.channels.cache.get('1323518160678424647') as TextChannel)
                 .send({
-                    content: `New application by ${interaction.user.username}`,
+                    content: `New application by <@!${interaction.user.id}>`,
                     embeds: [
                         new GargoyleEmbedBuilder()
                             .setThumbnail(interaction.user.avatarURL())
@@ -186,11 +241,20 @@ export default class Entropy extends GargoyleCommand {
                     ],
                     components: [
                         new ActionRowBuilder<ButtonBuilder>().addComponents(
-                            new GargoyleButtonBuilder(this, 'recruit', interaction.user.id).setLabel('Recruit').setStyle(ButtonStyle.Secondary)
+                            new GargoyleButtonBuilder(this, 'recruit', interaction.user.id).setLabel('Recruit').setStyle(ButtonStyle.Success),
+                            new GargoyleButtonBuilder(this, 'vouch').setLabel('Vouch').setStyle(ButtonStyle.Secondary),
+                            new GargoyleButtonBuilder(this, 'reject', interaction.user.id).setLabel('Reject').setStyle(ButtonStyle.Danger)
                         )
                     ]
                 })
-                .then(() => {
+                .then((message) => {
+                    message.react('👍');
+                    message.react('👎');
+                    message.startThread({
+                        name: `Discussion of ${interaction.user.username}`,
+                        autoArchiveDuration: 60,
+                        reason: 'Application thread'
+                    });
                     interaction.reply({ content: 'Application submitted, you will hear back from us.', flags: MessageFlags.Ephemeral });
                 });
         }
