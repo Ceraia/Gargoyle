@@ -4,12 +4,12 @@ import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBu
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import client from '@src/system/botClient.js';
 
 import {
     ActionRowBuilder,
     ButtonStyle,
     CategoryChannel,
-    Channel,
     ChannelType,
     ChatInputCommandInteraction,
     Guild,
@@ -253,8 +253,13 @@ export default class Groups extends GargoyleCommand {
         }
     }
 
-    private isGroupCategory(channel: Channel): Promise<boolean> {
-        return Promise.resolve(channel.type === ChannelType.GuildCategory && channel.permissionOverwrites.cache.has(channel.guild.id));
+    private isGroupCategory(channel: GuildChannel): Promise<boolean> {
+        const permissionOverwrite = channel.permissionOverwrites.cache.get(client.user?.id ?? '');
+        return Promise.resolve(
+            channel.type === ChannelType.GuildCategory &&
+            channel.permissionOverwrites.cache.has(client.user?.id ?? '') &&
+            (permissionOverwrite?.allow.has(PermissionFlagsBits.UseExternalStickers) ?? false)
+        );
     }
 
     private async isGroup(channel: GuildChannel): Promise<boolean> {
