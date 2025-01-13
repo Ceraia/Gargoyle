@@ -321,9 +321,12 @@ export default class Entropy extends GargoyleCommand {
 
 class RolePrefix extends GargoyleEvent {
     public event = Events.GuildMemberUpdate as const;
+    private lastChanged = new Map<string, number>();
 
     public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
         if (member.guild.id !== '1009048008857493624') return;
+
+        if (this.lastChanged.has(member.id) && Date.now() - this.lastChanged.get(member.id)! < 5000) return;
 
         const updatedMember = await member.fetch(true);
         let namePrefix = '[';
@@ -333,7 +336,7 @@ class RolePrefix extends GargoyleEvent {
         roles.forEach((role) => {
             if (role.name === '@everyone') return;
             // If role starts with a single letter and then a space
-            if (role.name.match(/^[a-zA-Z] /)) namePrefix += role.name.split('')[0].toUpperCase();
+            if (role.name.match(/^[a-zA-Z0-9] /)) namePrefix += role.name.split('')[0].toUpperCase();
         });
 
         namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
