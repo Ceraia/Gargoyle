@@ -290,21 +290,21 @@ export default class Entropy extends GargoyleCommand {
             let roleLevel: number;
             if (rankedMember.activity === 0) {
                 roleLevel = 0; // Assign level 0 for members with no activity
-            } else if (percentileRank <= 5) {
+            } else if (percentileRank <= 3) {
                 roleLevel = 9;
-            } else if (percentileRank <= 10) {
+            } else if (percentileRank <= 5) {
                 roleLevel = 8;
-            } else if (percentileRank <= 15) {
+            } else if (percentileRank <= 10) {
                 roleLevel = 7;
-            } else if (percentileRank <= 25) {
+            } else if (percentileRank <= 20) {
                 roleLevel = 6;
-            } else if (percentileRank <= 45) {
+            } else if (percentileRank <= 35) {
                 roleLevel = 5;
             } else if (percentileRank <= 55) {
                 roleLevel = 4;
-            } else if (percentileRank <= 70) {
+            } else if (percentileRank <= 75) {
                 roleLevel = 3;
-            } else if (percentileRank <= 90) {
+            } else if (percentileRank <= 80) {
                 roleLevel = 2;
             } else {
                 roleLevel = 1; // Least active
