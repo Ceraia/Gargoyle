@@ -34,7 +34,12 @@ export default class Entropy extends GargoyleCommand {
             .setName('entropy')
             .setDescription('Entropy related commands')
             .addGuild('1009048008857493624')
-            .addSubcommand((subcommand) => subcommand.setName('activity').setDescription('Calculate voice activity'))
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('activity')
+                    .setDescription('Voice activity related commands')
+                    .addSubcommand((subcommand) => subcommand.setName('calculate').setDescription('Calculate voice activity'))
+            )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
     public override textCommands = [
@@ -45,7 +50,7 @@ export default class Entropy extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
-        if (interaction.options.getSubcommand() === 'activity') {
+        if (interaction.options.getSubcommand() === 'calculate') {
             if (!interaction.guild) return;
 
             const guildMembers = await interaction.guild.members.fetch();
