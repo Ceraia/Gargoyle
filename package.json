@@ -9,7 +9,7 @@
         "fs": "^0.0.2",
         "gradient-string": "^3.0.0",
         "http": "^0.0.1-security",
-        "mongoose": "^8.9.4",
+        "mongoose": "^8.9.5",
         "path": "^0.12.7",
         "tsconfig-paths": "^4.2.0"
     },
@@ -17,7 +17,7 @@
         "@eslint/eslintrc": "^3.2.0",
         "@eslint/js": "^9.18.0",
         "@types/figlet": "^1.7.0",
-        "@types/node": "^22.10.5",
+        "@types/node": "^22.10.6",
         "@types/ws": "^8.5.13",
         "eslint": "^9.18.0",
         "globals": "^15.14.0",
@@ -26,7 +26,7 @@
         "prettier": "^3.4.2",
         "tsc-watch": "^6.2.1",
         "typescript": "~5.7.3",
-        "typescript-eslint": "^8.19.1"
+        "typescript-eslint": "^8.20.0"
     },
     "scripts": {
         "start": "bun run .",
