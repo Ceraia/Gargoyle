@@ -275,35 +275,49 @@ export default class Entropy extends GargoyleCommand {
     }
 
     private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
-        let roleCapacity = 1;
-        let currentRoleLevel = 9;
+        // Sort members by activity in descending order (highest activity first)
+        const sortedMembers = members.sort((a, b) => b.activity - a.activity);
 
-        for (const rankedMember of members) {
+        const totalMembers = sortedMembers.length;
+
+        for (const [index, rankedMember] of sortedMembers.entries()) {
             const member = rankedMember.guildMember;
 
+            // Calculate the percentile rank
+            const percentileRank = (index / totalMembers) * 100;
+
+            // Determine the role level based on percentile rank
+            let roleLevel: number;
             if (rankedMember.activity === 0) {
-                const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${0}`));
-                if (!role) continue;
-                if (!member.roles.cache.has(role.id)) {
-                    await this.removeMemberActivityRoles(member);
-                    await member.roles.add(role);
-                }
-                continue;
+                roleLevel = 0; // Assign level 0 for members with no activity
+            } else if (percentileRank <= 5) {
+                roleLevel = 9;
+            } else if (percentileRank <= 10) {
+                roleLevel = 8;
+            } else if (percentileRank <= 15) {
+                roleLevel = 7;
+            } else if (percentileRank <= 25) {
+                roleLevel = 6;
+            } else if (percentileRank <= 45) {
+                roleLevel = 5;
+            } else if (percentileRank <= 55) {
+                roleLevel = 4;
+            } else if (percentileRank <= 70) {
+                roleLevel = 3;
+            } else if (percentileRank <= 90) {
+                roleLevel = 2;
+            } else {
+                roleLevel = 1; // Least active
             }
 
-            const currentLevel = currentRoleLevel;
-            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${currentLevel}`));
+            // Find the corresponding role
+            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${roleLevel}`));
             if (!role) continue;
 
+            // Assign role if the member doesn't already have it
             if (!member.roles.cache.has(role.id)) {
                 await this.removeMemberActivityRoles(member);
                 await member.roles.add(role);
-            }
-
-            roleCapacity--;
-            if (roleCapacity <= 0) {
-                currentRoleLevel--;
-                roleCapacity = 2 ** (9 - currentRoleLevel); // Double the capacity for the next role
             }
         }
     }
