@@ -18,6 +18,7 @@ import {
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
+    PermissionFlagsBits,
     TextChannel,
     TextInputBuilder,
     TextInputStyle
@@ -34,11 +35,13 @@ export default class Entropy extends GargoyleCommand {
             .setName('entropy')
             .setDescription('Entropy related commands')
             .addGuild('1009048008857493624')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addSubcommandGroup((subcommandGroup) =>
                 subcommandGroup
                     .setName('activity')
                     .setDescription('Voice activity related commands')
                     .addSubcommand((subcommand) => subcommand.setName('calculate').setDescription('Calculate voice activity'))
+                    .addSubcommand((subcommand) => subcommand.setName('leaderboard').setDescription('Get voice leaderboard'))
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
@@ -60,11 +63,38 @@ export default class Entropy extends GargoyleCommand {
                 flags: MessageFlags.Ephemeral
             });
 
-            const rankedMembers = await this.getGuildVoiceActivity(Array.from(guildMembers.values()));
+            const rankedMembers = await this.getVoiceActivity(Array.from(guildMembers.values()));
 
             await this.setMemberRoles(rankedMembers);
 
             await interaction.editReply(`Finished calculating VC statistics for ${guildMembers.size} members for the past 7 days. Roles applied.`);
+        } else if (interaction.options.getSubcommand() == 'leaderboard') {
+            if (!interaction.guild) return;
+
+            const guildMembers = await interaction.guild.members.fetch();
+
+            await interaction.reply({
+                content: `Calculating all VC statistics for the past 7 days for ${guildMembers.size} members...`
+            });
+            const rankedMembers = await this.getVoiceActivity(Array.from(guildMembers.values()));
+
+            const embed = new GargoyleEmbedBuilder()
+                .setTitle('Voice Activity Leaderboard')
+                .setDescription('Top members based on their voice activity in the past 7 days.');
+
+            // Add top 10 members or fewer if less than 10
+            const topMembers = rankedMembers.slice(0, 10);
+            for (const [index, member] of topMembers.entries()) {
+                embed.addFields({
+                    name: `#${index + 1}: ${member.guildMember.user.username}`,
+                    value: `Activity: ${member.activity} minutes`
+                });
+            }
+
+            await interaction.editReply({
+                content: 'Here is the leaderboard:',
+                embeds: [embed]
+            });
         }
     }
 
@@ -266,20 +296,20 @@ export default class Entropy extends GargoyleCommand {
         }
     }
 
-    private async getGuildVoiceActivity(guildMembers: GuildMember[]): Promise<RankedGuildMember[]> {
-        const guildMembersVoiceActivity: RankedGuildMember[] = [];
+    private async getVoiceActivity(guildMembers: GuildMember[]): Promise<RankedVoiceMember[]> {
+        const guildMembersVoiceActivity: RankedVoiceMember[] = [];
 
         for (const guildMember of guildMembers.values()) {
             if (guildMember.user.bot) continue;
             const userVoiceActivity = await getUserVoiceActivity(guildMember.id, guildMember.guild.id, 7 * 24 * 60);
-            const user = new RankedGuildMember(guildMember, userVoiceActivity);
+            const user = new RankedVoiceMember(guildMember, userVoiceActivity);
             guildMembersVoiceActivity.push(user);
         }
 
         return guildMembersVoiceActivity.sort((a, b) => b.activity - a.activity);
     }
 
-    private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
+    private async setMemberRoles(members: RankedVoiceMember[]): Promise<void> {
         // Sort members by activity in descending order (highest activity first)
         const sortedMembers = members.sort((a, b) => b.activity - a.activity);
 
@@ -295,7 +325,7 @@ export default class Entropy extends GargoyleCommand {
             let roleLevel: number;
             if (rankedMember.activity === 0) {
                 roleLevel = 0; // Assign level 0 for members with no activity
-            } else if (percentileRank <= 3) {
+            } else if (percentileRank <= 2.5) {
                 roleLevel = 9;
             } else if (percentileRank <= 5) {
                 roleLevel = 8;
@@ -377,7 +407,7 @@ class LeaveLog extends GargoyleEvent {
     }
 }
 
-class RankedGuildMember {
+class RankedVoiceMember {
     public guildMember: GuildMember;
     public activity: number;
 
