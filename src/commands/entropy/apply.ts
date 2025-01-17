@@ -357,7 +357,7 @@ export default class Entropy extends GargoyleCommand {
 
     private async removeMemberActivityRoles(member: GuildMember): Promise<void> {
         for (const role of member.roles.cache.values()) {
-            if (role.name.match(/^\d/)) {
+            if (role.name.match(/^\d/) && role.name.endsWith('Activity')) {
                 await member.roles.remove(role);
             }
         }
