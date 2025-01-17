@@ -68,14 +68,12 @@ export default class Entropy extends GargoyleCommand {
             await this.setMemberRoles(rankedMembers);
 
             await interaction.editReply(`Finished calculating VC statistics for ${guildMembers.size} members for the past 7 days. Roles applied.`);
-        } else if (interaction.options.getSubcommand() == 'leaderboard') {
+        } else if (interaction.options.getSubcommand() === 'leaderboard') {
             if (!interaction.guild) return;
 
             const guildMembers = await interaction.guild.members.fetch();
 
-            await interaction.reply({
-                content: `Calculating all VC statistics for the past 7 days for ${guildMembers.size} members...`
-            });
+            await interaction.reply({ content: `Calculating all VC statistics for the past 7 days for ${guildMembers.size} members...` });
             const rankedMembers = await this.getVoiceActivity(Array.from(guildMembers.values()));
 
             const embed = new GargoyleEmbedBuilder()
@@ -346,7 +344,7 @@ export default class Entropy extends GargoyleCommand {
             }
 
             // Find the corresponding role
-            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${roleLevel}`));
+            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${roleLevel}`) && role.name.endsWith('Activity'));
             if (!role) continue;
 
             // Assign role if the member doesn't already have it
