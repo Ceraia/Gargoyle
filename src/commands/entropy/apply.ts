@@ -55,7 +55,10 @@ export default class Entropy extends GargoyleCommand {
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.options.getSubcommand() === 'calculate') {
             if (!interaction.guild) return;
-
+            if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) === false) {
+                await interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
+                return;
+            }
             const guildMembers = await interaction.guild.members.fetch();
 
             await interaction.reply({
