@@ -100,7 +100,7 @@ export default class Entropy extends GargoyleCommand {
             });
         } else if (interaction.options.getSubcommand() === 'view') {
             if (!interaction.guild) return;
-            interaction.deferReply();
+            await interaction.deferReply();
 
             const user = interaction.options.getUser('user') || interaction.user;
 
