@@ -42,6 +42,8 @@ export default class Entropy extends GargoyleCommand {
                     .setDescription('Voice activity related commands')
                     .addSubcommand((subcommand) => subcommand.setName('calculate').setDescription('Calculate voice activity'))
                     .addSubcommand((subcommand) => subcommand.setName('leaderboard').setDescription('Get voice leaderboard'))
+                    .addSubcommand((subcommand) => subcommand.setName('view').setDescription('View a user\'s voice activity')
+                        .addUserOption(option => option.setName('user').setDescription('The user to view').setRequired(false)))
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
@@ -96,6 +98,15 @@ export default class Entropy extends GargoyleCommand {
                 content: 'Here is the leaderboard:',
                 embeds: [embed]
             });
+        } else if (interaction.options.getSubcommand() === 'view') {
+            if (!interaction.guild) return;
+            interaction.deferReply();
+
+            const user = interaction.options.getUser('user') || interaction.user;
+
+            const userVoiceActivity = await getUserVoiceActivity(user.id, interaction.guild.id, 7 * 24 * 60);
+
+            await interaction.editReply({ content: `Voice activity for ${user.username} in the past 7 days: ${userVoiceActivity} minutes` });
         }
     }
 
