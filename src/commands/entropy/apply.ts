@@ -42,8 +42,12 @@ export default class Entropy extends GargoyleCommand {
                     .setDescription('Voice activity related commands')
                     .addSubcommand((subcommand) => subcommand.setName('calculate').setDescription('Calculate voice activity'))
                     .addSubcommand((subcommand) => subcommand.setName('leaderboard').setDescription('Get voice leaderboard'))
-                    .addSubcommand((subcommand) => subcommand.setName('view').setDescription('View a user\'s voice activity')
-                        .addUserOption(option => option.setName('user').setDescription('The user to view').setRequired(false)))
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('view')
+                            .setDescription('View a user\'s voice activity')
+                            .addUserOption((option) => option.setName('user').setDescription('The user to view').setRequired(false))
+                    )
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
@@ -400,7 +404,10 @@ class RolePrefix extends GargoyleEvent {
             if (role.name.match(/^[a-zA-Z0-9] /)) namePrefix += role.name.split('')[0].toUpperCase();
         });
 
-        namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
+        let username = updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username;
+        if (updatedMember.user.id === '287497254330302464') username = 'NutZak';
+
+        namePrefix += `] ${username}`;
 
         updatedMember.setNickname(namePrefix).catch(() => {});
     }
