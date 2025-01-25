@@ -73,7 +73,14 @@ export default class Entropy extends GargoyleCommand {
             
             const response = await ollama.chat({
                 model: 'deepseek-r1:1.5b',
-                messages: [{ role: 'user', content: interaction.options.getString('message') || 'No message content.' }]
+                messages: [
+                    { // Explain to the AI model that unknown words may be names, that it should keep it's responses short, and that the user is a user
+                        role: 'system', content: 'The following conversation may contain unknown words, which may be names. Please keep your responses short and concise.'
+                    },
+                    { // Give the user message
+                        role: 'user', content: interaction.options.getString('message') || 'No message content.'
+                    }
+                ]
             }).catch(() => {
                 interaction.editReply({ content: 'Failed to get response from AI model.' });
                 return null;
