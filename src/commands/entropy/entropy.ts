@@ -68,14 +68,16 @@ export default class Entropy extends GargoyleCommand {
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'jackson') {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply();
             const ollama = new Ollama({ host: 'http://ollama:11434' });
             const response = await ollama.chat({
                 model: 'deepseek-r1:1.5b',
                 messages: [{ role: 'user', content: interaction.options.getString('message') || 'No message content.' }]
             });
+            // Remove everything between <think> and </think> tags
+            const responseContent = response.message.content.replace(/<think>.*<\/think>/g, '');
 
-            await interaction.editReply({ content: response.message.content || 'No response received.' });
+            await interaction.editReply({ content: responseContent || 'No response received.' });
         }
 
         if (interaction.options.getSubcommand() === 'calculate') {
