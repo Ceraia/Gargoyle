@@ -68,16 +68,36 @@ export default class Entropy extends GargoyleCommand {
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'jackson') {
-            await interaction.deferReply();
+            await interaction.deferReply({});
             const ollama = new Ollama({ host: 'http://ollama:11434' });
+            
             const response = await ollama.chat({
                 model: 'deepseek-r1:1.5b',
                 messages: [{ role: 'user', content: interaction.options.getString('message') || 'No message content.' }]
+            }).catch(() => {
+                interaction.editReply({ content: 'Failed to get response from AI model.' });
+                return null;
             });
-            // Remove everything between <think> and </think> tags
-            const responseContent = response.message.content.replace(/<think>.*<\/think>/g, '');
 
-            await interaction.editReply({ content: responseContent || 'No response received.' });
+            if (response) {
+                const thinkRegex = /<think>.*\n\n.*<\/think>/g;
+                const message = response.message.content.replace(thinkRegex, '');
+
+                // Split message up into chunks of 2000 characters
+                const chunks = message.match(/[\s\S]{1,2000}/g);
+
+                if(chunks?.length === 1) {
+                    await interaction.editReply({ content: chunks[0] });
+                } else {
+                    if(chunks)
+                    for (const chunk of chunks) {
+                        await interaction.followUp({ content: chunk });
+                    }
+                }
+            } else {
+                await interaction.editReply({ content: 'Failed to get response from AI model.' });
+            }
+
         }
 
         if (interaction.options.getSubcommand() === 'calculate') {
