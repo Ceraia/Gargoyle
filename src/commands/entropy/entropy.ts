@@ -35,6 +35,8 @@ export default class Entropy extends GargoyleCommand {
         new GargoyleSlashCommandBuilder()
             .setName('jackson')
             .setDescription('Talk to an AI model.')
+            .addGuild('1009048008857493624')
+            .addStringOption((option) => option.setName('message').setDescription('The message to send to the AI model.').setRequired(true))
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) as GargoyleSlashCommandBuilder,
         new GargoyleSlashCommandBuilder()
             .setName('entropy')
@@ -66,13 +68,14 @@ export default class Entropy extends GargoyleCommand {
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'jackson') {
+            await interaction.deferReply({ ephemeral: true });
             const ollama = new Ollama({ host: 'http://ollama:11434' });
             const response = await ollama.chat({
                 model: 'deepseek-r1:1.5b',
                 messages: [{ role: 'user', content: interaction.options.getString('message') || 'No message content.' }]
             });
 
-            interaction.reply({ content: response.message.content || 'No response received.', ephemeral: true });
+            await interaction.editReply({ content: response.message.content || 'No response received.' });
         }
 
         if (interaction.options.getSubcommand() === 'calculate') {
