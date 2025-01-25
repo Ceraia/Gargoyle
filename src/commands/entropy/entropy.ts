@@ -80,7 +80,7 @@ export default class Entropy extends GargoyleCommand {
             });
 
             if (response) {
-                const thinkRegex = /<think>.*\n\n.*<\/think>/g;
+                const thinkRegex = /<think>[\s\S]*?<\/think>/g;
                 const message = response.message.content.replace(thinkRegex, '');
 
                 // Split message up into chunks of 2000 characters
