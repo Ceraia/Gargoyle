@@ -47,7 +47,7 @@ export default class Entropy extends GargoyleCommand {
                             .setName('view')
                             .setDescription('View a user\'s voice activity')
                             .addUserOption((option) => option.setName('user').setDescription('The user to view').setRequired(false))
-                    )
+                    ).addSubcommand((subcommand) => subcommand.setName('pie').setDescription('Check a pie chart of the voice activity'))
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
