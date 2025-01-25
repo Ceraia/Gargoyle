@@ -43,7 +43,7 @@ export default class VoicechatCommand extends GargoyleCommand {
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('create')
-                .setDescription('Create dynamic vc\'s')
+                .setDescription("Create dynamic vc's")
                 .addChannelOption((option) =>
                     option
                         .setName('vc')

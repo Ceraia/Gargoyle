@@ -3,7 +3,6 @@ import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
-
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
 
@@ -21,47 +20,54 @@ import {
     MessageFlags,
     PermissionFlagsBits
 } from 'discord.js';
+import { Ollama } from 'ollama';
 
 export default class Groups extends GargoyleCommand {
     public override category: string = 'fun';
-    public override slashCommands = [new GargoyleSlashCommandBuilder()
-        .setName('group')
-        .setDescription('Group related commands.')
-        .addGuild('1009048008857493624')
-        .addSubcommandGroup((subcommandGroup) =>
-            subcommandGroup
-                .setName('admin')
-                .setDescription('Admin commands for groups.')
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('setup')
-                        .setDescription('Setup group functionality for the server.')
-                        .addChannelOption((option) =>
-                            option
-                                .setName('channel')
-                                .setDescription('The category to create the group channels in.')
-                                .addChannelTypes(ChannelType.GuildCategory)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('delete')
-                        .setDescription('Delete a group.')
-                        .addChannelOption((option) =>
-                            option.setName('channel').setDescription('The group to delete.').setRequired(true).addChannelTypes(ChannelType.GuildText)
-                        )
-                )
-        )
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('create')
-                .setDescription('Create a group.')
-                .addStringOption((option) => option.setName('name').setDescription('The name of the group.').setRequired(true))
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder];
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('group')
+            .setDescription('Group related commands.')
+            .addGuild('1009048008857493624')
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('admin')
+                    .setDescription('Admin commands for groups.')
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('setup')
+                            .setDescription('Setup group functionality for the server.')
+                            .addChannelOption((option) =>
+                                option
+                                    .setName('channel')
+                                    .setDescription('The category to create the group channels in.')
+                                    .addChannelTypes(ChannelType.GuildCategory)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('delete')
+                            .setDescription('Delete a group.')
+                            .addChannelOption((option) =>
+                                option
+                                    .setName('channel')
+                                    .setDescription('The group to delete.')
+                                    .setRequired(true)
+                                    .addChannelTypes(ChannelType.GuildText)
+                            )
+                    )
+            )
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('create')
+                    .setDescription('Create a group.')
+                    .addStringOption((option) => option.setName('name').setDescription('The name of the group.').setRequired(true))
+            )
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
+    ];
 
-    public override executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+    public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand();
         if (!subcommand) return;
 
