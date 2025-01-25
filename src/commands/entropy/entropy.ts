@@ -27,10 +27,15 @@ import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
+import { Ollama } from 'ollama';
 
 export default class Entropy extends GargoyleCommand {
     public override category: string = 'utilities';
     public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('jackson')
+            .setDescription('Talk to an AI model.')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) as GargoyleSlashCommandBuilder,
         new GargoyleSlashCommandBuilder()
             .setName('entropy')
             .setDescription('Entropy related commands')
@@ -45,9 +50,10 @@ export default class Entropy extends GargoyleCommand {
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('view')
-                            .setDescription('View a user\'s voice activity')
+                            .setDescription("View a user's voice activity")
                             .addUserOption((option) => option.setName('user').setDescription('The user to view').setRequired(false))
-                    ).addSubcommand((subcommand) => subcommand.setName('pie').setDescription('Check a pie chart of the voice activity'))
+                    )
+                    .addSubcommand((subcommand) => subcommand.setName('pie').setDescription('Check a pie chart of the voice activity'))
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
@@ -59,6 +65,16 @@ export default class Entropy extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
+        if (interaction.commandName === 'jackson') {
+            const ollama = new Ollama({ host: 'http://ollama:11434' });
+            const response = await ollama.chat({
+                model: 'deepseek-r1:1.5b',
+                messages: [{ role: 'user', content: interaction.options.getString('message') || 'No message content.' }]
+            });
+
+            interaction.reply({ content: response.message.content || 'No response received.', ephemeral: true });
+        }
+
         if (interaction.options.getSubcommand() === 'calculate') {
             if (!interaction.guild) return;
             if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) === false) {
