@@ -22,7 +22,8 @@ export default class VoiceActivity extends GargoyleEvent {
         const userId = member.id;
 
         if (newState.channelId && !oldState.channelId) {
-            // User joined a voice channel without leaving another one
+            // User joined a voice channel
+            if(newState.guild.afkChannelId === newState.channelId) return;
             getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
                 voiceTime.activity.push({
                     dateJoined: new Date(),
@@ -32,7 +33,7 @@ export default class VoiceActivity extends GargoyleEvent {
                 await voiceTime.save();
             });
         } else if (newState.channelId && oldState.channelId) {
-            // User switched voice channels
+            // User switched voice states or was moved to a different voice channel
             if (newState.guild.afkChannelId === newState.channelId) {
                 // User joined the AFK channel, thus has left the voice channel / is AFK
                 getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
@@ -45,13 +46,26 @@ export default class VoiceActivity extends GargoyleEvent {
                     }
                 });
             } else {
+                // User switched voice channels or voice state
                 getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
                     const lastActivity = voiceTime.activity.pop();
                     if (lastActivity) {
-                        if (lastActivity.hasLeft) return;
-                        lastActivity.dateLastChecked = new Date();
-                        voiceTime.activity.push(lastActivity);
-                        await voiceTime.save();
+                        if (lastActivity.hasLeft) {
+                            // User is last logged as having left a voice channel, but is in a voice channel so log them as joining again
+                            voiceTime.activity.push(lastActivity);
+                            voiceTime.activity.push({
+                                dateJoined: new Date(),
+                                dateLastChecked: new Date(),
+                                hasLeft: false
+                            });
+                            await voiceTime.save();
+                            return;
+                        } else {
+                            // User is still in a voice channel
+                            lastActivity.dateLastChecked = new Date();
+                            voiceTime.activity.push(lastActivity);
+                            await voiceTime.save();
+                        }
                     }
                 });
             }
