@@ -12,6 +12,7 @@ import {
     ButtonStyle,
     ChatInputCommandInteraction,
     Events,
+    Guild,
     GuildMember,
     InteractionContextType,
     Message,
@@ -37,6 +38,7 @@ export default class Entropy extends GargoyleCommand {
             .setDescription('Talk to an AI model.')
             .addGuild('1009048008857493624')
             .addStringOption((option) => option.setName('message').setDescription('The message to send to the AI model.').setRequired(true))
+            .setContexts([InteractionContextType.Guild])
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) as GargoyleSlashCommandBuilder,
         new GargoyleSlashCommandBuilder()
             .setName('entropy')
@@ -55,7 +57,7 @@ export default class Entropy extends GargoyleCommand {
                             .setDescription("View a user's voice activity")
                             .addUserOption((option) => option.setName('user').setDescription('The user to view').setRequired(false))
                     )
-                    )
+            )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
     public override textCommands = [
@@ -67,45 +69,88 @@ export default class Entropy extends GargoyleCommand {
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'jackson') {
-            await interaction.reply({ content: "Temporarily disabled due to no supervision." });
+            interaction.reply({ content: 'Jackson is currently disabled.', flags: MessageFlags.Ephemeral });
             return;
             await interaction.deferReply({});
-            const ollama = new Ollama({ host: 'http://ollama:11434' });
-            
-            const response = await ollama.chat({
-                model: 'deepseek-r1:7b',
-                messages: [
-                    { // Explain to the AI model that unknown words may be names, that it should keep it's responses short, and that the user is a user
-                        role: 'assistant', content: 'The following conversation may contain unknown words, terms or concepts, these will be the names of a user. Please keep your responses short and concise.'
-                    },
-                    { // Give the user message
-                        role: 'user', content: interaction.options.getString('message') || 'No message content.'
-                    }
-                ]
-            }).catch(() => {
-                interaction.editReply({ content: 'Failed to get response from AI model.' });
-                return null;
-            });
+
+            async function fetchDiscordMessages(userId: string, channel: TextChannel) {
+                const messages = await channel.messages.fetch({ limit: 50 }); // Fetch last 50 messages
+                return messages.filter((msg) => msg.author.id === userId).map((msg) => ({ content: msg.content }));
+            }
+
+            async function fetchUserInfo(userId: string, guild: Guild) {
+                const member = await guild.members.fetch(userId);
+                return {
+                    username: member.user.username,
+                    nickname: member.nickname,
+                    roles: member.roles.cache.map((role) => role.name)
+                };
+            }
+
+            const ollama = new Ollama({ host: 'http://localhost:11434' });
+
+            const userId = interaction.user.id;
+            const userMessages = await fetchDiscordMessages(userId, interaction.channel as TextChannel);
+            const userInfo = await fetchUserInfo(userId, interaction.guild as Guild); 
+
+            client.logger.trace(`User Messages: ${userMessages.map((msg) => `- ${msg.content}`).join('\n')}\n}`);
+
+            const context =
+                `User Information:\n` +
+                `- Username: ${userInfo.username}\n` +
+                `- Nickname: ${userInfo.nickname || 'N/A'}\n` +
+                `- Roles: ${userInfo.roles.join(', ') || 'No roles'}\n` +
+                `` +
+                `Recent Messages:\n` +
+                `${userMessages.map((msg) => `- ${msg.content}`).join('\n')}\n`;
+
+            client.logger.trace(`Context: ${context}`);
+            const response = await ollama
+                .chat({
+                    model: 'deepseek-r1:7b',
+                    messages: [
+                        {
+                            role: 'assistant',
+                            content: `Your name is Jackson, you are a member of a discord chat, you should always respond in first person.\n`+
+                                `The following conversation may contain unknown words, terms, or concepts.\n` +
+                                `These may represent the names of users or other Discord-related information.\n`+
+                                `Use the provided context to give accurate, short, and concise responses.`
+                        },
+                        {
+                            role: 'system',
+                            content: context.trim()
+                        },
+                        {
+                            role: 'user',
+                            content: interaction.options.getString('message') || 'No message content.'
+                        }
+                    ]
+                })
+                .catch((err) => {
+                    interaction.editReply({ content: 'Failed to get response from AI model.' });
+                    client.logger.error(err);
+                    return null;
+                });
 
             if (response) {
                 const thinkRegex = /<think>[\s\S]*?<\/think>/g;
                 const message = response.message.content.replace(thinkRegex, '');
 
-                // Split message up into chunks of 2000 characters
                 const chunks = message.match(/[\s\S]{1,2000}/g);
 
-                if(chunks?.length === 1) {
+                if (chunks?.length === 1) {
                     await interaction.editReply({ content: chunks[0] });
-                } else {
-                    if(chunks)
+                    return;
+                } else if (chunks) {
                     for (const chunk of chunks) {
                         await interaction.followUp({ content: chunk });
+                        return;
                     }
                 }
             } else {
                 await interaction.editReply({ content: 'Failed to get response from AI model.' });
+                return;
             }
-
         }
 
         if (interaction.options.getSubcommand() === 'calculate') {
