@@ -23,7 +23,7 @@ export default class VoiceActivity extends GargoyleEvent {
 
         if (newState.channelId && !oldState.channelId) {
             // User joined a voice channel
-            if(newState.guild.afkChannelId === newState.channelId) return;
+            if (newState.guild.afkChannelId === newState.channelId) return;
             getGuildUserVoiceActivity(userId, guildId).then(async (voiceTime) => {
                 voiceTime.activity.push({
                     dateJoined: new Date(),
