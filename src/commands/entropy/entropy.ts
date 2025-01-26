@@ -68,6 +68,8 @@ export default class Entropy extends GargoyleCommand {
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'jackson') {
+            await interaction.reply({ content: "Temporarily disabled due to no supervision." });
+            return;
             await interaction.deferReply({});
             const ollama = new Ollama({ host: 'http://ollama:11434' });
             
