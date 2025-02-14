@@ -3,6 +3,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
+import client from '@src/system/botClient.js';
 import {
     ActionRowBuilder,
     ApplicationCommandType,
@@ -20,7 +21,7 @@ import {
 } from 'discord.js';
 
 export default class Server extends GargoyleCommand {
-    public override category: string = 'utilities';
+    public override category: string = 'server';
     public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('server')
         .setDescription('Server / community commands')
@@ -64,14 +65,14 @@ export default class Server extends GargoyleCommand {
             );
         } else if (interaction.options.getSubcommand() === 'attachment') {
             await interaction.reply({ content: 'Sending attachment, one moment...', flags: MessageFlags.Ephemeral });
-            sendAsServer({ files: [interaction.options.getAttachment('attachment')!] }, interaction.channel as TextChannel);
+            sendAsServer(client, { files: [interaction.options.getAttachment('attachment')!] }, interaction.channel as TextChannel);
         }
     }
 
     public override executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
         if (args[0] === 'message') {
             interaction.reply({ content: 'Sending message, one moment...', flags: MessageFlags.Ephemeral });
-            sendAsServer({ content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel);
+            sendAsServer(client, { content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel);
         } else if (args[0] === 'edit') {
             if (!interaction.channel) return;
             (interaction.channel as TextChannel).messages.fetch(args[1]).then((message) => {

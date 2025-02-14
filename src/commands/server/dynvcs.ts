@@ -34,7 +34,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 
 export default class VoicechatCommand extends GargoyleCommand {
-    public override category: string = 'utilities';
+    public override category: string = 'server';
     public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('vc')
         .setDescription('Voicechat related commands.')
@@ -43,7 +43,7 @@ export default class VoicechatCommand extends GargoyleCommand {
         .addSubcommand((subcommand) =>
             subcommand
                 .setName('create')
-                .setDescription("Create dynamic vc's")
+                .setDescription('Create dynamic vc\'s')
                 .addChannelOption((option) =>
                     option
                         .setName('vc')
@@ -63,7 +63,7 @@ export default class VoicechatCommand extends GargoyleCommand {
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommand() === 'panel') {
             interaction.reply({ content: 'Sending the panel!', flags: MessageFlags.Ephemeral });
-            sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
+            sendAsServer(client, this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
         } else if (interaction.options.getSubcommand() === 'create') {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             if (!interaction.guild) return;
@@ -103,14 +103,17 @@ export default class VoicechatCommand extends GargoyleCommand {
         }
     }
 
-    public override executeTextCommand(_client: GargoyleClient, message: Message) {
-        sendAsServer(this.panelMessage as MessageCreateOptions, message.channel as TextChannel);
+    public override executeTextCommand(client: GargoyleClient, message: Message) {
+        sendAsServer(client, this.panelMessage as MessageCreateOptions, message.channel as TextChannel);
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (interaction.message.webhookId)
             editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id);
-        else interaction.message.delete().then(() => sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
+        else
+            interaction.message
+                .delete()
+                .then(() => sendAsServer(client, this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
 
         if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;

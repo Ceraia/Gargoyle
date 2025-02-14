@@ -18,7 +18,7 @@ import {
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 
 export default class ButtonRole extends GargoyleCommand {
-    public override category: string = 'utilities';
+    public override category: string = 'server';
     public override slashCommand = new GargoyleSlashCommandBuilder()
         .setName('rolebutton')
         .setDescription('Create a button that gives a role')
@@ -109,7 +109,7 @@ export default class ButtonRole extends GargoyleCommand {
                     componentCollection.push(actionRow);
                 }
 
-                sendAsServer({ components: componentCollection }, channel);
+                sendAsServer(client, { components: componentCollection }, channel);
             }
         }
     }
