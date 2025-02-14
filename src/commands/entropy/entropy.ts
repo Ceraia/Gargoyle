@@ -31,7 +31,7 @@ import client from '@src/system/botClient.js';
 import { Ollama } from 'ollama';
 
 export default class Entropy extends GargoyleCommand {
-    public override category: string = 'utilities';
+    public override category: string = 'entropy';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
             .setName('jackson')
@@ -91,7 +91,7 @@ export default class Entropy extends GargoyleCommand {
 
             const userId = interaction.user.id;
             const userMessages = await fetchDiscordMessages(userId, interaction.channel as TextChannel);
-            const userInfo = await fetchUserInfo(userId, interaction.guild as Guild); 
+            const userInfo = await fetchUserInfo(userId, interaction.guild as Guild);
 
             client.logger.trace(`User Messages: ${userMessages.map((msg) => `- ${msg.content}`).join('\n')}\n}`);
 
@@ -111,9 +111,10 @@ export default class Entropy extends GargoyleCommand {
                     messages: [
                         {
                             role: 'assistant',
-                            content: `Your name is Jackson, you are a member of a discord chat, you should always respond in first person.\n`+
+                            content:
+                                `Your name is Jackson, you are a member of a discord chat, you should always respond in first person.\n` +
                                 `The following conversation may contain unknown words, terms, or concepts.\n` +
-                                `These may represent the names of users or other Discord-related information.\n`+
+                                `These may represent the names of users or other Discord-related information.\n` +
                                 `Use the provided context to give accurate, short, and concise responses.`
                         },
                         {
