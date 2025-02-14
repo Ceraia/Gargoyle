@@ -42,7 +42,7 @@ services:
       - 11434:11434
     restart: unless-stopped
     volumes:
-      - ai:/model_files
+      - ./container/ollama:/root/.ollama
     networks:
       - gargoyle
   
