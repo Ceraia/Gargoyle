@@ -59,7 +59,6 @@ export default class VoiceActivity extends GargoyleEvent {
                                 hasLeft: false
                             });
                             await voiceTime.save();
-                            return;
                         } else {
                             // User is still in a voice channel
                             lastActivity.dateLastChecked = new Date();
