@@ -2,12 +2,13 @@ import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
-
+import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
 
 import {
     ActionRowBuilder,
+    ButtonInteraction,
     ButtonStyle,
     CategoryChannel,
     ChannelType,
@@ -19,45 +20,52 @@ import {
     MessageFlags,
     PermissionFlagsBits
 } from 'discord.js';
+import { Ollama } from 'ollama';
 
 export default class Groups extends GargoyleCommand {
     public override category: string = 'fun';
-    public override slashCommand = new GargoyleSlashCommandBuilder()
-        .setName('group')
-        .setDescription('Group related commands.')
-        .addGuild('1009048008857493624')
-        .addSubcommandGroup((subcommandGroup) =>
-            subcommandGroup
-                .setName('admin')
-                .setDescription('Admin commands for groups.')
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('setup')
-                        .setDescription('Setup group functionality for the server.')
-                        .addChannelOption((option) =>
-                            option
-                                .setName('channel')
-                                .setDescription('The category to create the group channels in.')
-                                .addChannelTypes(ChannelType.GuildCategory)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('delete')
-                        .setDescription('Delete a group.')
-                        .addChannelOption((option) =>
-                            option.setName('channel').setDescription('The group to delete.').setRequired(true).addChannelTypes(ChannelType.GuildText)
-                        )
-                )
-        )
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('create')
-                .setDescription('Create a group.')
-                .addStringOption((option) => option.setName('name').setDescription('The name of the group.').setRequired(true))
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('group')
+            .setDescription('Group related commands.')
+            .addGuild('1009048008857493624')
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('admin')
+                    .setDescription('Admin commands for groups.')
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('setup')
+                            .setDescription('Setup group functionality for the server.')
+                            .addChannelOption((option) =>
+                                option
+                                    .setName('channel')
+                                    .setDescription('The category to create the group channels in.')
+                                    .addChannelTypes(ChannelType.GuildCategory)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('delete')
+                            .setDescription('Delete a group.')
+                            .addChannelOption((option) =>
+                                option
+                                    .setName('channel')
+                                    .setDescription('The group to delete.')
+                                    .setRequired(true)
+                                    .addChannelTypes(ChannelType.GuildText)
+                            )
+                    )
+            )
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('create')
+                    .setDescription('Create a group.')
+                    .addStringOption((option) => option.setName('name').setDescription('The name of the group.').setRequired(true))
+            )
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
+    ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         const subcommand = interaction.options.getSubcommand();
@@ -68,21 +76,56 @@ export default class Groups extends GargoyleCommand {
             return;
         }
 
+        switch (subcommand) {
+            case 'setup': {
+                if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+                    interaction.reply({ content: 'You do not have permission to run this command.', ephemeral: true });
+                    return;
+                }
+                try {
+                    // Your setup logic here
+                } catch (error) {
+                    client.logger.error(`Error executing ${subcommand} command:`, error as string);
+                    interaction.reply({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });
+                }
+                break;
+            }
+        }
+    }
+
+    public override executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): void {
+        const subcommand = args[0];
+        if (!subcommand) return;
+
+        if (!client.user?.id) {
+            interaction.reply({ content: 'Bot user not available.', flags: MessageFlags.Ephemeral });
+            return;
+        }
+
         try {
             switch (subcommand) {
-                case 'setup':
-                    await this.handleSetup(client, interaction);
+                case 'invite':
                     break;
-                case 'delete':
-                    await this.handleDelete(client, interaction);
+                case 'kick':
                     break;
-                case 'create':
-                    await this.handleCreate(client, interaction);
+                case 'promote':
+                    break;
+                case 'leave':
                     break;
             }
         } catch (error) {
             client.logger.error(`Error executing ${subcommand} command:`, error as string);
             interaction.reply({ content: 'An error occurred while processing your request.', flags: MessageFlags.Ephemeral });
+        }
+    }
+
+    private async getGroupCategory(client: GargoyleClient, guild: Guild): Promise<GuildChannel | null> {
+        try {
+            const channels = await guild.channels.fetch();
+            return Array.from(channels.values()).find(async (channel) => await this.isGroupCategory(channel as GuildChannel)) as GuildChannel;
+        } catch (error) {
+            client.logger.error(`Failed to get group category for ${guild.id}:`, error as string);
+            return null;
         }
     }
 
@@ -128,6 +171,26 @@ export default class Groups extends GargoyleCommand {
         }
     }
 
+    private async hasGroup(client: GargoyleClient, guild: Guild, member: GuildMember): Promise<boolean> {
+        try {
+            const channels = await guild.channels.fetch();
+            return Array.from(channels.values()).some(async (channel) => await this.isGroup(channel as GuildChannel));
+        } catch (error) {
+            client.logger.error(`Failed to check if ${member.id} has a group in ${guild.id}:`, error as string);
+            return false;
+        }
+    }
+
+    private async getGroups(client: GargoyleClient, guild: Guild): Promise<GuildChannel[]> {
+        try {
+            const channels = await guild.channels.fetch();
+            return Array.from(channels.values()).filter(async (channel) => await this.isGroup(channel as GuildChannel)) as GuildChannel[];
+        } catch (error) {
+            client.logger.error(`Failed to get groups for ${guild.id}:`, error as string);
+            return [];
+        }
+    }
+
     private async handleSetup(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -151,6 +214,34 @@ export default class Groups extends GargoyleCommand {
 
         await this.removeGuildGroupCategories(client, interaction.guild as Guild);
         await this.setGroupCategory(client, channel as GuildChannel);
+        for (const childChannel of (channel as CategoryChannel).children.cache.values()) {
+            childChannel.delete().catch(() => {});
+        }
+
+        await interaction.guild?.channels
+            .create({
+                name: 'Groups',
+                type: ChannelType.GuildText,
+                parent: channel.id,
+                permissionOverwrites: [{ id: client.user?.id ?? '', allow: [PermissionFlagsBits.UseExternalStickers] }]
+            })
+            .then(async (channel) => {
+                channel.send({
+                    content: 'Groups',
+                    embeds: [new GargoyleEmbedBuilder().setTitle('Groups').setDescription('Select a group to view.')],
+                    components: [
+                        new ActionRowBuilder<GargoyleStringSelectMenuBuilder>().addComponents(
+                            new GargoyleStringSelectMenuBuilder(this, 'group').addOptions(
+                                (await this.getGroups(client, interaction.guild as Guild)).map((channel) => ({
+                                    label: channel.name,
+                                    value: channel.id
+                                }))
+                            )
+                        )
+                    ]
+                });
+            });
+
         interaction.editReply('Group setup complete.');
     }
 
@@ -189,11 +280,7 @@ export default class Groups extends GargoyleCommand {
 
         if (await this.hasGroup(client, interaction.guild, interaction.member as GuildMember)) {
             interaction.editReply('You already have a group.');
-            return;
         }
-
-        const channel = await this.createGroup(client, interaction.guild, name, interaction.member as GuildMember);
-        interaction.editReply(channel ? `Group ${name} created.` : 'Failed to create group.');
     }
 
     private async setGroupCategory(client: GargoyleClient, channel: GuildChannel): Promise<boolean> {
@@ -209,30 +296,45 @@ export default class Groups extends GargoyleCommand {
         return false;
     }
 
-    private async removeGroupCategory(client: GargoyleClient, channel: GuildChannel): Promise<boolean> {
-        try {
-            const fetchedChannel = await client.channels.fetch(channel.id);
-            if (fetchedChannel?.type === ChannelType.GuildCategory) {
-                await fetchedChannel.permissionOverwrites.delete(client.user!.id);
-                return true;
-            }
-        } catch (error) {
-            client.logger.error(`Failed to remove group category for ${channel.id}:`, error as string);
-        }
-        return false;
+    private isGroupCategory(channel: GuildChannel): Promise<boolean> {
+        const permissionOverwrite = channel.permissionOverwrites.cache.get(client.user?.id ?? '');
+        return Promise.resolve(
+            channel.type === ChannelType.GuildCategory &&
+                channel.permissionOverwrites.cache.has(client.user?.id ?? '') &&
+                (permissionOverwrite?.allow.has(PermissionFlagsBits.UseExternalStickers) ?? false)
+        );
     }
 
-    private async getGroupCategory(client: GargoyleClient, guild: Guild): Promise<CategoryChannel | null> {
+    private async isGroup(channel: GuildChannel): Promise<boolean> {
+        const parentIsGroupCategory = channel.parent ? await this.isGroupCategory(channel.parent) : false;
+        return channel.type === ChannelType.GuildText && parentIsGroupCategory;
+    }
+
+    private isGroupIndex(channel: GuildChannel): Promise<boolean> {
+        const permissionOverwrite = channel.permissionOverwrites.cache.get(client.user?.id ?? '');
+        return Promise.resolve(
+            channel.type === ChannelType.GuildText &&
+                channel.permissionOverwrites.cache.has(client.user?.id ?? '') &&
+                (permissionOverwrite?.allow.has(PermissionFlagsBits.UseExternalStickers) ?? false)
+        );
+    }
+
+    private isGroupOwner(channel: GuildChannel, member: GuildMember): Promise<boolean> {
+        const permissions = channel.permissionOverwrites.cache.get(member.id);
+        return Promise.resolve(permissions?.allow.has(PermissionFlagsBits.UseExternalStickers) || false);
+    }
+
+    private async removeGroupCategory(client: GargoyleClient, channel: GuildChannel): Promise<boolean> {
         try {
-            const channels = await guild.channels.fetch();
-            return (
-                channels
-                    .filter((channel): channel is CategoryChannel => channel !== null && channel.type === ChannelType.GuildCategory)
-                    .find((channel) => this.isGroupCategory(channel)) || null
-            );
+            // Remove the permission overwrite for the bot
+            const permissionOverwrite = channel.permissionOverwrites.cache.get(client.user?.id ?? '');
+            if (permissionOverwrite) {
+                await permissionOverwrite.delete();
+            }
+            return true;
         } catch (error) {
-            client.logger.error(`Failed to get group category for guild ${guild.id}:`, error as string);
-            return null;
+            client.logger.error(`Failed to remove group category for ${channel.id}:`, error as string);
+            return false;
         }
     }
 
@@ -249,41 +351,6 @@ export default class Groups extends GargoyleCommand {
             return true;
         } catch (error) {
             client.logger.error(`Failed to remove group categories for ${guild.id}:`, error as string);
-            return false;
-        }
-    }
-
-    private isGroupCategory(channel: GuildChannel): Promise<boolean> {
-        const permissionOverwrite = channel.permissionOverwrites.cache.get(client.user?.id ?? '');
-        return Promise.resolve(
-            channel.type === ChannelType.GuildCategory &&
-            channel.permissionOverwrites.cache.has(client.user?.id ?? '') &&
-            (permissionOverwrite?.allow.has(PermissionFlagsBits.UseExternalStickers) ?? false)
-        );
-    }
-
-    private async isGroup(channel: GuildChannel): Promise<boolean> {
-        const parentIsGroupCategory = channel.parent ? await this.isGroupCategory(channel.parent) : false;
-        return channel.type === ChannelType.GuildText && parentIsGroupCategory;
-    }
-
-    private isGroupOwner(channel: GuildChannel, member: GuildMember): Promise<boolean> {
-        const permissions = channel.permissionOverwrites.cache.get(member.id);
-        return Promise.resolve(permissions?.allow.has(PermissionFlagsBits.UseExternalStickers) || false);
-    }
-
-    private async hasGroup(client: GargoyleClient, guild: Guild, member: GuildMember): Promise<boolean> {
-        try {
-            const channels = await guild.channels.fetch();
-            return (
-                await Promise.all(
-                    Array.from(channels.values()).map(
-                        async (channel) => (await this.isGroup(channel as GuildChannel)) && (await this.isGroupOwner(channel as GuildChannel, member))
-                    )
-                )
-            ).some(Boolean);
-        } catch (error) {
-            client.logger.error(`Failed to check group ownership for ${member.id}:`, error as string);
             return false;
         }
     }

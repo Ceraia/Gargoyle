@@ -93,7 +93,7 @@ export default class Role extends GargoyleCommand {
                     componentCollection.push(actionRow);
                 }
 
-                sendAsServer({ components: componentCollection }, channel);
+                sendAsServer(client, { components: componentCollection }, channel);
             }
         }
     }

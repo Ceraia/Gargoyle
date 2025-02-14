@@ -12,12 +12,14 @@ import {
     ButtonStyle,
     ChatInputCommandInteraction,
     Events,
+    Guild,
     GuildMember,
     InteractionContextType,
     Message,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
+    PermissionFlagsBits,
     TextChannel,
     TextInputBuilder,
     TextInputStyle
@@ -26,15 +28,36 @@ import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
+import { Ollama } from 'ollama';
 
 export default class Entropy extends GargoyleCommand {
-    public override category: string = 'utilities';
+    public override category: string = 'entropy';
     public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('jackson')
+            .setDescription('Talk to an AI model.')
+            .addGuild('1009048008857493624')
+            .addStringOption((option) => option.setName('message').setDescription('The message to send to the AI model.').setRequired(true))
+            .setContexts([InteractionContextType.Guild])
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) as GargoyleSlashCommandBuilder,
         new GargoyleSlashCommandBuilder()
             .setName('entropy')
             .setDescription('Entropy related commands')
             .addGuild('1009048008857493624')
-            .addSubcommand((subcommand) => subcommand.setName('activity').setDescription('Calculate voice activity'))
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('activity')
+                    .setDescription('Voice activity related commands')
+                    .addSubcommand((subcommand) => subcommand.setName('calculate').setDescription('Calculate voice activity'))
+                    .addSubcommand((subcommand) => subcommand.setName('leaderboard').setDescription('Get voice leaderboard'))
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('view')
+                            .setDescription("View a user's voice activity")
+                            .addUserOption((option) => option.setName('user').setDescription('The user to view').setRequired(false))
+                    )
+            )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
     public override textCommands = [
@@ -45,9 +68,98 @@ export default class Entropy extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
-        if (interaction.options.getSubcommand() === 'activity') {
-            if (!interaction.guild) return;
+        if (interaction.commandName === 'jackson') {
+            interaction.reply({ content: 'Jackson is currently disabled.', flags: MessageFlags.Ephemeral });
+            return;
+            await interaction.deferReply({});
 
+            async function fetchDiscordMessages(userId: string, channel: TextChannel) {
+                const messages = await channel.messages.fetch({ limit: 50 }); // Fetch last 50 messages
+                return messages.filter((msg) => msg.author.id === userId).map((msg) => ({ content: msg.content }));
+            }
+
+            async function fetchUserInfo(userId: string, guild: Guild) {
+                const member = await guild.members.fetch(userId);
+                return {
+                    username: member.user.username,
+                    nickname: member.nickname,
+                    roles: member.roles.cache.map((role) => role.name)
+                };
+            }
+
+            const ollama = new Ollama({ host: 'http://localhost:11434' });
+
+            const userId = interaction.user.id;
+            const userMessages = await fetchDiscordMessages(userId, interaction.channel as TextChannel);
+            const userInfo = await fetchUserInfo(userId, interaction.guild as Guild);
+
+            client.logger.trace(`User Messages: ${userMessages.map((msg) => `- ${msg.content}`).join('\n')}\n}`);
+
+            const context =
+                `User Information:\n` +
+                `- Username: ${userInfo.username}\n` +
+                `- Nickname: ${userInfo.nickname || 'N/A'}\n` +
+                `- Roles: ${userInfo.roles.join(', ') || 'No roles'}\n` +
+                `` +
+                `Recent Messages:\n` +
+                `${userMessages.map((msg) => `- ${msg.content}`).join('\n')}\n`;
+
+            client.logger.trace(`Context: ${context}`);
+            const response = await ollama
+                .chat({
+                    model: 'deepseek-r1:7b',
+                    messages: [
+                        {
+                            role: 'assistant',
+                            content:
+                                `Your name is Jackson, you are a member of a discord chat, you should always respond in first person.\n` +
+                                `The following conversation may contain unknown words, terms, or concepts.\n` +
+                                `These may represent the names of users or other Discord-related information.\n` +
+                                `Use the provided context to give accurate, short, and concise responses.`
+                        },
+                        {
+                            role: 'system',
+                            content: context.trim()
+                        },
+                        {
+                            role: 'user',
+                            content: interaction.options.getString('message') || 'No message content.'
+                        }
+                    ]
+                })
+                .catch((err) => {
+                    interaction.editReply({ content: 'Failed to get response from AI model.' });
+                    client.logger.error(err);
+                    return null;
+                });
+
+            if (response) {
+                const thinkRegex = /<think>[\s\S]*?<\/think>/g;
+                const message = response.message.content.replace(thinkRegex, '');
+
+                const chunks = message.match(/[\s\S]{1,2000}/g);
+
+                if (chunks?.length === 1) {
+                    await interaction.editReply({ content: chunks[0] });
+                    return;
+                } else if (chunks) {
+                    for (const chunk of chunks) {
+                        await interaction.followUp({ content: chunk });
+                        return;
+                    }
+                }
+            } else {
+                await interaction.editReply({ content: 'Failed to get response from AI model.' });
+                return;
+            }
+        }
+
+        if (interaction.options.getSubcommand() === 'calculate') {
+            if (!interaction.guild) return;
+            if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) === false) {
+                await interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
+                return;
+            }
             const guildMembers = await interaction.guild.members.fetch();
 
             await interaction.reply({
@@ -55,11 +167,45 @@ export default class Entropy extends GargoyleCommand {
                 flags: MessageFlags.Ephemeral
             });
 
-            const rankedMembers = await this.getGuildVoiceActivity(Array.from(guildMembers.values()));
+            const rankedMembers = await this.getVoiceActivity(Array.from(guildMembers.values()));
 
             await this.setMemberRoles(rankedMembers);
 
             await interaction.editReply(`Finished calculating VC statistics for ${guildMembers.size} members for the past 7 days. Roles applied.`);
+        } else if (interaction.options.getSubcommand() === 'leaderboard') {
+            if (!interaction.guild) return;
+
+            const guildMembers = await interaction.guild.members.fetch();
+
+            await interaction.reply({ content: `Calculating all VC statistics for the past 7 days for ${guildMembers.size} members...` });
+            const rankedMembers = await this.getVoiceActivity(Array.from(guildMembers.values()));
+
+            const embed = new GargoyleEmbedBuilder()
+                .setTitle('Voice Activity Leaderboard')
+                .setDescription('Top members based on their voice activity in the past 7 days.');
+
+            // Add top 10 members or fewer if less than 10
+            const topMembers = rankedMembers.slice(0, 10);
+            for (const [index, member] of topMembers.entries()) {
+                embed.addFields({
+                    name: `#${index + 1}: ${member.guildMember.user.username}`,
+                    value: `Activity: ${member.activity} minutes`
+                });
+            }
+
+            await interaction.editReply({
+                content: 'Here is the leaderboard:',
+                embeds: [embed]
+            });
+        } else if (interaction.options.getSubcommand() === 'view') {
+            if (!interaction.guild) return;
+            await interaction.deferReply();
+
+            const user = interaction.options.getUser('user') || interaction.user;
+
+            const userVoiceActivity = await getUserVoiceActivity(user.id, interaction.guild.id, 7 * 24 * 60);
+
+            await interaction.editReply({ content: `Voice activity for ${user.username} in the past 7 days: ${userVoiceActivity} minutes` });
         }
     }
 
@@ -261,56 +407,70 @@ export default class Entropy extends GargoyleCommand {
         }
     }
 
-    private async getGuildVoiceActivity(guildMembers: GuildMember[]): Promise<RankedGuildMember[]> {
-        const guildMembersVoiceActivity: RankedGuildMember[] = [];
+    private async getVoiceActivity(guildMembers: GuildMember[]): Promise<RankedVoiceMember[]> {
+        const guildMembersVoiceActivity: RankedVoiceMember[] = [];
 
         for (const guildMember of guildMembers.values()) {
             if (guildMember.user.bot) continue;
             const userVoiceActivity = await getUserVoiceActivity(guildMember.id, guildMember.guild.id, 7 * 24 * 60);
-            const user = new RankedGuildMember(guildMember, userVoiceActivity);
+            const user = new RankedVoiceMember(guildMember, userVoiceActivity);
             guildMembersVoiceActivity.push(user);
         }
 
         return guildMembersVoiceActivity.sort((a, b) => b.activity - a.activity);
     }
 
-    private async setMemberRoles(members: RankedGuildMember[]): Promise<void> {
-        let i = 9;
-        let j = 9;
+    private async setMemberRoles(members: RankedVoiceMember[]): Promise<void> {
+        // Sort members by activity in descending order (highest activity first)
+        const sortedMembers = members.sort((a, b) => b.activity - a.activity);
 
-        for (const rankedMember of members) {
+        const totalMembers = sortedMembers.length;
+
+        for (const [index, rankedMember] of sortedMembers.entries()) {
             const member = rankedMember.guildMember;
 
+            // Calculate the percentile rank
+            const percentileRank = (index / totalMembers) * 100;
+
+            // Determine the role level based on percentile rank
+            let roleLevel: number;
             if (rankedMember.activity === 0) {
-                const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${0}`));
-                if (!role) continue;
-                if (!member.roles.cache.has(role.id)) {
-                    await this.removeMemberActivityRoles(member);
-                    await member.roles.add(role);
-                }
-                continue;
+                roleLevel = 0; // Assign level 0 for members with no activity
+            } else if (percentileRank <= 2.5) {
+                roleLevel = 9;
+            } else if (percentileRank <= 5) {
+                roleLevel = 8;
+            } else if (percentileRank <= 10) {
+                roleLevel = 7;
+            } else if (percentileRank <= 20) {
+                roleLevel = 6;
+            } else if (percentileRank <= 35) {
+                roleLevel = 5;
+            } else if (percentileRank <= 55) {
+                roleLevel = 4;
+            } else if (percentileRank <= 75) {
+                roleLevel = 3;
+            } else if (percentileRank <= 80) {
+                roleLevel = 2;
+            } else {
+                roleLevel = 1; // Least active
             }
 
-            const currentRoleLevel = j;
-            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${currentRoleLevel}`));
+            // Find the corresponding role
+            const role = member.guild.roles.cache.find((role) => role.name.startsWith(`${roleLevel}`) && role.name.endsWith('Activity'));
             if (!role) continue;
 
+            // Assign role if the member doesn't already have it
             if (!member.roles.cache.has(role.id)) {
                 await this.removeMemberActivityRoles(member);
                 await member.roles.add(role);
-            }
-
-            i--;
-            if (i < j) {
-                j--;
-                i = 9;
             }
         }
     }
 
     private async removeMemberActivityRoles(member: GuildMember): Promise<void> {
         for (const role of member.roles.cache.values()) {
-            if (role.name.match(/^\d/)) {
+            if (role.name.match(/^\d/) && role.name.endsWith('Activity')) {
                 await member.roles.remove(role);
             }
         }
@@ -339,7 +499,10 @@ class RolePrefix extends GargoyleEvent {
             if (role.name.match(/^[a-zA-Z0-9] /)) namePrefix += role.name.split('')[0].toUpperCase();
         });
 
-        namePrefix += `] ${updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username}`;
+        let username = updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username;
+        if (updatedMember.user.id === '287497254330302464') username = 'NutZak';
+
+        namePrefix += `] ${username}`;
 
         updatedMember.setNickname(namePrefix).catch(() => {});
     }
@@ -358,7 +521,7 @@ class LeaveLog extends GargoyleEvent {
     }
 }
 
-class RankedGuildMember {
+class RankedVoiceMember {
     public guildMember: GuildMember;
     public activity: number;
 
