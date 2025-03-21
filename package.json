@@ -10,7 +10,6 @@
         "gradient-string": "^3.0.0",
         "http": "^0.0.1-security",
         "mongoose": "^8.10.1",
-        "ollama": "^0.5.13",
         "path": "^0.12.7",
         "tsconfig-paths": "^4.2.0"
     },
