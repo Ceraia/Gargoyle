@@ -1,6 +1,7 @@
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import client from '@src/system/botClient.js';
 import {
     ApplicationCommandType,
     ButtonInteraction,
@@ -56,7 +57,8 @@ export default class Moderation extends GargoyleCommand {
                 .then(() => {
                     interaction.editReply({ content: `Deleted ${amount} messages.` });
                 })
-                .catch(() => {
+                .catch((err) => {
+                    client.logger.error(err);
                     interaction.editReply({ content: `Failed deleting ${amount} messages.` });
                 });
         }
