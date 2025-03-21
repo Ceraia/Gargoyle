@@ -45,7 +45,7 @@ export default class Entropy extends GargoyleCommand {
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('view')
-                            .setDescription("View a user's voice activity")
+                            .setDescription('View a user\'s voice activity')
                             .addUserOption((option) => option.setName('user').setDescription('The user to view').setRequired(false))
                     )
             )
