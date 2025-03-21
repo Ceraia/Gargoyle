@@ -4,8 +4,6 @@ import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import client from '@src/system/botClient.js';
 import {
     ApplicationCommandType,
-    ButtonInteraction,
-    CacheType,
     ChannelType,
     ChatInputCommandInteraction,
     ContextMenuCommandBuilder,
@@ -33,11 +31,11 @@ export default class Moderation extends GargoyleCommand {
 
         .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
     public override contextCommands = [
-        // new ContextMenuCommandBuilder()
-        //     .setContexts(InteractionContextType.Guild)
-        //     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
-        //     .setType(ApplicationCommandType.Message)
-        //     .setName('Delete messages till here')
+        new ContextMenuCommandBuilder()
+            .setContexts(InteractionContextType.Guild)
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+            .setType(ApplicationCommandType.Message)
+            .setName('Delete messages till here')
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
@@ -59,13 +57,34 @@ export default class Moderation extends GargoyleCommand {
                 })
                 .catch((err) => {
                     client.logger.error(err);
-                    interaction.editReply({ content: `Failed deleting ${amount} messages.` });
+                    interaction.editReply({
+                        content: `Failed deleting ${amount} messages.\n-# You can only bulk-delete messages that are under 14 days old, this is a limitation presented by Discord themselves unfortunately.`
+                    });
                 });
         }
         return;
     }
 
-    override executeButtonCommand(_client: GargoyleClient, _interaction: ButtonInteraction<CacheType>, ..._args: string[]): void {}
+    public override async executeContextMenuCommand(_client: GargoyleClient, interaction: MessageContextMenuCommandInteraction) {
+        if (!interaction.channel || interaction.channel.type !== ChannelType.GuildText) return;
+        await interaction.deferReply({ ephemeral: true });
 
-    public override executeContextMenuCommand(_client: GargoyleClient, _interaction: MessageContextMenuCommandInteraction): void {}
+        const channel = interaction.channel as TextChannel;
+        const clickedMessage = await interaction.channel.messages.fetch(interaction.targetId);
+        if (!clickedMessage) return interaction.editReply({ content: 'Could not find the selected message.' });
+
+        try {
+            const messages = await channel.messages.fetch({ after: clickedMessage.id, limit: 100 });
+            const deletableMessages = messages.filter((msg) => !msg.pinned && msg.createdTimestamp > clickedMessage.createdTimestamp);
+
+            if (deletableMessages.size === 0) {
+                return interaction.editReply({ content: 'No messages found to delete.' });
+            }
+
+            await channel.bulkDelete(deletableMessages, true);
+            return interaction.editReply({ content: `Deleted ${deletableMessages.size} messages.` });
+        } catch (error) {
+            return interaction.editReply({ content: 'Failed to delete messages. Messages older than 14 days cannot be bulk deleted.' });
+        }
+    }
 }
