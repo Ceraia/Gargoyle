@@ -32,35 +32,6 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://${DBUSERNAME}:${DBPASSWORD}@mongo:27017/gargoyle?authSource=admin
     networks:
       - gargoyle
-  
-  ollama:
-    profiles:
-      - ai
-    hostname: ollama
-    image: ollama/ollama:latest
-    ports:
-      - 11434:11434
-    restart: unless-stopped
-    volumes:
-      - ./container/ollama:/root/.ollama
-    networks:
-      - gargoyle
-  
-  chat-webui:
-    profiles:
-      - ai
-    image: ghcr.io/open-webui/open-webui:main
-    ports:
-      - 3000:8080
-    restart: unless-stopped
-    depends_on:
-      - ollama
-    environment:
-      OLLAMA_BASE_URL: http://ollama:11434
-    volumes:
-      - ./container/openwebui:/app/backend/data
-    networks:
-      - gargoyle
 
 networks:
   gargoyle:

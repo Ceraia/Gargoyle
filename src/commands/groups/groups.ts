@@ -20,7 +20,6 @@ import {
     MessageFlags,
     PermissionFlagsBits
 } from 'discord.js';
-import { Ollama } from 'ollama';
 
 export default class Groups extends GargoyleCommand {
     public override category: string = 'fun';
