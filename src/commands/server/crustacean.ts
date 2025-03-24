@@ -29,24 +29,24 @@ export default class Server extends GargoyleCommand {
                     new GargoyleEmbedBuilder()
                         .setTitle('Crustacean Invite System')
                         .setDescription(
-                            `Crustacean is a custom invite & invite tracking system for your server.\n` +
-                                `Crustacean is a W.I.P system to allow you to more accurately "whitelist" who gets access to your server, primarily meant for communities who value reputation of members.\n` +
-                                `Crustacean is not meant to replace the default Discord invite system, but rather to supplement it.\n` +
-                                `In short, as people's minds have atrophied and cannot be bothered to read all text;\n\n` +
-                                `- Track invitations, and see who invited who. \n` +
-                                `- Track reputation of members, and add merit accordingly. \n` +
-                                `- Track in-game names of members (for whitelisting for minecraft for example). \n\n` +
-                                `-# Crustacean is a work in progress, and may not work as expected, any bugs and feature requests can be forwarded to \`@axodouble.\``
+                            'Crustacean is a custom invite & invite tracking system for your server.\n' +
+                                'Crustacean is a W.I.P system to allow you to more accurately "whitelist" who gets access to your server, primarily meant for communities who value reputation of members.\n' +
+                                'Crustacean is not meant to replace the default Discord invite system, but rather to supplement it.\n' +
+                                "In short, as people's minds have atrophied and cannot be bothered to read all text;\n\n" +
+                                '- Track invitations, and see who invited who. \n' +
+                                '- Track reputation of members, and add merit accordingly. \n' +
+                                '- Track in-game names of members (for whitelisting for minecraft for example). \n\n' +
+                                '-# Crustacean is a work in progress, and may not work as expected, any bugs and feature requests can be forwarded to `@axodouble.`'
                         )
                 ],
                 flags: MessageFlags.Ephemeral
             });
         } else if (interaction.options.getSubcommand() === 'enable') {
             const guildId = interaction.guildId;
-            if (!guildId) return interaction.reply({ content: `This command can only be used in a guild`, flags: MessageFlags.Ephemeral });
-            let guild = await getCrustaceanGuild(guildId);
+            if (!guildId) return interaction.reply({ content: 'This command can only be used in a guild', flags: MessageFlags.Ephemeral });
+            const guild = await getCrustaceanGuild(guildId);
 
-            if (guild.enabled == interaction.options.getBoolean('enable', true)) {
+            if (guild.enabled === interaction.options.getBoolean('enable', true)) {
                 return interaction.reply({
                     content: `Crustacean system is already ${guild.enabled ? 'enabled' : 'disabled'}`,
                     flags: MessageFlags.Ephemeral
@@ -60,9 +60,8 @@ export default class Server extends GargoyleCommand {
                 content: `Crustacean system has been ${guild.enabled ? 'enabled' : 'disabled'}`,
                 flags: MessageFlags.Ephemeral
             });
-        } else {
-            return interaction.reply({ content: `Not implemented yet, sorry.`, flags: MessageFlags.Ephemeral });
         }
+        return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
     }
 
     public override events: GargoyleEvent[] = [new MemberJoin()];
@@ -122,9 +121,7 @@ const databaseCrustaceanUser = model('CrustaceanUsers', crustaceanUserSchema);
 async function getCrustaceanGuild(guildId: string) {
     let crustaceanGuild = await databaseCrustaceanGuild.findOne({ guildId: guildId });
     if (!crustaceanGuild) {
-        crustaceanGuild = new databaseCrustaceanGuild({
-            guildId: guildId
-        });
+        crustaceanGuild = new databaseCrustaceanGuild({ guildId: guildId });
         await crustaceanGuild.save();
     }
 
