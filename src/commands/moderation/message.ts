@@ -58,7 +58,6 @@ export default class Moderation extends GargoyleCommand {
                     interaction.editReply({ content: `Failed deleting ${amount} messages.\n-# You can only bulk-delete messages that are under 14 days old, this is a limitation presented by Discord themselves unfortunately.` });
                 });
         }
-
     }
 
     public override async executeContextMenuCommand(_client: GargoyleClient, interaction: MessageContextMenuCommandInteraction) {
