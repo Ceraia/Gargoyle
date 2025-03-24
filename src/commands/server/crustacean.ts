@@ -4,6 +4,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import client from '@src/system/botClient.js';
 import {
     ActionRowBuilder,
     ButtonInteraction,
@@ -133,7 +134,7 @@ export default class Crustacean extends GargoyleCommand {
                 const value = interaction.options.getNumber('value', true);
                 let oldValue = 0;
 
-                const crustaceanUser = await getCrustaceanUser(user.id, guildId);
+                const crustaceanUser = await getCrustaceanUser(client, user.id, guildId);
 
                 if (crustaceanUser.reputation) oldValue = crustaceanUser.reputation;
                 crustaceanUser.reputation = value;
@@ -147,7 +148,7 @@ export default class Crustacean extends GargoyleCommand {
                 const user = interaction.options.getUser('user', true);
                 const inviter = interaction.options.getUser('inviter', true);
 
-                const crustaceanUser = await getCrustaceanUser(user.id, guildId);
+                const crustaceanUser = await getCrustaceanUser(client, user.id, guildId);
                 crustaceanUser.inviterId = inviter.id;
                 await crustaceanUser.save();
 
@@ -163,13 +164,13 @@ export default class Crustacean extends GargoyleCommand {
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
     }
 
-    public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (interaction.guild === null) return;
 
         if (args[0] === 'invite') {
             const userId = args[1];
 
-            const crustaceanInvitee = await getCrustaceanUser(userId, interaction.guild.id);
+            const crustaceanInvitee = await getCrustaceanUser(client, userId, interaction.guild.id);
             crustaceanInvitee.inviterId = interaction.user.id;
             await crustaceanInvitee.save();
 
@@ -265,6 +266,7 @@ const crustaceanGuildSchema = new Schema({
 
 const crustaceanUserSchema = new Schema({
     userId: String,
+    cachedName: String,
     guildId: String, // Users are unique per guild
     inviterId: {
         type: String, // The user who "invited" the user to the guild, or accepted the joinee
@@ -289,11 +291,13 @@ async function getCrustaceanGuild(guildId: string) {
     return crustaceanGuild;
 }
 
-async function getCrustaceanUser(userId: string, guildId: string) {
+async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId: string) {
     let crustaceanUser = await databaseCrustaceanUser.findOne({ userId: userId, guildId: guildId });
     if (!crustaceanUser) {
+        const user = await client.users.fetch(userId);
         crustaceanUser = new databaseCrustaceanUser({
             userId: userId,
+            cachedName: user.displayName,
             guildId: guildId
         });
         await crustaceanUser.save();
