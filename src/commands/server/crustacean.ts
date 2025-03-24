@@ -1,11 +1,23 @@
+import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
-import { ChatInputCommandInteraction, Events, GuildMember, InteractionContextType, MessageFlags, PermissionFlagsBits } from 'discord.js';
+import {
+    ActionRowBuilder,
+    ButtonInteraction,
+    ButtonStyle,
+    ChannelType,
+    ChatInputCommandInteraction,
+    Events,
+    GuildMember,
+    InteractionContextType,
+    MessageFlags,
+    PermissionFlagsBits
+} from 'discord.js';
 
-export default class Server extends GargoyleCommand {
+export default class Crustacean extends GargoyleCommand {
     public override category: string = 'server';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
@@ -23,7 +35,9 @@ export default class Server extends GargoyleCommand {
                 subcommand
                     .setName('channel')
                     .setDescription('Set the channel for the crustacean system')
-                    .addChannelOption((option) => option.setName('channel').setDescription('Channel where invitees go').setRequired(true))
+                    .addChannelOption((option) =>
+                        option.setName('channel').setDescription('Channel where invitees go').setRequired(true).addChannelTypes(ChannelType.GuildText)
+                    )
             )
             .addSubcommand((subcommand) =>
                 subcommand
@@ -138,17 +152,60 @@ export default class Server extends GargoyleCommand {
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
     }
 
+    public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (interaction.guild === null) return;
+
+        if (args[0] === 'invite') {
+            const userId = args[1];
+
+            const crustaceanInvitee = await getCrustaceanUser(userId, interaction.guild.id);
+            crustaceanInvitee.inviterId = interaction.user.id;
+            await crustaceanInvitee.save();
+
+            await interaction.update({
+                components: [
+                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                        new GargoyleButtonBuilder(this)
+                            .setLabel(`Invited by ${interaction.user.displayName}`)
+                            .setStyle(ButtonStyle.Success)
+                            .setDisabled(true)
+                    )
+                ]
+            });
+
+            await interaction.reply({ content: 'You have now invited this user to the guild.', flags: MessageFlags.Ephemeral });
+            return;
+        }
+    }
+
     public override events: GargoyleEvent[] = [new MemberJoin()];
 }
 
 class MemberJoin extends GargoyleEvent {
     public event = Events.GuildMemberAdd as const;
 
-    public execute(_client: GargoyleClient, _member: GuildMember): void {
-        // // Check what invite the user used to join the server
-        // member.guild.fetchInvites().then((invites) => {
-        //     const invite = invites.find((invite) => invite.uses! < invite.maxUses!);
-        //     if (invite) {
+    public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
+        const crustaceanGuild = await getCrustaceanGuild(member.guild.id);
+        if (!crustaceanGuild.enabled) return;
+
+        let crustaceanChannel = member.guild.channels.cache.get(crustaceanGuild.channel);
+
+        if (!crustaceanChannel) {
+            crustaceanGuild.enabled = false;
+            await crustaceanGuild.save();
+            return;
+        }
+
+        if (crustaceanChannel.isSendable()) {
+            crustaceanChannel.send({
+                content: `Welcome to the server, ${member}!`,
+                components: [
+                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                        new GargoyleButtonBuilder(new Crustacean(), 'invite', member.id).setLabel('Invite').setStyle(ButtonStyle.Secondary)
+                    )
+                ]
+            }); // #TODO Add multiple invite messages for variance, or custom set.
+        }
     }
 }
 
