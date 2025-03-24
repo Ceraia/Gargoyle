@@ -305,23 +305,31 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
     }
 
     // Upwards
-    let tree = '';
+    let upwardsTree: string[] = [];
     let currentUserId: string | null = userId;
-    let depth = 0;
+    let rootUserId: string | null = null; // Keep track of the very first inviter
 
-    while (currentUserId && depth < maxDepth) {
+    while (currentUserId) {
         const currentUser: CrustaceanUser | null = await databaseCrustaceanUser.findOne({ guildId, userId: currentUserId });
 
         if (!currentUser || !currentUser.inviterId) break; // Stop if no inviter
 
         currentUserId = currentUser.inviterId;
-        tree = `↑ <@${currentUserId}>\n` + tree; // Prepend upwards
-        depth++;
+        upwardsTree.push(`<@${currentUserId}>`);
+        rootUserId = currentUserId; // Update root user
     }
 
-    // Downwards
-    tree += `<@${userId}>\n`;
-    tree += await generateInviteTree(guildId, userId, maxDepth, 0, '');
+    // Trim the middle if the upwards chain is too long
+    if (upwardsTree.length > maxDepth) {
+        const first = upwardsTree[0];
+        const last = upwardsTree[upwardsTree.length - 1];
+        upwardsTree = [first, '...', last];
+    }
 
-    return tree;
+    const upwardsStr = upwardsTree.length > 0 ? upwardsTree.reverse().join(' → ') + '\n' : '';
+
+    const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '');
+
+    const firstUserPrefix = rootUserId ? '└── ' : '';
+    return `${upwardsStr}${firstUserPrefix}<@${userId}>\n${downwardsTree}`;
 }
