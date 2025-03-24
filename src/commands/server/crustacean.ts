@@ -19,6 +19,37 @@ export default class Server extends GargoyleCommand {
                     .setDescription('Enable or disable the crustacean system')
                     .addBooleanOption((option) => option.setName('enable').setDescription('Enable or disable the system').setRequired(true))
             )
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('channel')
+                    .setDescription('Set the channel for the crustacean system')
+                    .addChannelOption((option) => option.setName('channel').setDescription('Channel where invitees go').setRequired(true))
+            )
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('role')
+                    .setDescription('Set the role for the crustacean system')
+                    .addRoleOption((option) => option.setName('role').setDescription('Role to give to invitees').setRequired(true))
+            )
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('set')
+                    .setDescription('Set certain values')
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('reputation')
+                            .setDescription("Set a user's reputation")
+                            .addUserOption((option) => option.setName('user').setDescription('Affected user').setRequired(true))
+                            .addNumberOption((option) => option.setName('value').setDescription('Value to set').setRequired(true))
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('inviter')
+                            .setDescription('Set the inviter of a user')
+                            .addUserOption((option) => option.setName('user').setDescription('Affected user').setRequired(true))
+                            .addUserOption((option) => option.setName('inviter').setDescription('Inviter').setRequired(true))
+                    )
+            )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
@@ -41,14 +72,16 @@ export default class Server extends GargoyleCommand {
                         )
                 ]
             });
-        } else if (interaction.options.getSubcommand() === 'enable') {
-            const guildId = interaction.guildId;
-            if (!guildId) return interaction.reply({ content: 'This command can only be used in a guild', flags: MessageFlags.Ephemeral });
-            const guild = await getCrustaceanGuild(guildId);
+        }
 
+        const guildId = interaction.guildId;
+        if (!guildId) return interaction.reply({ content: 'This command can only be used in a guild', flags: MessageFlags.Ephemeral });
+        const guild = await getCrustaceanGuild(guildId);
+
+        if (interaction.options.getSubcommand() === 'enable') {
             if (guild.enabled === interaction.options.getBoolean('enable', true)) {
                 return interaction.reply({
-                    content: `Crustacean system is already ${guild.enabled ? 'enabled' : 'disabled'}`,
+                    content: `Crustacean system is already ${guild.enabled ? 'enabled' : 'disabled'}\n-# Make sure you do have a channel selected, with \`/crustacean channel\``,
                     flags: MessageFlags.Ephemeral
                 });
             }
@@ -60,7 +93,48 @@ export default class Server extends GargoyleCommand {
                 content: `Crustacean system has been ${guild.enabled ? 'enabled' : 'disabled'}`,
                 flags: MessageFlags.Ephemeral
             });
+        } else if (interaction.options.getSubcommand() === 'channel') {
+            const channel = interaction.options.getChannel('channel', true);
+
+            guild.channel = channel.id;
+            await guild.save();
+
+            return interaction.reply({ content: `Crustacean channel has been set to ${channel}`, flags: MessageFlags.Ephemeral });
+        } else if (interaction.options.getSubcommand() === 'role') {
+            const role = interaction.options.getRole('role', true);
+
+            guild.role = role.id;
+            await guild.save();
+
+            return interaction.reply({ content: `Crustacean role has been set to ${role}`, flags: MessageFlags.Ephemeral });
+        } else if (interaction.options.getSubcommandGroup() === 'set') {
+            if (interaction.options.getSubcommand() === 'reputation') {
+                const user = interaction.options.getUser('user', true);
+                const value = interaction.options.getNumber('value', true);
+                let oldValue = 0;
+
+                const crustaceanUser = await getCrustaceanUser(user.id, guildId);
+
+                if (crustaceanUser.reputation) oldValue = crustaceanUser.reputation;
+                crustaceanUser.reputation = value;
+                await crustaceanUser.save();
+
+                return interaction.reply({
+                    content: `Reputation of ${user} has been set to ${value} from ${oldValue}`,
+                    flags: MessageFlags.Ephemeral
+                });
+            } else if (interaction.options.getSubcommand() === 'inviter') {
+                const user = interaction.options.getUser('user', true);
+                const inviter = interaction.options.getUser('inviter', true);
+
+                const crustaceanUser = await getCrustaceanUser(user.id, guildId);
+                crustaceanUser.inviterId = inviter.id;
+                await crustaceanUser.save();
+
+                return interaction.reply({ content: `${inviter} has been set as the inviter of ${user}`, flags: MessageFlags.Ephemeral });
+            }
         }
+
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
     }
 
@@ -89,6 +163,10 @@ const crustaceanGuildSchema = new Schema({
     channel: {
         type: String,
         default: null
+    },
+    role: {
+        type: String,
+        default: null
     }
 });
 
@@ -100,18 +178,8 @@ const crustaceanUserSchema = new Schema({
         default: null // this can be null to account for users who are not invited yet or have no logged invitee.
     },
     reputation: {
-        value: {
-            type: Number,
-            default: 0
-        },
-        log: [
-            {
-                userId: String, // User who caused the reputation value increase
-                value: Number, // The value it would have increased by
-                reason: String, // Reason for the increase, admin or user
-                timestamp: Date // When the increase happened
-            }
-        ]
+        type: Number,
+        default: 0
     }
 });
 
