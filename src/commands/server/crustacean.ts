@@ -157,7 +157,7 @@ export default class Crustacean extends GargoyleCommand {
             const user = interaction.options.getUser('user', true);
             const tree = await generateFullInviteTree(guildId, user.id);
 
-            return interaction.reply({ content: `${user}\n${tree}`, flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: `${tree}`, flags: MessageFlags.Ephemeral });
         }
 
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
@@ -328,8 +328,8 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
 
     const upwardsStr = upwardsTree.length > 0 ? upwardsTree.reverse().join(' → ') + '\n' : '';
 
-    const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '');
+    const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '    ');
 
-    const firstUserPrefix = rootUserId ? '└── ' : '    ';
+    const firstUserPrefix = rootUserId ? '└── ' : '';
     return `${upwardsStr}${firstUserPrefix}<@${userId}>\n${downwardsTree}`;
 }
