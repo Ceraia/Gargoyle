@@ -39,8 +39,7 @@ export default class Server extends GargoyleCommand {
                                 '-# Crustacean is a work in progress, and may not work as expected, any bugs and feature requests can be forwarded to `@axodouble.`' +
                                 '-# This idea is based off of the lobste.rs invite system.'
                         )
-                ],
-                flags: MessageFlags.Ephemeral
+                ]
             });
         } else if (interaction.options.getSubcommand() === 'enable') {
             const guildId = interaction.guildId;
