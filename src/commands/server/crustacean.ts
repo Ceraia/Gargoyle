@@ -153,6 +153,11 @@ export default class Crustacean extends GargoyleCommand {
 
                 return interaction.reply({ content: `${inviter} has been set as the inviter of ${user}`, flags: MessageFlags.Ephemeral });
             }
+        } else if (interaction.options.getSubcommand() === 'tree') {
+            const user = interaction.options.getUser('user', true);
+            const tree = await generateInviteTree(guildId, user.id);
+
+            return interaction.reply({ content: `Invite tree of ${user}:\n\`\`\`${tree}\`\`\``, flags: MessageFlags.Ephemeral });
         }
 
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
@@ -270,4 +275,23 @@ async function getCrustaceanUser(userId: string, guildId: string) {
     }
 
     return crustaceanUser;
+}
+
+async function generateInviteTree(guildId: string, userId: string, prefix = ''): Promise<string> {
+    const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
+
+    if (invitees.length === 0) return '';
+
+    let tree = '';
+
+    for (let i = 0; i < invitees.length; i++) {
+        const isLast = i === invitees.length - 1;
+        const branch = isLast ? '└── ' : '├── ';
+        const inviteeId = invitees[i].userId ?? 'UnknownUser'; // Ensure it's always a string
+
+        tree += `${prefix}${branch}<@${inviteeId}>\n`;
+        tree += await generateInviteTree(guildId, inviteeId, prefix + (isLast ? '    ' : '│   '));
+    }
+
+    return tree;
 }
