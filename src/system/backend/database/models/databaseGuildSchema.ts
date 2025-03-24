@@ -6,6 +6,14 @@ const guildSchema = new Schema({
         type: String,
         default: ','
     },
+    inviteTracking: {
+        type: Boolean,
+        default: true
+    },
+    inviterChannel: {
+        type: String,
+        default: ''
+    },
     dynamicVCs: {
         prefix: {
             type: String,

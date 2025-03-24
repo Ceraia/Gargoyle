@@ -3,6 +3,10 @@ import { Schema, model } from 'mongoose';
 const guildUserSchema = new Schema({
     userId: String,
     guildId: String,
+    inviter: {
+        type: String,
+        default: ''
+    },
     economy: {
         balance: {
             type: Number,
