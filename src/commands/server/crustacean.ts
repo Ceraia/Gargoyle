@@ -155,9 +155,9 @@ export default class Crustacean extends GargoyleCommand {
             }
         } else if (interaction.options.getSubcommand() === 'tree') {
             const user = interaction.options.getUser('user', true);
-            const tree = await generateInviteTree(guildId, user.id);
+            const tree = await generateFullInviteTree(guildId, user.id);
 
-            return interaction.reply({ content: `Invite tree of ${user}:\n${tree}`, flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: `${user}\n${tree}`, flags: MessageFlags.Ephemeral });
         }
 
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
@@ -277,7 +277,9 @@ async function getCrustaceanUser(userId: string, guildId: string) {
     return crustaceanUser;
 }
 
-async function generateInviteTree(guildId: string, userId: string, prefix = ''): Promise<string> {
+async function generateInviteTree(guildId: string, userId: string, maxDepth = 5, depth = 0, prefix = ''): Promise<string> {
+    if (depth > maxDepth) return '';
+
     const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
 
     if (invitees.length === 0) return '';
@@ -290,8 +292,36 @@ async function generateInviteTree(guildId: string, userId: string, prefix = ''):
         const inviteeId = invitees[i].userId ?? 'UnknownUser'; // Ensure it's always a string
 
         tree += `${prefix}${branch}<@${inviteeId}>\n`;
-        tree += await generateInviteTree(guildId, inviteeId, prefix + (isLast ? '    ' : '│   '));
+        tree += await generateInviteTree(guildId, inviteeId, maxDepth, depth + 1, prefix + (isLast ? '    ' : '│   '));
     }
+
+    return tree;
+}
+
+async function generateFullInviteTree(guildId: string, userId: string, maxDepth = 5): Promise<string> {
+    interface CrustaceanUser {
+        userId: string;
+        inviterId?: string | null;
+    }
+
+    // Upwards
+    let tree = '';
+    let currentUserId: string | null = userId;
+    let depth = 0;
+
+    while (currentUserId && depth < maxDepth) {
+        const currentUser: CrustaceanUser | null = await databaseCrustaceanUser.findOne({ guildId, userId: currentUserId });
+
+        if (!currentUser || !currentUser.inviterId) break; // Stop if no inviter
+
+        currentUserId = currentUser.inviterId;
+        tree = `↑ <@${currentUserId}>\n` + tree; // Prepend upwards
+        depth++;
+    }
+
+    // Downwards
+    tree += `<@${userId}>\n`;
+    tree += await generateInviteTree(guildId, userId, maxDepth, 0, '');
 
     return tree;
 }
