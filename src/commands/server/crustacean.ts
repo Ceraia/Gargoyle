@@ -330,6 +330,6 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
 
     const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '');
 
-    const firstUserPrefix = rootUserId ? '└── ' : '';
+    const firstUserPrefix = rootUserId ? '└── ' : '    ';
     return `${upwardsStr}${firstUserPrefix}<@${userId}>\n${downwardsTree}`;
 }
