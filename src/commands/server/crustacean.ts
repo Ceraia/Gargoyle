@@ -326,7 +326,15 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
         upwardsTree = [first, '...', last];
     }
 
-    const upwardsStr = upwardsTree.length > 0 ? upwardsTree.reverse().join(' → ') + '\n' : '';
+    const upwardsStr =
+        upwardsTree.length > 0
+            ? upwardsTree
+                  .reverse()
+                  .map((u, i) => (i === 0 ? u : `└── ${u}`))
+                  .join('\n') + '\n'
+            : '';
+
+    // const upwardsStr = upwardsTree.length > 0 ? upwardsTree.reverse().join(' → ') + '\n' : '';
 
     const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '    ');
 
