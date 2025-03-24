@@ -173,6 +173,34 @@ export default class Crustacean extends GargoyleCommand {
             crustaceanInvitee.inviterId = interaction.user.id;
             await crustaceanInvitee.save();
 
+            // give the user the role too
+            const crustaceanGuild = await getCrustaceanGuild(interaction.guild.id);
+
+            if (crustaceanGuild.role) {
+                const role = interaction.guild.roles.cache.get(crustaceanGuild.role);
+                if (role) {
+                    await interaction.guild.members.fetch(userId).then((member) => {
+                        member.roles.add(role).catch(async () => {
+                            await interaction.reply({
+                                content: 'An error occurred giving the user the role, the role may be above my highest role.'
+                            });
+                            return;
+                        });
+                    });
+                } else {
+                    crustaceanGuild.role = null;
+                    await crustaceanGuild.save();
+
+                    await interaction.reply({ content: 'The role set for the crustacean system was not found, please set it again.' });
+                    return;
+                }
+            } else {
+                await interaction.reply({
+                    content: 'The role set for the crustacean system was not found, please set it again.'
+                });
+                return;
+            }
+
             await interaction.update({
                 components: [
                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
@@ -232,10 +260,7 @@ const crustaceanGuildSchema = new Schema({
         type: String,
         default: null
     },
-    role: {
-        type: String,
-        default: null
-    }
+    role: String
 });
 
 const crustaceanUserSchema = new Schema({
@@ -334,7 +359,7 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
     //               .join('\n') + '\n'
     //         : '';
 
-     const upwardsStr = upwardsTree.length > 0 ? upwardsTree.join(' ← ') + '\n' : '';
+    const upwardsStr = upwardsTree.length > 0 ? upwardsTree.join(' ← ') + '\n' : '';
 
     const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '    ');
 
