@@ -46,9 +46,7 @@ export default class Moderation extends GargoyleCommand {
             const channel = (await interaction.channel?.fetch()) as TextChannel;
 
             if (!channel || channel.type !== ChannelType.GuildText)
-                return interaction.editReply({
-                    content: 'Channel not found ? Or is not a text channel? This is unexpected. Please try again later.'
-                });
+                return interaction.editReply({ content: 'Channel not found ? Or is not a text channel? This is unexpected. Please try again later.' });
 
             channel
                 .bulkDelete(amount)
@@ -57,12 +55,10 @@ export default class Moderation extends GargoyleCommand {
                 })
                 .catch((err) => {
                     client.logger.error(err);
-                    interaction.editReply({
-                        content: `Failed deleting ${amount} messages.\n-# You can only bulk-delete messages that are under 14 days old, this is a limitation presented by Discord themselves unfortunately.`
-                    });
+                    interaction.editReply({ content: `Failed deleting ${amount} messages.\n-# You can only bulk-delete messages that are under 14 days old, this is a limitation presented by Discord themselves unfortunately.` });
                 });
         }
-        return;
+
     }
 
     public override async executeContextMenuCommand(_client: GargoyleClient, interaction: MessageContextMenuCommandInteraction) {

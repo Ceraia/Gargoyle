@@ -2,7 +2,6 @@ import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
-import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import client from '@src/system/botClient.js';
 import {
@@ -10,8 +9,6 @@ import {
     ApplicationCommandType,
     ChatInputCommandInteraction,
     ContextMenuCommandBuilder,
-    Events,
-    GuildMember,
     InteractionContextType,
     MessageContextMenuCommandInteraction,
     MessageFlags,
@@ -40,24 +37,6 @@ export default class Server extends GargoyleCommand {
                             .setName('attachment')
                             .setDescription('Send an attachment as the server')
                             .addAttachmentOption((option) => option.setName('attachment').setDescription('Attachment to send').setRequired(true))
-                    )
-            )
-            .addSubcommandGroup((subcommandGroup) =>
-                subcommandGroup
-                    .setName('invites')
-                    .setDescription('Manage invites')
-                    .addSubcommand((subcommand) =>
-                        subcommand
-                            .setName('tracking')
-                            .addBooleanOption((option) =>
-                                option.setName('enabled').setDescription('Enable or disable invite tracking').setRequired(true)
-                            )
-                    )
-                    .addSubcommand((subcommand) =>
-                        subcommand
-                            .setName('track')
-                            .setDescription('Track who invited a user')
-                            .addUserOption((option) => option.setName('user').setDescription('User to track').setRequired(true))
                     )
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
@@ -89,33 +68,6 @@ export default class Server extends GargoyleCommand {
         } else if (interaction.options.getSubcommand() === 'attachment') {
             await interaction.reply({ content: 'Sending attachment, one moment...', flags: MessageFlags.Ephemeral });
             return sendAsServer(client, { files: [interaction.options.getAttachment('attachment')!] }, interaction.channel as TextChannel);
-        } else if (interaction.options.getSubcommand() === 'tracking') {
-            if (!interaction.guildId)
-                return await interaction.reply({
-                    content: 'This does not appear to be a guild, you cannot toggle invite tracking.',
-                    flags: MessageFlags.Ephemeral
-                });
-
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-            if (client.db === undefined || client.db === null)
-                return interaction.editReply({ content: 'Database not connected, this feature is not available without database connectivity.' });
-
-            client.db
-                .getGuild(interaction.guildId)
-                .then(async (databaseGuild) => {
-                    databaseGuild.inviteTracking = interaction.options.getBoolean('enabled')!;
-                    await databaseGuild.save();
-                    return await interaction.editReply({
-                        content: `Invite tracking is now ${databaseGuild.inviteTracking ? 'enabled' : 'disabled'}.`
-                    });
-                })
-                .catch((err) => {
-                    client.logger.error(err);
-                    return interaction.editReply({ content: 'Failed to toggle invite tracking, please try again later.' });
-                });
-        } else if (interaction.options.getSubcommand() === 'track') {
-            // #TODO: Implement invite tracking
         }
     }
 
@@ -163,17 +115,5 @@ export default class Server extends GargoyleCommand {
             );
         }
     }
-
-    public override events: GargoyleEvent[] = [new MemberJoin()];
 }
 
-class MemberJoin extends GargoyleEvent {
-    public event = Events.GuildMemberAdd as const;
-
-    public execute(_client: GargoyleClient, _member: GuildMember): void {
-        // // Check what invite the user used to join the server
-        // member.guild.fetchInvites().then((invites) => {
-        //     const invite = invites.find((invite) => invite.uses! < invite.maxUses!);
-        //     if (invite) {
-    }
-}
