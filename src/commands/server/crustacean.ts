@@ -64,6 +64,12 @@ export default class Crustacean extends GargoyleCommand {
                             .addUserOption((option) => option.setName('inviter').setDescription('Inviter').setRequired(true))
                     )
             )
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('tree')
+                    .setDescription('Get the invite tree')
+                    .addUserOption((option) => option.setName('user').setDescription('User to get the tree of').setRequired(true))
+            )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
