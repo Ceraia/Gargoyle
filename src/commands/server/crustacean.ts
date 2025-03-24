@@ -36,7 +36,8 @@ export default class Server extends GargoyleCommand {
                                 '- Track invitations, and see who invited who. \n' +
                                 '- Track reputation of members, and add merit accordingly. \n' +
                                 '- Track in-game names of members (for whitelisting for minecraft for example). \n\n' +
-                                '-# Crustacean is a work in progress, and may not work as expected, any bugs and feature requests can be forwarded to `@axodouble.`'
+                                '-# Crustacean is a work in progress, and may not work as expected, any bugs and feature requests can be forwarded to `@axodouble.`' +
+                                '-# This idea is based off of the lobste.rs invite system.'
                         )
                 ],
                 flags: MessageFlags.Ephemeral
