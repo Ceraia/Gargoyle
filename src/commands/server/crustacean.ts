@@ -157,7 +157,7 @@ export default class Crustacean extends GargoyleCommand {
             }
         } else if (interaction.options.getSubcommand() === 'tree') {
             const user = interaction.options.getUser('user', true);
-            const tree = await generateFullInviteTree(guildId, user.id);
+            const tree = await generateFullInviteTreeOld(guildId, user.id);
 
             return interaction.reply({ content: `${tree}`, flags: MessageFlags.Ephemeral });
         }
@@ -450,8 +450,52 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
 
     const upwardsStr = upwardsTree.length > 0 ? upwardsTree.join(' ← ') + '\n' : '';
 
-    const downwardsTree = await generateInviteTreeOld(guildId, userId, maxDepth, 0, '    ');
+    const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '    ');
 
     const firstUserPrefix = rootUserId ? '└── ' : '';
     return `${upwardsStr}${firstUserPrefix}` + user.cachedName ?? `<@${userId}>?` + `\n${downwardsTree}`;
+}
+
+async function generateFullInviteTreeOld(guildId: string, userId: string, maxDepth = 5): Promise<string> {
+    interface CrustaceanUser {
+        userId: string;
+        inviterId?: string | null;
+    }
+
+    // Upwards
+    let upwardsTree: string[] = [];
+    let currentUserId: string | null = userId;
+    let rootUserId: string | null = null; // Keep track of the very first inviter
+
+    while (currentUserId) {
+        const currentUser: CrustaceanUser | null = await databaseCrustaceanUser.findOne({ guildId, userId: currentUserId });
+
+        if (!currentUser || !currentUser.inviterId) break; // Stop if no inviter
+
+        currentUserId = currentUser.inviterId;
+        upwardsTree.push(`<@${currentUserId}>`);
+        rootUserId = currentUserId; // Update root user
+    }
+
+    // Trim the middle if the upwards chain is too long
+    if (upwardsTree.length > maxDepth) {
+        const first = upwardsTree[0];
+        const last = upwardsTree[upwardsTree.length - 1];
+        upwardsTree = [first, '...', last];
+    }
+
+    // const upwardsStr =
+    //     upwardsTree.length > 0
+    //         ? upwardsTree
+    //               .reverse()
+    //               .map((u, i) => (i === 0 ? u : `└── ${u}`))
+    //               .join('\n') + '\n'
+    //         : '';
+
+    const upwardsStr = upwardsTree.length > 0 ? upwardsTree.join(' ← ') + '\n' : '';
+
+    const downwardsTree = await generateInviteTreeOld(guildId, userId, maxDepth, 0, '    ');
+
+    const firstUserPrefix = rootUserId ? '└── ' : '';
+    return `${upwardsStr}${firstUserPrefix}<@${userId}>\n${downwardsTree}`;
 }
