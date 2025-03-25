@@ -401,7 +401,11 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
 
         currentUserId = currentUser.inviterId;
         // upwardsTree.push(`<@${currentUserId}>`);
-        upwardsTree.push(currentUser.cachedName ?? `<@${currentUserId}>?`);
+
+        const inviterCachedUser = await getCrustaceanUser(client, currentUser.inviterId, guildId);
+        const inviterCachedName = inviterCachedUser.cachedName ?? `<@${currentUser.inviterId}>?`;
+
+        upwardsTree.push(inviterCachedName);
         rootUserId = currentUserId; // Update root user
     }
 
