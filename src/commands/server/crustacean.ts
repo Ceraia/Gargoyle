@@ -238,7 +238,7 @@ export default class Crustacean extends GargoyleCommand {
         }
     }
 
-    public override events: GargoyleEvent[] = [new MemberJoin(), new ReputationMessage()];
+    public override events: GargoyleEvent[] = [new MemberJoin(), new ReputationMessage(), new UserLeave()];
 }
 
 class MemberJoin extends GargoyleEvent {
@@ -256,6 +256,11 @@ class MemberJoin extends GargoyleEvent {
             return;
         }
 
+        const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
+        if (crustaceanUser.state === 'banned' || crustaceanUser.state === 'left') {
+            crustaceanUser.state = 'member';
+        }
+
         if (crustaceanChannel.isSendable()) {
             crustaceanChannel.send({
                 content: `Welcome to the server, ${member}!`,
@@ -266,6 +271,16 @@ class MemberJoin extends GargoyleEvent {
                 ]
             }); // #TODO Add multiple invite messages for variance, or custom set.
         }
+    }
+}
+
+class UserLeave extends GargoyleEvent {
+    public event = Events.GuildMemberRemove as const;
+
+    public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
+        const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
+        crustaceanUser.state = 'left';
+        await crustaceanUser.save();
     }
 }
 
