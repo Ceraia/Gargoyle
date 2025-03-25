@@ -157,7 +157,7 @@ export default class Crustacean extends GargoyleCommand {
             }
         } else if (interaction.options.getSubcommand() === 'tree') {
             const user = interaction.options.getUser('user', true);
-            const tree = await generateFullInviteTreeOld(guildId, user.id);
+            const tree = await generateFullInviteTree(guildId, user.id);
 
             return interaction.reply({ content: `${tree}`, flags: MessageFlags.Ephemeral });
         }
@@ -363,27 +363,6 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
     return crustaceanUser;
 }
 
-async function generateInviteTreeOld(guildId: string, userId: string, maxDepth = 5, depth = 0, prefix = ''): Promise<string> {
-    if (depth > maxDepth) return '';
-
-    const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
-
-    if (invitees.length === 0) return '';
-
-    let tree = '';
-
-    for (let i = 0; i < invitees.length; i++) {
-        const isLast = i === invitees.length - 1;
-        const branch = isLast ? '└── ' : '├── ';
-        const inviteeId = invitees[i].userId ?? 'UnknownUser'; // Ensure it's always a string
-
-        tree += `${prefix}${branch}<@${inviteeId}>\n`;
-        tree += await generateInviteTree(guildId, inviteeId, maxDepth, depth + 1, prefix + (isLast ? '    ' : '│   '));
-    }
-
-    return tree;
-}
-
 async function generateInviteTree(guildId: string, userId: string, maxDepth = 5, depth = 0, prefix = ''): Promise<string> {
     if (depth > maxDepth) return '';
 
@@ -410,8 +389,10 @@ async function generateInviteTree(guildId: string, userId: string, maxDepth = 5,
 }
 
 async function generateFullInviteTree(guildId: string, userId: string, maxDepth = 5): Promise<string> {
-    // Get current cached name
-    const user = await getCrustaceanUser(client, userId, guildId);
+    interface CrustaceanUser {
+        userId: string;
+        inviterId?: string | null;
+    }
 
     // Upwards
     let upwardsTree: string[] = [];
@@ -424,12 +405,7 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
         if (!currentUser || !currentUser.inviterId) break; // Stop if no inviter
 
         currentUserId = currentUser.inviterId;
-        // upwardsTree.push(`<@${currentUserId}>`);
-
-        const inviterCachedUser = await getCrustaceanUser(client, currentUser.inviterId, guildId);
-        const inviterCachedName = inviterCachedUser.cachedName ?? `<@${currentUser.inviterId}>?`;
-
-        upwardsTree.push(inviterCachedName);
+        upwardsTree.push(`<@${currentUserId}>`);
         rootUserId = currentUserId; // Update root user
     }
 
@@ -453,7 +429,7 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
     const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '    ');
 
     const firstUserPrefix = rootUserId ? '└── ' : '';
-    return `${upwardsStr}${firstUserPrefix}` + user.cachedName ?? `<@${userId}>?` + `\n${downwardsTree}`;
+    return `${upwardsStr}${firstUserPrefix}<@${userId}>\n${downwardsTree}`;
 }
 
 async function generateFullInviteTreeOld(guildId: string, userId: string, maxDepth = 5): Promise<string> {
