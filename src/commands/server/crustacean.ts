@@ -139,6 +139,7 @@ export default class Crustacean extends GargoyleCommand {
             let missingStr = '';
 
             for (const member of members) {
+                if(member[1].user.bot) continue;
                 const crustaceanMember = await getCrustaceanUser(client, member[0], guildId);
 
                 if (!crustaceanMember.inviterId) {
