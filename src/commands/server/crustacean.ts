@@ -131,17 +131,20 @@ export default class Crustacean extends GargoyleCommand {
 
             return interaction.reply({ content: `Crustacean role has been set to ${role}`, flags: MessageFlags.Ephemeral });
         } else if (interaction.options.getSubcommand() === 'missing') {
-            if(!interaction.guild) return interaction.reply({ content: 'This command can only be used in a guild', flags: MessageFlags.Ephemeral });
+            if (!interaction.guild) return interaction.reply({ content: 'This command can only be used in a guild', flags: MessageFlags.Ephemeral });
 
             // Get all members in the guild who do not have an entry in the database
             const members = await interaction.guild.members.fetch();
 
-            const missing = members.filter((member) => !member.user.bot).filter(async (member) => {
-                const user = await getCrustaceanUser(client, member.id, guildId);
-                return !user.inviterId;
-            });
+            let missingStr = '';
 
-            const missingStr = missing.map((member) => member.toString()).join(', ');
+            for (const member of members) {
+                const crustaceanMember = await getCrustaceanUser(client, member[0], guildId);
+
+                if (!crustaceanMember.inviterId) {
+                    missingStr += `<@!${member[0]}>, `;
+                }
+            }
 
             return interaction.reply({ content: `Missing invitees: ${missingStr}`, flags: MessageFlags.Ephemeral });
         } else if (interaction.options.getSubcommandGroup() === 'set') {
