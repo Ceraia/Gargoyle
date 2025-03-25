@@ -442,7 +442,6 @@ async function generateInviteTree(rich: boolean = false, guildId: string, userId
         const inviteeId = invitees[i].userId ?? 'UnknownUser'; // Ensure it's always a string
         const inviteeCachedName = invitees[i].cachedName ?? `<@${inviteeId}>?`;
 
-
         let statePrefix = `[2;32m`;
         let stateSuffix = `[0m`;
         if (invitees[i].state === 'banned') {
@@ -461,6 +460,8 @@ async function generateInviteTree(rich: boolean = false, guildId: string, userId
 }
 
 async function generateFullInviteTree(guildId: string, userId: string, rich: boolean = false, maxDepth = 5): Promise<string> {
+    client.logger.trace(`Generating invite tree for user ${userId} in guild ${guildId} ${rich ? 'with' : 'without'} rich formatting`);
+
     // Upwards
     let upwardsTree: string[] = [];
     let currentUserId: string | null = userId;
@@ -485,9 +486,9 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
         } else if (currentUser.state === 'left') {
             prefix = '[2;32m';
             suffix = '[0m';
-        } 
+        }
 
-        upwardsTree.push(`${rich ? prefix: ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${user.reputation})${rich ? suffix: ``}`);
+        upwardsTree.push(`${rich ? prefix : ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${user.reputation})${rich ? suffix : ``}`);
         rootUserId = currentUserId; // Update root user
     }
 
