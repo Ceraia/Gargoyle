@@ -380,7 +380,7 @@ async function generateInviteTree(guildId: string, userId: string, maxDepth = 5,
         const inviteeId = invitees[i].userId ?? 'UnknownUser'; // Ensure it's always a string
         const inviteeCachedName = invitees[i].cachedName ?? `<@${inviteeId}>?`;
 
-        tree += `${prefix}${branch}${inviteeCachedName}\n`;
+        tree += `${prefix}${branch}${inviteeCachedName} (${invitees[i].reputation ?? `0`})\n`;
         tree += await generateInviteTree(guildId, inviteeId, maxDepth, depth + 1, prefix + (isLast ? '    ' : '│   '));
         client.logger.trace(`Tracing invitee tree: ` + inviteeId);
     }
@@ -394,19 +394,17 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
     let currentUserId: string | null = userId;
     let rootUserId: string | null = null; // Keep track of the very first inviter
 
-    let usernameCached = '';
+    let user = await getCrustaceanUser(client, userId, guildId);
 
     while (currentUserId) {
         let currentUser = await getCrustaceanUser(client, currentUserId, guildId);
-
-        if (usernameCached == '') usernameCached = currentUser.cachedName ?? `<@${currentUserId}>?`; // Caches the first username
 
         if (!currentUser || !currentUser.inviterId) break; // Stop if no inviter
 
         currentUserId = currentUser.inviterId;
 
         currentUser = await getCrustaceanUser(client, currentUserId, guildId);
-        upwardsTree.push(currentUser.cachedName ?? `<@${currentUserId}>`);
+        upwardsTree.push(`${currentUser.cachedName ?? `<@${currentUserId}>`}  (${user.reputation})`);
         rootUserId = currentUserId; // Update root user
     }
 
@@ -430,7 +428,7 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
     const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '    ');
 
     const firstUserPrefix = rootUserId ? '└── ' : '';
-    return `${upwardsStr}${firstUserPrefix}${usernameCached}\n${downwardsTree}`;
+    return `${upwardsStr}${firstUserPrefix}${user.cachedName ?? `<@${currentUserId}>?`} (${user.reputation})\n${downwardsTree}`;
 }
 
 async function generateFullInviteTreeOld(guildId: string, userId: string, maxDepth = 5): Promise<string> {
