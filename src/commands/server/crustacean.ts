@@ -63,7 +63,7 @@ export default class Crustacean extends GargoyleCommand {
                             .setName('inviter')
                             .setDescription('Set the inviter of a user')
                             .addUserOption((option) => option.setName('user').setDescription('Affected user').setRequired(true))
-                            .addUserOption((option) => option.setName('inviter').setDescription('Inviter').setRequired(true))
+                            .addUserOption((option) => option.setName('inviter').setDescription('Inviter').setRequired(false))
                     )
             )
             .addSubcommand((subcommand) => subcommand.setName('missing').setDescription('Get a list of users who are missing an inviter'))
@@ -166,10 +166,10 @@ export default class Crustacean extends GargoyleCommand {
                 });
             } else if (interaction.options.getSubcommand() === 'inviter') {
                 const user = interaction.options.getUser('user', true);
-                const inviter = interaction.options.getUser('inviter', true);
+                const inviter = interaction.options.getUser('inviter', false);
 
                 const crustaceanUser = await getCrustaceanUser(client, user.id, guildId);
-                crustaceanUser.inviterId = inviter.id;
+                crustaceanUser.inviterId = inviter ? inviter.id : null;
                 await crustaceanUser.save();
 
                 return interaction.reply({ content: `${inviter} has been set as the inviter of ${user}`, flags: MessageFlags.Ephemeral });
