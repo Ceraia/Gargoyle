@@ -368,6 +368,8 @@ async function generateInviteTree(guildId: string, userId: string, maxDepth = 5,
 
     const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
 
+    client.logger.trace(`Invitees length: ` + invitees.length);
+
     if (invitees.length === 0) return '';
 
     let tree = '';
@@ -380,6 +382,7 @@ async function generateInviteTree(guildId: string, userId: string, maxDepth = 5,
 
         tree += `${prefix}${branch}${inviteeCachedName}\n`;
         tree += await generateInviteTree(guildId, inviteeId, maxDepth, depth + 1, prefix + (isLast ? '    ' : '│   '));
+        client.logger.trace(`Tracing invitee tree: ` + inviteeId);
     }
 
     return tree;
