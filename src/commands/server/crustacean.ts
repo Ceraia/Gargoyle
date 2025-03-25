@@ -395,6 +395,9 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
     }
 
     if (!crustaceanUser.lastCache || Date.now() - crustaceanUser.lastCache.getTime() > 1000 * 60 * 60 * 24) {
+        crustaceanUser.lastCache = new Date();
+        crustaceanUser.save();
+
         await updateCrustaceanUserCache(userId, guildId);
     }
 
