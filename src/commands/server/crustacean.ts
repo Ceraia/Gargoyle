@@ -302,7 +302,12 @@ function containsThanks(message: string): boolean {
         message.toLowerCase().includes('thanks') ||
         message.toLowerCase().includes('thank you') ||
         message.toLowerCase().includes('thx') ||
-        message.toLowerCase().includes('tysm')
+        message.toLowerCase().includes('tysm') ||
+        message.toLowerCase().includes('dankje') ||
+        message.toLowerCase().includes('danku') ||
+        message.toLowerCase().includes('danke') ||
+        message.toLowerCase().includes('gracias') ||
+        message.toLowerCase().includes('merci')
     );
 }
 
