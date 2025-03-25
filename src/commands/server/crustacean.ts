@@ -432,8 +432,6 @@ async function generateInviteTree(rich: boolean = false, guildId: string, userId
 
     const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
 
-    client.logger.trace(`Invitees length: ` + invitees.length);
-
     if (invitees.length === 0) return '';
 
     let tree = '';
@@ -444,9 +442,19 @@ async function generateInviteTree(rich: boolean = false, guildId: string, userId
         const inviteeId = invitees[i].userId ?? 'UnknownUser'; // Ensure it's always a string
         const inviteeCachedName = invitees[i].cachedName ?? `<@${inviteeId}>?`;
 
-        tree += `${prefix}${branch}${inviteeCachedName} (${invitees[i].reputation ?? `0`})\n`;
+
+        let statePrefix = `[2;32m`;
+        let stateSuffix = `[0m`;
+        if (invitees[i].state === 'banned') {
+            statePrefix = '[2;41m';
+            stateSuffix = '[0m';
+        } else if (invitees[i].state === 'left') {
+            statePrefix = '[2;32m';
+            stateSuffix = '[0m';
+        }
+
+        tree += `${rich ? statePrefix : ''}${prefix}${branch}${inviteeCachedName} (${invitees[i].reputation ?? `0`})${rich ? stateSuffix : ''}\n`;
         tree += await generateInviteTree(rich, guildId, inviteeId, maxDepth, depth + 1, prefix + (isLast ? '    ' : '│   '));
-        client.logger.trace(`Tracing invitee tree: ` + inviteeId);
     }
 
     return tree;
@@ -468,7 +476,18 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
         currentUserId = currentUser.inviterId;
 
         currentUser = await getCrustaceanUser(client, currentUserId, guildId);
-        upwardsTree.push(`${currentUser.cachedName ?? `<@${currentUserId}>`}  (${user.reputation})`);
+
+        let prefix = `[2;32m`;
+        let suffix = `[0m`;
+        if (currentUser.state === 'banned') {
+            prefix = '[2;41m';
+            suffix = '[0m';
+        } else if (currentUser.state === 'left') {
+            prefix = '[2;32m';
+            suffix = '[0m';
+        } 
+
+        upwardsTree.push(`${rich ? prefix: ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${user.reputation})${rich ? suffix: ``}`);
         rootUserId = currentUserId; // Update root user
     }
 
@@ -490,5 +509,5 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
     const downwardsTree = await generateInviteTree(rich, guildId, userId, maxDepth, 0, '    ');
 
     const firstUserPrefix = rootUserId ? '└── ' : '';
-    return `${upwardsStr}${firstUserPrefix}${user.cachedName ?? `<@${currentUserId}>?`} (${user.reputation})\n${downwardsTree}`;
+    return `${rich ? `\`\`\`ansi` : ``}${upwardsStr}${firstUserPrefix}${user.cachedName ?? `<@${currentUserId}>?`} (${user.reputation})\n${downwardsTree}${rich ? `\`\`\`` : ``}`;
 }
