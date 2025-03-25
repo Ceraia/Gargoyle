@@ -400,12 +400,14 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
     let rootUserId: string | null = null; // Keep track of the very first inviter
 
     while (currentUserId) {
-        const currentUser = await getCrustaceanUser(client, currentUserId, guildId);
+        let currentUser = await getCrustaceanUser(client, currentUserId, guildId);
 
         if (!currentUser || !currentUser.inviterId) break; // Stop if no inviter
 
         currentUserId = currentUser.inviterId;
-        upwardsTree.push(`<@${currentUserId}>`);
+
+        currentUser = await getCrustaceanUser(client, currentUserId, guildId);
+        upwardsTree.push(currentUser.cachedName ?? `<@${currentUserId}>`);
         rootUserId = currentUserId; // Update root user
     }
 
