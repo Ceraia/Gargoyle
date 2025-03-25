@@ -139,7 +139,7 @@ export default class Crustacean extends GargoyleCommand {
             let missingStr = '';
 
             for (const member of members) {
-                if(member[1].user.bot) continue;
+                if (member[1].user.bot) continue;
                 const crustaceanMember = await getCrustaceanUser(client, member[0], guildId);
 
                 if (!crustaceanMember.inviterId) {
@@ -349,10 +349,7 @@ const crustaceanUserSchema = new Schema({
     userId: String,
     cachedName: String,
     guildId: String, // Users are unique per guild
-    inviterId: {
-        type: String, // The user who "invited" the user to the guild, or accepted the joinee
-        default: null // this can be null to account for users who are not invited yet or have no logged invitee.
-    },
+    inviterId: String,
     reputation: {
         type: Number,
         default: 0
@@ -384,6 +381,17 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
         });
         await crustaceanUser.save();
     }
+
+    if (crustaceanUser.cachedName === null) {
+        const user = await client.users.fetch(userId);
+        const member = await client.guilds.cache.get(guildId)?.members.fetch(userId);
+        crustaceanUser.cachedName = member?.displayName ?? user.displayName;
+    }
+
+    if (crustaceanUser.inviterId === crustaceanUser.userId) {
+        crustaceanUser.inviterId = null;
+    }
+    await crustaceanUser.save();
 
     return crustaceanUser;
 }
