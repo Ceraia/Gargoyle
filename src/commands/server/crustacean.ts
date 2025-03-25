@@ -366,7 +366,7 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
 async function generateInviteTree(guildId: string, userId: string, maxDepth = 5, depth = 0, prefix = ''): Promise<string> {
     if (depth > maxDepth) return '';
 
-    const invitees = await databaseCrustaceanUser.find({ guildId: guildId, inviterId: userId });
+    const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
 
     if (invitees.length === 0) return '';
 
