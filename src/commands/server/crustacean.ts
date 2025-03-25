@@ -402,7 +402,7 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
             guildId: guildId
         });
         await crustaceanUser.save();
-    }
+    } 
 
     if (crustaceanUser.inviterId === crustaceanUser.userId) {
         crustaceanUser.inviterId = null;
@@ -463,7 +463,7 @@ async function generateInviteTree(rich: boolean = false, guildId: string, userId
             statePrefix = '[2;41m';
             stateSuffix = '[0m';
         } else if (invitees[i].state === 'left') {
-            statePrefix = '[2;32m';
+            statePrefix = '[2;33m';
             stateSuffix = '[0m';
         }
 
@@ -499,7 +499,7 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
             prefix = '[2;41m';
             suffix = '[0m';
         } else if (currentUser.state === 'left') {
-            prefix = '[2;32m';
+            prefix = '[2;33m';
             suffix = '[0m';
         }
 
