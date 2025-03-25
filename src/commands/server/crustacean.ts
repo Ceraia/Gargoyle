@@ -350,6 +350,11 @@ const crustaceanUserSchema = new Schema({
     cachedName: String,
     guildId: String, // Users are unique per guild
     inviterId: String,
+    lastCache: Date,
+    state: {
+        type: String,
+        default: 'member'
+    },
     reputation: {
         type: Number,
         default: 0
@@ -371,9 +376,11 @@ async function getCrustaceanGuild(guildId: string) {
 
 async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId: string) {
     let crustaceanUser = await databaseCrustaceanUser.findOne({ userId: userId, guildId: guildId });
+
     if (!crustaceanUser) {
         const user = await client.users.fetch(userId);
-        const member = await client.guilds.cache.get(guildId)?.members.fetch(userId);
+        const guild = client.guilds.cache.get(guildId);
+        const member = await guild?.members.fetch(userId);
         crustaceanUser = new databaseCrustaceanUser({
             userId: userId,
             cachedName: member?.displayName ?? user.displayName,
@@ -382,21 +389,42 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
         await crustaceanUser.save();
     }
 
-    if (crustaceanUser.cachedName === null) {
-        const user = await client.users.fetch(userId);
-        const member = await client.guilds.cache.get(guildId)?.members.fetch(userId);
-        crustaceanUser.cachedName = member?.displayName ?? user.displayName;
-    }
-
     if (crustaceanUser.inviterId === crustaceanUser.userId) {
         crustaceanUser.inviterId = null;
+        await crustaceanUser.save();
     }
-    await crustaceanUser.save();
+
+    if (!crustaceanUser.lastCache || Date.now() - crustaceanUser.lastCache.getTime() > 1000 * 60 * 60 * 24) {
+        await updateCrustaceanUserCache(userId, guildId);
+    }
 
     return crustaceanUser;
 }
 
-async function generateInviteTree(guildId: string, userId: string, maxDepth = 5, depth = 0, prefix = ''): Promise<string> {
+async function updateCrustaceanUserCache(userId: string, guildId: string) {
+    client.logger.trace(`Updating cache for user ${userId} in guild ${guildId}`);
+    const crustaceanUser = await getCrustaceanUser(client, userId, guildId);
+
+    const user = await client.users.fetch(userId);
+    const guild = client.guilds.cache.get(guildId);
+    const member = await guild?.members.fetch(userId);
+
+    crustaceanUser.cachedName = member?.displayName ?? user.displayName;
+
+    crustaceanUser.lastCache = new Date();
+
+    if (!member) {
+        if (guild?.bans.fetch(userId)) {
+            crustaceanUser.state = 'banned';
+        } else {
+            crustaceanUser.state = 'left';
+        }
+    }
+
+    await crustaceanUser.save();
+}
+
+async function generateInviteTree(rich: boolean = false, guildId: string, userId: string, maxDepth = 5, depth = 0, prefix = ''): Promise<string> {
     if (depth > maxDepth) return '';
 
     const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
@@ -414,14 +442,14 @@ async function generateInviteTree(guildId: string, userId: string, maxDepth = 5,
         const inviteeCachedName = invitees[i].cachedName ?? `<@${inviteeId}>?`;
 
         tree += `${prefix}${branch}${inviteeCachedName} (${invitees[i].reputation ?? `0`})\n`;
-        tree += await generateInviteTree(guildId, inviteeId, maxDepth, depth + 1, prefix + (isLast ? '    ' : '│   '));
+        tree += await generateInviteTree(rich, guildId, inviteeId, maxDepth, depth + 1, prefix + (isLast ? '    ' : '│   '));
         client.logger.trace(`Tracing invitee tree: ` + inviteeId);
     }
 
     return tree;
 }
 
-async function generateFullInviteTree(guildId: string, userId: string, maxDepth = 5): Promise<string> {
+async function generateFullInviteTree(guildId: string, userId: string, rich: boolean = false, maxDepth = 5): Promise<string> {
     // Upwards
     let upwardsTree: string[] = [];
     let currentUserId: string | null = userId;
@@ -448,62 +476,16 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
         upwardsTree = [first, '...', last];
     }
 
-    // const upwardsStr =
-    //     upwardsTree.length > 0
-    //         ? upwardsTree
-    //               .reverse()
-    //               .map((u, i) => (i === 0 ? u : `└── ${u}`))
-    //               .join('\n') + '\n'
-    //         : '';
+    // ```ansi
+    // This [2;41mword[0m has a red colored background
+    // This [2;32mword[0m has a tinted text blue
+    // This [2;33mword[0m has a tinted text yellow
+    // ```
 
     const upwardsStr = upwardsTree.length > 0 ? upwardsTree.join(' ← ') + '\n' : '';
 
-    const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '    ');
+    const downwardsTree = await generateInviteTree(rich, guildId, userId, maxDepth, 0, '    ');
 
     const firstUserPrefix = rootUserId ? '└── ' : '';
     return `${upwardsStr}${firstUserPrefix}${user.cachedName ?? `<@${currentUserId}>?`} (${user.reputation})\n${downwardsTree}`;
-}
-
-async function generateFullInviteTreeOld(guildId: string, userId: string, maxDepth = 5): Promise<string> {
-    interface CrustaceanUser {
-        userId: string;
-        inviterId?: string | null;
-    }
-
-    // Upwards
-    let upwardsTree: string[] = [];
-    let currentUserId: string | null = userId;
-    let rootUserId: string | null = null; // Keep track of the very first inviter
-
-    while (currentUserId) {
-        const currentUser: CrustaceanUser | null = await databaseCrustaceanUser.findOne({ guildId, userId: currentUserId });
-
-        if (!currentUser || !currentUser.inviterId) break; // Stop if no inviter
-
-        currentUserId = currentUser.inviterId;
-        upwardsTree.push(`<@${currentUserId}>`);
-        rootUserId = currentUserId; // Update root user
-    }
-
-    // Trim the middle if the upwards chain is too long
-    if (upwardsTree.length > maxDepth) {
-        const first = upwardsTree[0];
-        const last = upwardsTree[upwardsTree.length - 1];
-        upwardsTree = [first, '...', last];
-    }
-
-    // const upwardsStr =
-    //     upwardsTree.length > 0
-    //         ? upwardsTree
-    //               .reverse()
-    //               .map((u, i) => (i === 0 ? u : `└── ${u}`))
-    //               .join('\n') + '\n'
-    //         : '';
-
-    const upwardsStr = upwardsTree.length > 0 ? upwardsTree.join(' ← ') + '\n' : '';
-
-    const downwardsTree = await generateInviteTree(guildId, userId, maxDepth, 0, '    ');
-
-    const firstUserPrefix = rootUserId ? '└── ' : '';
-    return `${upwardsStr}${firstUserPrefix}<@${userId}>\n${downwardsTree}`;
 }
