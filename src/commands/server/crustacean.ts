@@ -14,6 +14,7 @@ import {
     Events,
     GuildMember,
     InteractionContextType,
+    Message,
     MessageFlags,
     PermissionFlagsBits
 } from 'discord.js';
@@ -218,7 +219,11 @@ export default class Crustacean extends GargoyleCommand {
         }
     }
 
-    public override events: GargoyleEvent[] = [new MemberJoin()];
+    public override events: GargoyleEvent[] = [
+        new MemberJoin(),
+        new ReputationMessage()
+    ];
+    
 }
 
 class MemberJoin extends GargoyleEvent {
@@ -247,6 +252,62 @@ class MemberJoin extends GargoyleEvent {
             }); // #TODO Add multiple invite messages for variance, or custom set.
         }
     }
+}
+
+class ReputationMessage extends GargoyleEvent {
+    public event = Events.MessageCreate as const;
+
+    private thanksCache = new Map<string, Date>();
+
+    public async execute(client: GargoyleClient, message: Message): Promise<void> {
+        if (message.author.bot) return;
+        if (message.channel.type !== ChannelType.GuildText) return;
+
+        if (!message.guild) return;
+
+        const guildId = message.guild.id;
+        const userId = message.author.id;
+
+        const crustaceanGuild = await getCrustaceanGuild(guildId);
+        if (!crustaceanGuild.enabled) return;
+
+        const crustaceanUser = await getCrustaceanUser(client, userId, guildId);
+        crustaceanUser.cachedName = message.author.displayName;
+
+        if (message.mentions.users.size > 0 && containsThanks(message.content)) {
+            // Check if the author has thanked someone in the last 12 hours
+            if (this.thanksCache.has(message.author.id)) {
+                const lastThanks = this.thanksCache.get(message.author.id);
+                if (lastThanks && Date.now() - lastThanks.getTime() < 12 * 60 * 60 * 1000) {
+                    return; // User has thanked someone in the last 12 hours
+                }
+            }
+
+            // User has not thanked someone in the last 12 hours
+            this.thanksCache.set(message.author.id, new Date());
+
+            message.mentions.users.forEach(async (user) => {
+                if (user.id === userId) return;
+
+                const thankedUser = await getCrustaceanUser(client, user.id, guildId);
+                thankedUser.reputation += 1;
+                await thankedUser.save();
+            });
+
+            await message.react('❤️');
+        }
+
+        await crustaceanUser.save();
+    }
+}
+
+function containsThanks(message: string): boolean {
+    return (
+        message.toLowerCase().includes('thanks') ||
+        message.toLowerCase().includes('thank you') ||
+        message.toLowerCase().includes('thx') ||
+        message.toLowerCase().includes('tysm')
+    );
 }
 
 import { Schema, model } from 'mongoose';
