@@ -66,6 +66,7 @@ export default class Crustacean extends GargoyleCommand {
                             .addUserOption((option) => option.setName('inviter').setDescription('Inviter').setRequired(true))
                     )
             )
+            .addSubcommand((subcommand) => subcommand.setName('missing').setDescription('Get a list of users who are missing an inviter'))
             .addSubcommand((subcommand) =>
                 subcommand
                     .setName('tree')
@@ -129,6 +130,20 @@ export default class Crustacean extends GargoyleCommand {
             await guild.save();
 
             return interaction.reply({ content: `Crustacean role has been set to ${role}`, flags: MessageFlags.Ephemeral });
+        } else if (interaction.options.getSubcommand() === 'missing') {
+            if(!interaction.guild) return interaction.reply({ content: 'This command can only be used in a guild', flags: MessageFlags.Ephemeral });
+
+            // Get all members in the guild who do not have an entry in the database
+            const members = await interaction.guild.members.fetch();
+
+            const missing = members.filter((member) => !member.user.bot).filter(async (member) => {
+                const user = await getCrustaceanUser(client, member.id, guildId);
+                return !user.inviterId;
+            });
+
+            const missingStr = missing.map((member) => member.toString()).join(', ');
+
+            return interaction.reply({ content: `Missing invitees: ${missingStr}`, flags: MessageFlags.Ephemeral });
         } else if (interaction.options.getSubcommandGroup() === 'set') {
             if (interaction.options.getSubcommand() === 'reputation') {
                 const user = interaction.options.getUser('user', true);
