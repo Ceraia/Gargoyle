@@ -268,7 +268,7 @@ class ReputationMessage extends GargoyleEvent {
         if (!crustaceanGuild.enabled) return;
 
         const crustaceanUser = await getCrustaceanUser(client, userId, guildId);
-        crustaceanUser.cachedName = message.author.displayName;
+        crustaceanUser.cachedName = message.member?.displayName ?? message.author.displayName;
 
         if (message.mentions.users.size > 0 && containsThanks(message.content)) {
             // Check if the author has thanked someone in the last 12 hours
@@ -352,9 +352,10 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
     let crustaceanUser = await databaseCrustaceanUser.findOne({ userId: userId, guildId: guildId });
     if (!crustaceanUser) {
         const user = await client.users.fetch(userId);
+        const member = await client.guilds.cache.get(guildId)?.members.fetch(userId);
         crustaceanUser = new databaseCrustaceanUser({
             userId: userId,
-            cachedName: user.displayName,
+            cachedName: member?.displayName ?? user.displayName,
             guildId: guildId
         });
         await crustaceanUser.save();
