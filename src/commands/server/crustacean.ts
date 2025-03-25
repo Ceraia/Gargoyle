@@ -399,7 +399,7 @@ async function generateFullInviteTree(guildId: string, userId: string, maxDepth 
     while (currentUserId) {
         let currentUser = await getCrustaceanUser(client, currentUserId, guildId);
 
-        if (usernameCached !== '') usernameCached = currentUser.cachedName ?? `<@${currentUserId}>?`; // Caches the first username
+        if (usernameCached == '') usernameCached = currentUser.cachedName ?? `<@${currentUserId}>?`; // Caches the first username
 
         if (!currentUser || !currentUser.inviterId) break; // Stop if no inviter
 
