@@ -488,7 +488,7 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
             suffix = '[0m';
         }
 
-        upwardsTree.push(`${rich ? prefix : ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${user.reputation})${rich ? suffix : ``}`);
+        upwardsTree.push(`${rich ? prefix : ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${currentUser.reputation})${rich ? suffix : ``}`);
         rootUserId = currentUserId; // Update root user
     }
 
