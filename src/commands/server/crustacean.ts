@@ -424,7 +424,7 @@ async function getCrustaceanGuild(guildId: string) {
     return crustaceanGuild;
 }
 
-async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId: string) {
+async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId: string, cache: boolean = true) {
     let crustaceanUser = await databaseCrustaceanUser.findOne({ userId: userId, guildId: guildId });
 
     if (!crustaceanUser) {
@@ -445,23 +445,24 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
         await crustaceanUser.save();
     }
 
-    if (
-        !crustaceanUser.joinedDate || // If a join date is missing, update it
-        !crustaceanUser.lastCache ||
-        Date.now() - crustaceanUser.lastCache.getTime() > 1000 * 60 * 60 * 24
-    ) {
-        crustaceanUser.lastCache = new Date();
-        crustaceanUser.save();
+    if (cache)
+        if (
+            !crustaceanUser.joinedDate || // If a join date is missing, update it
+            !crustaceanUser.lastCache ||
+            Date.now() - crustaceanUser.lastCache.getTime() > 1000 * 60 * 60 * 24
+        ) {
+            crustaceanUser.lastCache = new Date();
+            crustaceanUser.save();
 
-        await updateCrustaceanUserCache(userId, guildId);
-    }
+            await updateCrustaceanUserCache(userId, guildId);
+        }
 
     return crustaceanUser;
 }
 
 async function updateCrustaceanUserCache(userId: string, guildId: string) {
     client.logger.trace(`Updating cache for user ${userId} in guild ${guildId}`);
-    const crustaceanUser = await getCrustaceanUser(client, userId, guildId);
+    const crustaceanUser = await getCrustaceanUser(client, userId, guildId, false);
 
     const user = await client.users.fetch(userId);
     const guild = client.guilds.cache.get(guildId);
