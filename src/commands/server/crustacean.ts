@@ -283,7 +283,7 @@ async function getReputationTotal(client: GargoyleClient, userId: string, guildI
     for (const invitee of invitees) {
         // If the user is banned remove 5 reputation
         if (invitee.state === 'banned') {
-            total -= 5;
+            total -= 1;
         }
 
         // If the user has left remove 0 reputation
@@ -293,8 +293,15 @@ async function getReputationTotal(client: GargoyleClient, userId: string, guildI
 
         // If the user is a member add 2 reputation
         if (invitee.state === 'member') {
-            total += 2;
+            total += 1;
         }
+    }
+
+    if (crustaceanUser.joinedDate) {
+        const diff = Date.now() - crustaceanUser.joinedDate.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+        total += Math.floor(days / 7);
     }
 
     return total;
@@ -393,6 +400,7 @@ const crustaceanUserSchema = new Schema({
     guildId: String, // Users are unique per guild
     inviterId: String,
     lastCache: Date,
+    joinedDate: Date,
     state: {
         type: String,
         default: 'member'
@@ -426,6 +434,7 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
         crustaceanUser = new databaseCrustaceanUser({
             userId: userId,
             cachedName: member?.displayName ?? user.displayName,
+            joinedDate: member?.joinedAt || new Date(),
             guildId: guildId
         });
         await crustaceanUser.save();
@@ -436,7 +445,11 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
         await crustaceanUser.save();
     }
 
-    if (!crustaceanUser.lastCache || Date.now() - crustaceanUser.lastCache.getTime() > 1000 * 60 * 60 * 24) {
+    if (
+        !crustaceanUser.joinedDate || // If a join date is missing, update it
+        !crustaceanUser.lastCache ||
+        Date.now() - crustaceanUser.lastCache.getTime() > 1000 * 60 * 60 * 24
+    ) {
         crustaceanUser.lastCache = new Date();
         crustaceanUser.save();
 
@@ -455,6 +468,8 @@ async function updateCrustaceanUserCache(userId: string, guildId: string) {
     const member = await guild?.members.fetch(userId);
 
     crustaceanUser.cachedName = member?.displayName ?? user.displayName;
+
+    crustaceanUser.joinedDate = member?.joinedAt || new Date();
 
     crustaceanUser.lastCache = new Date();
 
@@ -531,7 +546,7 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
             prefix = '[2;33m';
             suffix = '[0m';
         }
-        
+
         const reputation = await getReputationTotal(client, currentUserId, guildId);
 
         upwardsTree.push(`${rich ? prefix : ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${reputation})${rich ? suffix : ``}`);
