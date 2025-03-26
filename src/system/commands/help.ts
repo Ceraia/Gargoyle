@@ -99,14 +99,14 @@ export default class Help extends GargoyleCommand {
             if (command.textCommand) {
                 let name = command.textCommand.name;
                 if (command.textCommand?.aliases) {
-                    name += `(${command.textCommand.aliases.join(', ')})`;
+                    name += command.textCommand.aliases.length > 0 ? ` (${command.textCommand.aliases.join(', ')})` : '';
                 }
                 embed.addFields({ name: name, value: command.textCommand.description });
             } else if (command.textCommands) {
                 command.textCommands.forEach((textCommand) => {
                     let name = textCommand.name;
                     if (textCommand.aliases) {
-                        name += `(${textCommand.aliases.join(', ')})`;
+                        name += textCommand.aliases.length > 0 ? ` (${textCommand.aliases.join(', ')})` : '';
                     }
                     embed.addFields({ name: name, value: textCommand.description });
                 });
