@@ -2,7 +2,6 @@ services:
   mongo:
     profiles:
       - db
-      - ai
     hostname: mongo
     image: mongo:latest
     environment:
@@ -18,7 +17,6 @@ services:
   express:
     profiles:
       - db
-      - ai
     image: mongo-express:latest
     ports:
       - 80:80
