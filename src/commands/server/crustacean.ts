@@ -1,6 +1,7 @@
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
@@ -74,6 +75,10 @@ export default class Crustacean extends GargoyleCommand {
                     .addUserOption((option) => option.setName('user').setDescription('User to get the tree of').setRequired(true))
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
+    ];
+
+    public override textCommands = [
+        new GargoyleTextCommandBuilder().setName('tree').setDescription('Get the crustacean invite tree').setContexts([InteractionContextType.Guild])
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
@@ -177,7 +182,7 @@ export default class Crustacean extends GargoyleCommand {
         } else if (interaction.options.getSubcommand() === 'tree') {
             const user = interaction.options.getUser('user', true);
 
-            await interaction.deferReply();
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const tree = await generateFullInviteTree(guildId, user.id, true).catch((err) => {
                 client.logger.error(err.stack);
                 return interaction.editReply({ content: 'An error occurred generating the tree, please try again later.' });
@@ -187,6 +192,23 @@ export default class Crustacean extends GargoyleCommand {
         }
 
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
+    }
+
+    public override async executeTextCommand(client: GargoyleClient, message: Message<boolean>): Promise<void> {
+        if (!message.guild) {
+            await message.reply('This command can only be used in a guild');
+            return;
+        }
+
+        const user = message.mentions.members?.first()?.user ?? message.author;
+
+        const tree = await generateFullInviteTree(message.guild.id, user.id, true).catch(async (err) => {
+            client.logger.error(err.stack);
+            return await message.reply({ content: 'An error occurred generating the tree, please try again later.' }).catch(() => {});
+        });
+
+        await message.reply({ content: `${tree}` }).catch(() => {});
+        return;
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
