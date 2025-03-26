@@ -274,12 +274,40 @@ class MemberJoin extends GargoyleEvent {
     }
 }
 
+async function getReputationTotal(client: GargoyleClient, userId: string, guildId: string): Promise<number> {
+    const crustaceanUser = await getCrustaceanUser(client, userId, guildId);
+    let total = crustaceanUser.reputation;
+
+    const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
+
+    for (const invitee of invitees) {
+        // If the user is banned remove 5 reputation
+        if (invitee.state === 'banned') {
+            total -= 5;
+        }
+
+        // If the user has left remove 0 reputation
+        if (invitee.state === 'left') {
+            total -= 0;
+        }
+
+        // If the user is a member add 2 reputation
+        if (invitee.state === 'member') {
+            total += 2;
+        }
+    }
+
+    return total;
+}
+
 class UserLeave extends GargoyleEvent {
     public event = Events.GuildMemberRemove as const;
 
-    public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
+    public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
         const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
-        crustaceanUser.state = 'left';
+        if (client.guilds.cache.get(member.guild.id)?.bans.fetch(member.id)) crustaceanUser.state = 'banned';
+        else crustaceanUser.state = 'left';
+
         await crustaceanUser.save();
     }
 }
@@ -402,7 +430,7 @@ async function getCrustaceanUser(client: GargoyleClient, userId: string, guildId
             guildId: guildId
         });
         await crustaceanUser.save();
-    } 
+    }
 
     if (crustaceanUser.inviterId === crustaceanUser.userId) {
         crustaceanUser.inviterId = null;
@@ -467,7 +495,9 @@ async function generateInviteTree(rich: boolean = false, guildId: string, userId
             stateSuffix = '[0m';
         }
 
-        tree += `${rich ? statePrefix : ''}${prefix}${branch}${inviteeCachedName} (${invitees[i].reputation ?? `0`})${rich ? stateSuffix : ''}\n`;
+        const reputation = await getReputationTotal(client, inviteeId, guildId);
+
+        tree += `${prefix}${branch}${rich ? statePrefix : ''}${inviteeCachedName} (${reputation})${rich ? stateSuffix : ''}\n`;
         tree += await generateInviteTree(rich, guildId, inviteeId, maxDepth, depth + 1, prefix + (isLast ? '    ' : '│   '));
     }
 
@@ -502,8 +532,10 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
             prefix = '[2;33m';
             suffix = '[0m';
         }
+        
+        const reputation = await getReputationTotal(client, currentUserId, guildId);
 
-        upwardsTree.push(`${rich ? prefix : ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${currentUser.reputation})${rich ? suffix : ``}`);
+        upwardsTree.push(`${rich ? prefix : ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${reputation})${rich ? suffix : ``}`);
         rootUserId = currentUserId; // Update root user
     }
 
@@ -524,6 +556,8 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
 
     const downwardsTree = await generateInviteTree(rich, guildId, userId, maxDepth, 0, '    ');
 
+    const reputation = await getReputationTotal(client, userId, guildId);
+
     const firstUserPrefix = rootUserId ? '└── ' : '';
-    return `${rich ? `\`\`\`ansi\n` : ``}${upwardsStr}${firstUserPrefix}${user.cachedName ?? `<@${currentUserId}>?`} (${user.reputation})\n${downwardsTree}${rich ? `\`\`\`` : ``}`;
+    return `${rich ? `\`\`\`ansi\n` : ``}${upwardsStr}${firstUserPrefix}${user.cachedName ?? `<@${currentUserId}>?`} (${reputation})\n${downwardsTree}${rich ? `\`\`\`` : ``}`;
 }
