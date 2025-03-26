@@ -176,9 +176,13 @@ export default class Crustacean extends GargoyleCommand {
             }
         } else if (interaction.options.getSubcommand() === 'tree') {
             const user = interaction.options.getUser('user', true);
-            const tree = await generateFullInviteTree(guildId, user.id, true);
 
-            return interaction.reply({ content: `${tree}` });
+            await interaction.deferReply()
+            const tree = await generateFullInviteTree(guildId, user.id, true).catch(() => {
+                return interaction.editReply({ content: 'An error occurred generating the tree, please try again later.' });
+            })
+
+            return interaction.editReply({ content: `${tree}` });
         }
 
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
@@ -468,18 +472,21 @@ async function updateCrustaceanUserCache(userId: string, guildId: string) {
     const guild = client.guilds.cache.get(guildId);
     const member = await guild?.members.fetch(userId);
 
-    crustaceanUser.cachedName = member?.displayName ?? user.displayName;
-
-    crustaceanUser.joinedDate = member?.joinedAt || new Date();
-
     crustaceanUser.lastCache = new Date();
 
     if (!member) {
+        crustaceanUser.cachedName = user.displayName;
+        crustaceanUser.joinedDate = new Date();
+
         if (guild?.bans.fetch(userId)) {
             crustaceanUser.state = 'banned';
         } else {
             crustaceanUser.state = 'left';
         }
+    } else {
+        crustaceanUser.cachedName = member.displayName;
+
+        crustaceanUser.joinedDate = member.joinedAt;
     }
 
     await crustaceanUser.save();
