@@ -177,11 +177,11 @@ export default class Crustacean extends GargoyleCommand {
         } else if (interaction.options.getSubcommand() === 'tree') {
             const user = interaction.options.getUser('user', true);
 
-            await interaction.deferReply()
+            await interaction.deferReply();
             const tree = await generateFullInviteTree(guildId, user.id, true).catch((err) => {
-                client.logger.error(err);
+                client.logger.error(err.stack);
                 return interaction.editReply({ content: 'An error occurred generating the tree, please try again later.' });
-            })
+            });
 
             return interaction.editReply({ content: `${tree}` });
         }
@@ -471,7 +471,7 @@ async function updateCrustaceanUserCache(userId: string, guildId: string) {
 
     const user = await client.users.fetch(userId);
     const guild = client.guilds.cache.get(guildId);
-    const member = await guild?.members.fetch(userId);
+    const member = await guild?.members.fetch(userId).catch(() => null);
 
     crustaceanUser.lastCache = new Date();
 
