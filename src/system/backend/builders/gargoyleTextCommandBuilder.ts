@@ -41,7 +41,7 @@ class GargoyleTextCommandBuilder {
     private _name: string | undefined;
     private _description: string | undefined;
     private _aliases: string[] = [];
-    private _contexts: InteractionContextType[] = [];
+    private _contexts: InteractionContextType[] = [InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDM];
     private _guilds: string[] = [];
 
     setName(name: string): this {
