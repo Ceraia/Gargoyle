@@ -80,6 +80,11 @@ export default class Help extends GargoyleCommand {
         const embed = new GargoyleEmbedBuilder().setTitle('Slash Commands');
         await client.commands.forEach((command) => {
             if (command.slashCommand) embed.addFields({ name: command.slashCommand?.name, value: command.slashCommand?.description });
+            if (command.slashCommands) {
+                command.slashCommands.forEach((slashCommand) => {
+                    embed.addFields({ name: slashCommand.name, value: slashCommand.description });
+                });
+            }
         });
 
         return {
@@ -97,6 +102,14 @@ export default class Help extends GargoyleCommand {
                     name += `(${command.textCommand.aliases.join(', ')})`;
                 }
                 embed.addFields({ name: name, value: command.textCommand.description });
+            } else if (command.textCommands) {
+                command.textCommands.forEach((textCommand) => {
+                    let name = textCommand.name;
+                    if (textCommand.aliases) {
+                        name += `(${textCommand.aliases.join(', ')})`;
+                    }
+                    embed.addFields({ name: name, value: textCommand.description });
+                });
             }
         });
 
