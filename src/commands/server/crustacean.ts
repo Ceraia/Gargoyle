@@ -246,6 +246,25 @@ export default class Crustacean extends GargoyleCommand {
     public override events: GargoyleEvent[] = [new MemberJoin(), new ReputationMessage(), new UserLeave()];
 }
 
+function inviteMessage(): string {
+    const inviteMessages = [
+        'Brace yourself, ${member} has joined the server!',
+        "Look who's here! It's ${member}!",
+        'Welcome to the server, ${member}!',
+        "It's dangerous to go alone, take ${member}!",
+        'Swoooosh. ${member} just landed.',
+        'Hello ${member}, welcome to the server!',
+        'Everyone welcome ${member}!',
+        "Glad you're here, ${member}!",
+        '${member} has joined the server! Everyone, look busy!',
+        '${member} joined the party.',
+        '${member} just slid into the server.',
+        'A wild ${member} appeared.'
+    ];
+
+    return inviteMessages[Math.floor(Math.random() * inviteMessages.length)];
+}
+
 class MemberJoin extends GargoyleEvent {
     public event = Events.GuildMemberAdd as const;
 
@@ -268,13 +287,13 @@ class MemberJoin extends GargoyleEvent {
 
         if (crustaceanChannel.isSendable()) {
             crustaceanChannel.send({
-                content: `Welcome to the server, ${member}!`,
+                content: inviteMessage().replace('${member}', `<@!${member.id}>`),
                 components: [
                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
                         new GargoyleButtonBuilder(new Crustacean(), 'invite', member.id).setLabel('Invite').setStyle(ButtonStyle.Secondary)
                     )
                 ]
-            }); // #TODO Add multiple invite messages for variance, or custom set.
+            });
         }
     }
 }
@@ -286,17 +305,14 @@ async function getReputationTotal(client: GargoyleClient, userId: string, guildI
     const invitees = await databaseCrustaceanUser.find({ guildId, inviterId: userId });
 
     for (const invitee of invitees) {
-        // If the user is banned remove 5 reputation
         if (invitee.state === 'banned') {
             total -= 1;
         }
 
-        // If the user has left remove 0 reputation
         if (invitee.state === 'left') {
             total -= 0;
         }
 
-        // If the user is a member add 2 reputation
         if (invitee.state === 'member') {
             total += 1;
         }
