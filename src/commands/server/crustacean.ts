@@ -174,6 +174,22 @@ export default class Crustacean extends GargoyleCommand {
                 const inviter = interaction.options.getUser('inviter', false);
 
                 const crustaceanUser = await getCrustaceanUser(client, user.id, guildId);
+
+                if (inviter) {
+                    const crustaceanInviter = await getCrustaceanUser(client, inviter?.id ?? '', guildId);
+
+                    // Check if any of the parents of the inviter are the user
+                    let currentUserId = crustaceanInviter.userId;
+                    while (currentUserId) {
+                        if (currentUserId === user.id) {
+                            return interaction.reply({ content: 'You cannot set a user as the inviter of their inviter', flags: MessageFlags.Ephemeral });
+                        }
+
+                        const currentUser = await getCrustaceanUser(client, currentUserId, guildId);
+                        currentUserId = currentUser.inviterId;
+                    }
+                }
+
                 crustaceanUser.inviterId = inviter ? inviter.id : null;
                 await crustaceanUser.save();
 
