@@ -331,8 +331,11 @@ class ReputationMessage extends GargoyleEvent {
 
         const crustaceanUser = await getCrustaceanUser(client, userId, guildId);
         crustaceanUser.cachedName = message.member?.displayName ?? message.author.displayName;
+        await crustaceanUser.save();
 
         if (message.mentions.users.size > 0 && containsThanks(message.content)) {
+            await message.react('❤️').catch(() => {});
+
             // Check if the author has thanked someone in the last 12 hours
             if (this.thanksCache.has(message.author.id)) {
                 const lastThanks = this.thanksCache.get(message.author.id);
@@ -345,24 +348,20 @@ class ReputationMessage extends GargoyleEvent {
             this.thanksCache.set(message.author.id, new Date());
 
             message.mentions.users.forEach(async (user) => {
-                if (user.id === userId) return;
+                if (user.id === message.author.id) return;
 
                 const thankedUser = await getCrustaceanUser(client, user.id, guildId);
                 thankedUser.reputation += 1;
                 await thankedUser.save();
             });
-
-            await message.react('❤️');
         }
-
-        await crustaceanUser.save();
     }
 }
 
 function containsThanks(message: string): boolean {
     return (
         message.toLowerCase().includes('thanks') ||
-        message.toLowerCase().includes('thank you') ||
+        message.toLowerCase().includes('thank ') ||
         message.toLowerCase().includes('thx') ||
         message.toLowerCase().includes('tysm') ||
         message.toLowerCase().includes('dankje') ||
