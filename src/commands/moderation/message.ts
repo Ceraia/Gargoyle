@@ -39,7 +39,7 @@ export default class Moderation extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (interaction.options.getSubcommand() == 'delete') {
+        if (interaction.options.getSubcommand() === 'delete') {
             interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const amount = interaction.options.getNumber('amount', true);
 
@@ -51,13 +51,15 @@ export default class Moderation extends GargoyleCommand {
             channel
                 .bulkDelete(amount)
                 .then(() => {
-                    interaction.editReply({ content: `Deleted ${amount} messages.` });
+                    return interaction.editReply({ content: `Deleted ${amount} messages.` });
                 })
                 .catch((err) => {
                     client.logger.error(err);
-                    interaction.editReply({ content: `Failed deleting ${amount} messages.\n-# You can only bulk-delete messages that are under 14 days old, this is a limitation presented by Discord themselves unfortunately.` });
+                    return interaction.editReply({ content: `Failed deleting ${amount} messages.\n-# You can only bulk-delete messages that are under 14 days old, this is a limitation presented by Discord themselves unfortunately.` });
                 });
         }
+
+        return interaction.reply({ content: 'Invalid subcommand.' });
     }
 
     public override async executeContextMenuCommand(_client: GargoyleClient, interaction: MessageContextMenuCommandInteraction) {
@@ -79,6 +81,7 @@ export default class Moderation extends GargoyleCommand {
             await channel.bulkDelete(deletableMessages, true);
             return interaction.editReply({ content: `Deleted ${deletableMessages.size} messages.` });
         } catch (error) {
+            client.logger.error(error as Error);
             return interaction.editReply({ content: 'Failed to delete messages. Messages older than 14 days cannot be bulk deleted.' });
         }
     }

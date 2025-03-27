@@ -55,7 +55,7 @@ export default class Crustacean extends GargoyleCommand {
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('reputation')
-                            .setDescription("Set a user's reputation")
+                            .setDescription('Set a user\'s reputation')
                             .addUserOption((option) => option.setName('user').setDescription('Affected user').setRequired(true))
                             .addNumberOption((option) => option.setName('value').setDescription('Value to set').setRequired(true))
                     )
@@ -91,7 +91,7 @@ export default class Crustacean extends GargoyleCommand {
                             'Crustacean is a custom invite & invite tracking system for your server.\n' +
                                 'Crustacean is a W.I.P system to allow you to more accurately "whitelist" who gets access to your server, primarily meant for communities who value reputation of members.\n' +
                                 'Crustacean is not meant to replace the default Discord invite system, but rather to supplement it.\n' +
-                                "In short, as people's minds have atrophied and cannot be bothered to read all text;\n\n" +
+                                'In short, as people\'s minds have atrophied and cannot be bothered to read all text;\n\n' +
                                 '- Track invitations, and see who invited who. \n' +
                                 '- Track reputation of members, and add merit accordingly. \n' +
                                 '- Track in-game names of members (for whitelisting for minecraft for example). \n\n' +
@@ -186,14 +186,16 @@ export default class Crustacean extends GargoyleCommand {
                     let currentUserId = crustaceanInviter.userId;
                     while (currentUserId) {
                         if (currentUserId === user.id) {
-                            return interaction.reply({ content: 'You cannot set a user as the inviter of their inviter', flags: MessageFlags.Ephemeral });
+                            return interaction.reply({
+                                content: 'You cannot set a user as the inviter of their inviter',
+                                flags: MessageFlags.Ephemeral
+                            });
                         }
 
                         const currentUser = await getCrustaceanUser(client, currentUserId, guildId);
                         currentUserId = currentUser.inviterId;
                     }
                 }
-
 
                 crustaceanUser.inviterId = inviter ? inviter.id : null;
                 await crustaceanUser.save();
@@ -229,7 +231,6 @@ export default class Crustacean extends GargoyleCommand {
         });
 
         await message.reply({ content: `${tree}` }).catch(() => {});
-        return;
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
@@ -250,10 +251,7 @@ export default class Crustacean extends GargoyleCommand {
                 if (role) {
                     await interaction.guild.members.fetch(userId).then((member) => {
                         member.roles.add(role).catch(async () => {
-                            await interaction.reply({
-                                content: 'An error occurred giving the user the role, the role may be above my highest role.'
-                            });
-                            return;
+                            await interaction.reply({ content: 'An error occurred giving the user the role, the role may be above my highest role.' });
                         });
                     });
                 } else {
@@ -264,9 +262,7 @@ export default class Crustacean extends GargoyleCommand {
                     return;
                 }
             } else {
-                await interaction.reply({
-                    content: 'The role set for the crustacean system was not found, please set it again.'
-                });
+                await interaction.reply({ content: 'The role set for the crustacean system was not found, please set it again.' });
                 return;
             }
 
@@ -282,7 +278,6 @@ export default class Crustacean extends GargoyleCommand {
             });
 
             await interaction.reply({ content: 'You have now invited this user to the guild.', flags: MessageFlags.Ephemeral });
-            return;
         }
     }
 
@@ -291,18 +286,18 @@ export default class Crustacean extends GargoyleCommand {
 
 function inviteMessage(): string {
     const inviteMessages = [
-        'Brace yourself, ${member} has joined the server!',
-        "Look who's here! It's ${member}!",
-        'Welcome to the server, ${member}!',
-        "It's dangerous to go alone, take ${member}!",
-        'Swoooosh. ${member} just landed.',
-        'Hello ${member}, welcome to the server!',
-        'Everyone welcome ${member}!',
-        "Glad you're here, ${member}!",
-        '${member} has joined the server! Everyone, look busy!',
-        '${member} joined the party.',
-        '${member} just slid into the server.',
-        'A wild ${member} appeared.'
+        'Brace yourself, {member} has joined the server!',
+        'Look who\'s here! It\'s {member}!',
+        'Welcome to the server, {member}!',
+        'It\'s dangerous to go alone, take {member}!',
+        'Swoooosh. {member} just landed.',
+        'Hello {member}, welcome to the server!',
+        'Everyone welcome {member}!',
+        'Glad you\'re here, {member}!',
+        '{member} has joined the server! Everyone, look busy!',
+        '{member} joined the party.',
+        '{member} just slid into the server.',
+        'A wild {member} appeared.'
     ];
 
     return inviteMessages[Math.floor(Math.random() * inviteMessages.length)];
@@ -315,7 +310,7 @@ class MemberJoin extends GargoyleEvent {
         const crustaceanGuild = await getCrustaceanGuild(member.guild.id);
         if (!crustaceanGuild.enabled) return;
 
-        let crustaceanChannel = member.guild.channels.cache.get(crustaceanGuild.channel);
+        const crustaceanChannel = member.guild.channels.cache.get(crustaceanGuild.channel);
 
         if (!crustaceanChannel) {
             crustaceanGuild.enabled = false;
@@ -330,7 +325,7 @@ class MemberJoin extends GargoyleEvent {
 
         if (crustaceanChannel.isSendable()) {
             crustaceanChannel.send({
-                content: inviteMessage().replace('${member}', `<@!${member.id}>`),
+                content: inviteMessage().replace('{member}', `<@!${member.id}>`),
                 components: [
                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
                         new GargoyleButtonBuilder(new Crustacean(), 'invite', member.id).setLabel('Invite').setStyle(ButtonStyle.Secondary)
@@ -567,8 +562,8 @@ async function generateInviteTree(rich: boolean = false, guildId: string, userId
         const inviteeId = invitees[i].userId ?? 'UnknownUser'; // Ensure it's always a string
         const inviteeCachedName = invitees[i].cachedName ?? `<@${inviteeId}>?`;
 
-        let statePrefix = `[2;32m`;
-        let stateSuffix = `[0m`;
+        let statePrefix = '[2;32m';
+        let stateSuffix = '[0m';
         if (invitees[i].state === 'banned') {
             statePrefix = '[2;41m';
             stateSuffix = '[0m';
@@ -594,7 +589,7 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
     let currentUserId: string | null = userId;
     let rootUserId: string | null = null; // Keep track of the very first inviter
 
-    let user = await getCrustaceanUser(client, userId, guildId);
+    const user = await getCrustaceanUser(client, userId, guildId);
 
     while (currentUserId) {
         let currentUser = await getCrustaceanUser(client, currentUserId, guildId);
@@ -605,8 +600,8 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
 
         currentUser = await getCrustaceanUser(client, currentUserId, guildId);
 
-        let prefix = `[2;32m`;
-        let suffix = `[0m`;
+        let prefix = '[2;32m';
+        let suffix = '[0m';
         if (currentUser.state === 'banned') {
             prefix = '[2;41m';
             suffix = '[0m';
@@ -617,7 +612,7 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
 
         const reputation = await getReputationTotal(client, currentUserId, guildId);
 
-        upwardsTree.push(`${rich ? prefix : ``}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${reputation})${rich ? suffix : ``}`);
+        upwardsTree.push(`${rich ? prefix : ''}${currentUser.cachedName ?? `<@${currentUserId}>`}  (${reputation})${rich ? suffix : ''}`);
         rootUserId = currentUserId; // Update root user
     }
 
@@ -634,12 +629,12 @@ async function generateFullInviteTree(guildId: string, userId: string, rich: boo
     // This [2;33mword[0m has a tinted text yellow
     // ```
 
-    const upwardsStr = upwardsTree.length > 0 ? upwardsTree.join(' ← ') + '\n' : '';
+    const upwardsStr = upwardsTree.length > 0 ? `${upwardsTree.join(' ← ')}\n` : '';
 
     const downwardsTree = await generateInviteTree(rich, guildId, userId, maxDepth, 0, '    ');
 
     const reputation = await getReputationTotal(client, userId, guildId);
 
     const firstUserPrefix = rootUserId ? '└── ' : '';
-    return `${rich ? `\`\`\`ansi\n` : ``}${upwardsStr}${firstUserPrefix}${user.cachedName ?? `<@${currentUserId}>?`} (${reputation})\n${downwardsTree}${rich ? `\`\`\`` : ``}`;
+    return `${rich ? '```ansi\n' : ''}${upwardsStr}${firstUserPrefix}${user.cachedName ?? `<@${currentUserId}>?`} (${reputation})\n${downwardsTree}${rich ? '```' : ''}`;
 }
