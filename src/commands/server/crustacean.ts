@@ -55,7 +55,7 @@ export default class Crustacean extends GargoyleCommand {
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('reputation')
-                            .setDescription('Set a user\'s reputation')
+                            .setDescription("Set a user's reputation")
                             .addUserOption((option) => option.setName('user').setDescription('Affected user').setRequired(true))
                             .addNumberOption((option) => option.setName('value').setDescription('Value to set').setRequired(true))
                     )
@@ -91,7 +91,7 @@ export default class Crustacean extends GargoyleCommand {
                             'Crustacean is a custom invite & invite tracking system for your server.\n' +
                                 'Crustacean is a W.I.P system to allow you to more accurately "whitelist" who gets access to your server, primarily meant for communities who value reputation of members.\n' +
                                 'Crustacean is not meant to replace the default Discord invite system, but rather to supplement it.\n' +
-                                'In short, as people\'s minds have atrophied and cannot be bothered to read all text;\n\n' +
+                                "In short, as people's minds have atrophied and cannot be bothered to read all text;\n\n" +
                                 '- Track invitations, and see who invited who. \n' +
                                 '- Track reputation of members, and add merit accordingly. \n' +
                                 '- Track in-game names of members (for whitelisting for minecraft for example). \n\n' +
@@ -251,7 +251,9 @@ export default class Crustacean extends GargoyleCommand {
                 if (role) {
                     await interaction.guild.members.fetch(userId).then((member) => {
                         member.roles.add(role).catch(async () => {
-                            await interaction.reply({ content: 'An error occurred giving the user the role, the role may be above my highest role.' });
+                            await interaction.reply({
+                                content: 'An error occurred giving the user the role, the role may be above my highest role.'
+                            });
                         });
                     });
                 } else {
@@ -281,19 +283,19 @@ export default class Crustacean extends GargoyleCommand {
         }
     }
 
-    public override events: GargoyleEvent[] = [new MemberJoin(), new ReputationMessage(), new UserLeave()];
+    public override events: GargoyleEvent[] = [new MemberJoin(), new ReputationMessage(), new MemberLeave()];
 }
 
 function inviteMessage(): string {
     const inviteMessages = [
         'Brace yourself, {member} has joined the server!',
-        'Look who\'s here! It\'s {member}!',
+        "Look who's here! It's {member}!",
         'Welcome to the server, {member}!',
-        'It\'s dangerous to go alone, take {member}!',
+        "It's dangerous to go alone, take {member}!",
         'Swoooosh. {member} just landed.',
         'Hello {member}, welcome to the server!',
         'Everyone welcome {member}!',
-        'Glad you\'re here, {member}!',
+        "Glad you're here, {member}!",
         '{member} has joined the server! Everyone, look busy!',
         '{member} joined the party.',
         '{member} just slid into the server.',
@@ -301,6 +303,44 @@ function inviteMessage(): string {
     ];
 
     return inviteMessages[Math.floor(Math.random() * inviteMessages.length)];
+}
+
+function leaveMessage(): string {
+    const leaveMessages = [
+        '{member} has left the server.',
+        '{member} has left the building.',
+        '{member} has left the chat.',
+        'Sad to see {member} go.',
+        '{member} has left the server. Was it something we said?',
+        "{member} has left the server. We'll miss you!",
+        '{member} touched grass and left the server.',
+        "We've lost {member}."
+    ];
+
+    return leaveMessages[Math.floor(Math.random() * leaveMessages.length)];
+}
+
+class MemberLeave extends GargoyleEvent {
+    public event = Events.GuildMemberRemove as const;
+
+    public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
+        const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
+        if (client.guilds.cache.get(member.guild.id)?.bans.fetch(member.id)) crustaceanUser.state = 'banned';
+        else crustaceanUser.state = 'left';
+
+        await crustaceanUser.save();
+
+        const crustaceanGuild = await getCrustaceanGuild(member.guild.id);
+        if (!crustaceanGuild.enabled) return;
+
+        const crustaceanChannel = member.guild.channels.cache.get(crustaceanGuild.channel);
+
+        if (crustaceanChannel && crustaceanChannel.isSendable()) {
+            crustaceanChannel.send({
+                content: leaveMessage().replace('{member}', `<@!${member.id}>`)
+            });
+        }
+    }
 }
 
 class MemberJoin extends GargoyleEvent {
@@ -364,18 +404,6 @@ async function getReputationTotal(client: GargoyleClient, userId: string, guildI
     }
 
     return total;
-}
-
-class UserLeave extends GargoyleEvent {
-    public event = Events.GuildMemberRemove as const;
-
-    public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
-        const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
-        if (client.guilds.cache.get(member.guild.id)?.bans.fetch(member.id)) crustaceanUser.state = 'banned';
-        else crustaceanUser.state = 'left';
-
-        await crustaceanUser.save();
-    }
 }
 
 class ReputationMessage extends GargoyleEvent {
@@ -533,11 +561,11 @@ async function updateCrustaceanUserCache(userId: string, guildId: string) {
         crustaceanUser.cachedName = user.displayName;
         crustaceanUser.joinedDate = new Date();
 
-        if (guild?.bans.fetch(userId)) {
-            crustaceanUser.state = 'banned';
-        } else {
-            crustaceanUser.state = 'left';
-        }
+        const guild = client.guilds.cache.get(guildId);
+
+        guild?.bans.fetch(userId).then((ban) => {
+            ban ? (crustaceanUser.state = 'banned') : (crustaceanUser.state = 'left');
+        });
     } else {
         crustaceanUser.cachedName = member.displayName;
 
