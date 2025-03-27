@@ -274,12 +274,6 @@ export default class Crustacean extends GargoyleCommand {
                 .update({
                     content: interaction.message.content + `\n-# Invited by ${interaction.user.displayName} (<@!${interaction.user.id}>)`,
                     components: [
-                        // new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                        //     new GargoyleButtonBuilder(this)
-                        //         .setLabel(`Invited by ${interaction.user.displayName}`)
-                        //         .setStyle(ButtonStyle.Success)
-                        //         .setDisabled(true)
-                        // )
                     ]
                 })
                 .catch((err) => {
