@@ -5,7 +5,7 @@ import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTex
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
-import { sendAsServer } from '@src/system/backend/tools/server.js';
+import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import client from '@src/system/botClient.js';
 import {
     ActionRowBuilder,
@@ -270,17 +270,36 @@ export default class Crustacean extends GargoyleCommand {
                 return;
             }
 
-            await interaction.update({
-                content: interaction.message.content + `\n-# Invited by ${interaction.user.displayName} (<@!${interaction.user.id}>)`,
-                components: [
-                    // new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                    //     new GargoyleButtonBuilder(this)
-                    //         .setLabel(`Invited by ${interaction.user.displayName}`)
-                    //         .setStyle(ButtonStyle.Success)
-                    //         .setDisabled(true)
-                    // )
-                ]
-            });
+            await interaction
+                .update({
+                    content: interaction.message.content + `\n-# Invited by ${interaction.user.displayName} (<@!${interaction.user.id}>)`,
+                    components: [
+                        // new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                        //     new GargoyleButtonBuilder(this)
+                        //         .setLabel(`Invited by ${interaction.user.displayName}`)
+                        //         .setStyle(ButtonStyle.Success)
+                        //         .setDisabled(true)
+                        // )
+                    ]
+                })
+                .catch((err) => {
+                    client.logger.error('Failed to edit message as interaction, resorting to editing as server.', err.stack);
+                    editAsServer(
+                        {
+                            content: interaction.message.content + `\n-# Invited by ${interaction.user.displayName} (<@!${interaction.user.id}>)`,
+                            components: [
+                                // new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                                //     new GargoyleButtonBuilder(this)
+                                //         .setLabel(`Invited by ${interaction.user.displayName}`)
+                                //         .setStyle(ButtonStyle.Success)
+                                //         .setDisabled(true)
+                                // )
+                            ]
+                        },
+                        interaction.channel as TextChannel,
+                        interaction.message.id
+                    );
+                });
 
             await interaction.reply({ content: 'You have now invited this user to the guild.', flags: MessageFlags.Ephemeral });
         }
