@@ -5,6 +5,7 @@ import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTex
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 import client from '@src/system/botClient.js';
 import {
     ActionRowBuilder,
@@ -17,7 +18,8 @@ import {
     InteractionContextType,
     Message,
     MessageFlags,
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    TextChannel
 } from 'discord.js';
 
 export default class Crustacean extends GargoyleCommand {
@@ -269,13 +271,14 @@ export default class Crustacean extends GargoyleCommand {
             }
 
             await interaction.update({
+                content: interaction.message.content + `\n-# Invited by ${interaction.user.displayName} (<@!${interaction.user.id}>)`,
                 components: [
-                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                        new GargoyleButtonBuilder(this)
-                            .setLabel(`Invited by ${interaction.user.displayName}`)
-                            .setStyle(ButtonStyle.Success)
-                            .setDisabled(true)
-                    )
+                    // new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                    //     new GargoyleButtonBuilder(this)
+                    //         .setLabel(`Invited by ${interaction.user.displayName}`)
+                    //         .setStyle(ButtonStyle.Success)
+                    //         .setDisabled(true)
+                    // )
                 ]
             });
 
@@ -323,7 +326,7 @@ function leaveMessage(): string {
 class MemberLeave extends GargoyleEvent {
     public event = Events.GuildMemberRemove as const;
 
-    public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
+    public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
         const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
         if (client.guilds.cache.get(member.guild.id)?.bans.fetch(member.id)) crustaceanUser.state = 'banned';
         else crustaceanUser.state = 'left';
@@ -336,9 +339,13 @@ class MemberLeave extends GargoyleEvent {
         const crustaceanChannel = member.guild.channels.cache.get(crustaceanGuild.channel);
 
         if (crustaceanChannel && crustaceanChannel.isSendable()) {
-            crustaceanChannel.send({
-                content: leaveMessage().replace('{member}', `<@!${member.id}>`)
-            });
+            sendAsServer(
+                client,
+                {
+                    content: leaveMessage().replace('{member}', `<@!${member.id}>`)
+                },
+                crustaceanChannel as TextChannel
+            );
         }
     }
 }
@@ -364,14 +371,18 @@ class MemberJoin extends GargoyleEvent {
         }
 
         if (crustaceanChannel.isSendable()) {
-            crustaceanChannel.send({
-                content: inviteMessage().replace('{member}', `<@!${member.id}>`),
-                components: [
-                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                        new GargoyleButtonBuilder(new Crustacean(), 'invite', member.id).setLabel('Invite').setStyle(ButtonStyle.Secondary)
-                    )
-                ]
-            });
+            sendAsServer(
+                client,
+                {
+                    content: inviteMessage().replace('{member}', `<@!${member.id}>`),
+                    components: [
+                        new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                            new GargoyleButtonBuilder(new Crustacean(), 'invite', member.id).setLabel('Invite').setStyle(ButtonStyle.Secondary)
+                        )
+                    ]
+                },
+                crustaceanChannel as TextChannel
+            );
         }
     }
 }
