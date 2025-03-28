@@ -79,9 +79,11 @@ export default class Help extends GargoyleCommand {
     private async generateSlashHelpMessage(client: GargoyleClient): Promise<object> {
         const embed = new GargoyleEmbedBuilder().setTitle('Slash Commands');
         await client.commands.forEach((command) => {
-            if (command.slashCommand) embed.addFields({ name: command.slashCommand?.name, value: command.slashCommand?.description });
+            if (command.slashCommand && !command.slashCommand.private)
+                embed.addFields({ name: command.slashCommand?.name, value: command.slashCommand?.description });
             if (command.slashCommands) {
                 command.slashCommands.forEach((slashCommand) => {
+                    if (slashCommand.private) return;
                     embed.addFields({ name: slashCommand.name, value: slashCommand.description });
                 });
             }
@@ -97,6 +99,7 @@ export default class Help extends GargoyleCommand {
         const embed = new GargoyleEmbedBuilder().setTitle('Text Commands');
         await client.commands.forEach((command) => {
             if (command.textCommand) {
+                if (command.textCommand.private) return;
                 let name = command.textCommand.name;
                 if (command.textCommand?.aliases) {
                     name += command.textCommand.aliases.length > 0 ? ` (${command.textCommand.aliases.join(', ')})` : '';
@@ -104,6 +107,7 @@ export default class Help extends GargoyleCommand {
                 embed.addFields({ name: name, value: command.textCommand.description });
             } else if (command.textCommands) {
                 command.textCommands.forEach((textCommand) => {
+                    if (textCommand.private) return;
                     let name = textCommand.name;
                     if (textCommand.aliases) {
                         name += textCommand.aliases.length > 0 ? ` (${textCommand.aliases.join(', ')})` : '';
