@@ -245,7 +245,6 @@ export default class Crustacean extends GargoyleCommand {
             crustaceanInvitee.inviterId = interaction.user.id;
             await crustaceanInvitee.save();
 
-            // give the user the role too
             const crustaceanGuild = await getCrustaceanGuild(interaction.guild.id);
 
             if (!crustaceanGuild.role) {
@@ -294,14 +293,7 @@ export default class Crustacean extends GargoyleCommand {
                     editAsServer(
                         {
                             content: interaction.message.content + `\n-# Invited by ${interaction.user.displayName} (<@!${interaction.user.id}>)`,
-                            components: [
-                                // new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                                //     new GargoyleButtonBuilder(this)
-                                //         .setLabel(`Invited by ${interaction.user.displayName}`)
-                                //         .setStyle(ButtonStyle.Success)
-                                //         .setDisabled(true)
-                                // )
-                            ]
+                            components: []
                         },
                         interaction.channel as TextChannel,
                         interaction.message.id
