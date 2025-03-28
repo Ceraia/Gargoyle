@@ -248,33 +248,46 @@ export default class Crustacean extends GargoyleCommand {
             // give the user the role too
             const crustaceanGuild = await getCrustaceanGuild(interaction.guild.id);
 
-            if (crustaceanGuild.role) {
-                const role = interaction.guild.roles.cache.get(crustaceanGuild.role);
-                if (role) {
-                    await interaction.guild.members.fetch(userId).then((member) => {
-                        member.roles.add(role).catch(async () => {
-                            await interaction.reply({
-                                content: 'An error occurred giving the user the role, the role may be above my highest role.'
-                            });
-                        });
-                    });
-                } else {
-                    crustaceanGuild.role = null;
-                    await crustaceanGuild.save();
-
-                    await interaction.reply({ content: 'The role set for the crustacean system was not found, please set it again.' });
-                    return;
-                }
-            } else {
+            if (!crustaceanGuild.role) {
                 await interaction.reply({ content: 'The role set for the crustacean system was not found, please set it again.' });
                 return;
             }
 
+            const role = interaction.guild.roles.cache.get(crustaceanGuild.role);
+            if (!role) {
+                crustaceanGuild.role = null;
+                await crustaceanGuild.save();
+
+                await interaction.reply({ content: 'The role set for the crustacean system was not found, please set it again.' });
+                return;
+            }
+
+            if (interaction.user.id === userId) {
+                await interaction.reply({
+                    content: 'You cannot invite yourself, wait for who invited you to claim the invite.',
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            const guildMember = interaction.guild.members.cache.get(userId);
+            if (!guildMember?.roles.cache.has(role.id)) {
+                await interaction.reply({ content: 'You do not have permission to claim an invite.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            await interaction.guild.members.fetch(userId).then((member) => {
+                member.roles.add(role).catch(async () => {
+                    await interaction.reply({
+                        content: 'An error occurred giving the user the role, the role may be above my highest role.'
+                    });
+                });
+            });
+
             await interaction
                 .update({
                     content: interaction.message.content + `\n-# Invited by ${interaction.user.displayName} (<@!${interaction.user.id}>)`,
-                    components: [
-                    ]
+                    components: []
                 })
                 .catch((err) => {
                     client.logger.error('Failed to edit message as interaction, resorting to editing as server.', err.stack);
@@ -390,7 +403,7 @@ class MemberJoin extends GargoyleEvent {
                     content: inviteMessage().replace('{member}', `<@!${member.id}>`),
                     components: [
                         new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                            new GargoyleButtonBuilder(new Crustacean(), 'invite', member.id).setLabel('Invite').setStyle(ButtonStyle.Secondary)
+                            new GargoyleButtonBuilder(new Crustacean(), 'invite', member.id).setLabel('Claim Invite').setStyle(ButtonStyle.Secondary)
                         )
                     ]
                 },
