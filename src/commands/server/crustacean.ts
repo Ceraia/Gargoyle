@@ -346,7 +346,12 @@ class MemberLeave extends GargoyleEvent {
 
     public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
         const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
-        if (client.guilds.cache.get(member.guild.id)?.bans.fetch(member.id)) crustaceanUser.state = 'banned';
+
+        let banned = client.guilds.cache
+            .get(member.guild.id)
+            ?.bans.fetch(member.id)
+            .catch(() => null);
+        if (banned) crustaceanUser.state = 'banned';
         else crustaceanUser.state = 'left';
 
         await crustaceanUser.save();
@@ -592,9 +597,14 @@ async function updateCrustaceanUserCache(userId: string, guildId: string) {
 
         const guild = client.guilds.cache.get(guildId);
 
-        guild?.bans.fetch(userId).then((ban) => {
-            ban ? (crustaceanUser.state = 'banned') : (crustaceanUser.state = 'left');
-        });
+        guild?.bans
+            .fetch(userId)
+            .catch(() => {
+                crustaceanUser.state = 'left';
+            })
+            .then((ban) => {
+                ban ? (crustaceanUser.state = 'banned') : (crustaceanUser.state = 'left');
+            });
     } else {
         crustaceanUser.cachedName = member.displayName;
 
