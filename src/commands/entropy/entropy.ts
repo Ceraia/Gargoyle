@@ -34,7 +34,6 @@ export default class Entropy extends GargoyleCommand {
         new GargoyleSlashCommandBuilder()
             .setName('entropy')
             .setDescription('Entropy related commands')
-            .setPrivate(true)
             .addGuild('1009048008857493624')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addSubcommandGroup((subcommandGroup) =>
