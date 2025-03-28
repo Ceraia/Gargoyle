@@ -27,6 +27,12 @@ export default class Server extends GargoyleCommand {
             .setName('server')
             .setDescription('Server / community commands')
             .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('prefix')
+                    .setDescription('Set the server prefix')
+                    .addStringOption((option) => option.setName('prefix').setDescription('Prefix to set').setRequired(true))
+            )
             .addSubcommandGroup((subcommandGroup) =>
                 subcommandGroup
                     .setName('send')
@@ -68,6 +74,23 @@ export default class Server extends GargoyleCommand {
         } else if (interaction.options.getSubcommand() === 'attachment') {
             await interaction.reply({ content: 'Sending attachment, one moment...', flags: MessageFlags.Ephemeral });
             return sendAsServer(client, { files: [interaction.options.getAttachment('attachment')!] }, interaction.channel as TextChannel);
+        } else if (interaction.options.getSubcommand() === 'prefix') {
+            const prefix = interaction.options.getString('prefix');
+            if (!prefix) return;
+
+            if (!client.db) return interaction.reply({ content: 'Database not available, please try again later', flags: MessageFlags.Ephemeral });
+
+            let guildDb = await client.db.getGuild(interaction.guildId!);
+
+            guildDb.prefix = prefix;
+            await guildDb
+                .save()
+                .catch(() => {
+                    interaction.reply({ content: 'Failed to set prefix.', flags: MessageFlags.Ephemeral }).catch(() => {});
+                })
+                .then(() => {
+                    interaction.reply({ content: `Server prefix set to \`${prefix}\``, flags: MessageFlags.Ephemeral }).catch(() => {});
+                });
         }
     }
 
