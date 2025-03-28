@@ -34,6 +34,7 @@ export default class Entropy extends GargoyleCommand {
         new GargoyleSlashCommandBuilder()
             .setName('entropy')
             .setDescription('Entropy related commands')
+            .setPrivate(true)
             .addGuild('1009048008857493624')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addSubcommandGroup((subcommandGroup) =>
@@ -45,7 +46,7 @@ export default class Entropy extends GargoyleCommand {
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('view')
-                            .setDescription('View a user\'s voice activity')
+                            .setDescription("View a user's voice activity")
                             .addUserOption((option) => option.setName('user').setDescription('The user to view').setRequired(false))
                     )
             )
@@ -54,6 +55,7 @@ export default class Entropy extends GargoyleCommand {
     public override textCommands = [
         new GargoyleTextCommandBuilder()
             .setName('entropy')
+            .setPrivate(true)
             .setDescription('Open an entropy application panel')
             .setContexts([InteractionContextType.Guild])
     ];
