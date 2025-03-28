@@ -7,6 +7,7 @@ import {
     ButtonInteraction,
     ChatInputCommandInteraction,
     EmbedBuilder,
+    Guild,
     Message,
     MessageFlags,
     StringSelectMenuBuilder,
@@ -55,10 +56,10 @@ export default class Help extends GargoyleCommand {
     override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...argument: string[]): Promise<void> {
         if (argument[0] === 'commands') {
             if (interaction.values[0] === 'commands') {
-                const message = await this.generateSlashHelpMessage(client);
+                const message = await this.generateSlashHelpMessage(client, interaction.guild ? interaction.guild : undefined);
                 await interaction.update(message);
             } else if (interaction.values[0] === 'text') {
-                const message = await this.generateTextHelpMessage(client);
+                const message = await this.generateTextHelpMessage(client, interaction.guild ? interaction.guild : undefined);
                 await interaction.update(message);
             } else {
                 await interaction.update(this.helpMessage);
@@ -68,22 +69,35 @@ export default class Help extends GargoyleCommand {
 
     override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...argument: string[]): Promise<void> {
         if (argument[0] === 'commands') {
-            const message = await this.generateSlashHelpMessage(client);
+            const message = await this.generateSlashHelpMessage(client, interaction.guild ? interaction.guild : undefined);
             await interaction.update(message);
         } else if (argument[0] === 'text') {
-            const message = await this.generateTextHelpMessage(client);
+            const message = await this.generateTextHelpMessage(client, interaction.guild ? interaction.guild : undefined);
             await interaction.update(message);
         }
     }
 
-    private async generateSlashHelpMessage(client: GargoyleClient): Promise<object> {
+    private async generateSlashHelpMessage(client: GargoyleClient, guild?: Guild): Promise<object> {
         const embed = new GargoyleEmbedBuilder().setTitle('Slash Commands');
         await client.commands.forEach((command) => {
-            if (command.slashCommand && !command.slashCommand.private)
+            if (command.slashCommand) {
+                if (!command.slashCommand.private) return;
+
+                if (command.slashCommand.guilds && guild) {
+                    if (!command.slashCommand.guilds.includes(guild.id)) return;
+                }
+
                 embed.addFields({ name: command.slashCommand?.name, value: command.slashCommand?.description });
+            }
+
             if (command.slashCommands) {
                 command.slashCommands.forEach((slashCommand) => {
                     if (slashCommand.private) return;
+
+                    if (slashCommand.guilds && guild) {
+                        if (!slashCommand.guilds.includes(guild.id)) return;
+                    }
+
                     embed.addFields({ name: slashCommand.name, value: slashCommand.description });
                 });
             }
@@ -95,11 +109,16 @@ export default class Help extends GargoyleCommand {
         };
     }
 
-    private async generateTextHelpMessage(client: GargoyleClient): Promise<object> {
+    private async generateTextHelpMessage(client: GargoyleClient, guild?: Guild): Promise<object> {
         const embed = new GargoyleEmbedBuilder().setTitle('Text Commands');
         await client.commands.forEach((command) => {
             if (command.textCommand) {
                 if (command.textCommand.private) return;
+
+                if (command.textCommand.guilds && guild) {
+                    if (!command.textCommand.guilds.includes(guild.id)) return;
+                }
+
                 let name = command.textCommand.name;
                 if (command.textCommand?.aliases) {
                     name += command.textCommand.aliases.length > 0 ? ` (${command.textCommand.aliases.join(', ')})` : '';
@@ -108,6 +127,11 @@ export default class Help extends GargoyleCommand {
             } else if (command.textCommands) {
                 command.textCommands.forEach((textCommand) => {
                     if (textCommand.private) return;
+
+                    if (textCommand.guilds && guild) {
+                        if (!textCommand.guilds.includes(guild.id)) return;
+                    }
+
                     let name = textCommand.name;
                     if (textCommand.aliases) {
                         name += textCommand.aliases.length > 0 ? ` (${textCommand.aliases.join(', ')})` : '';
