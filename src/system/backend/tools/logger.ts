@@ -133,14 +133,14 @@ class Logger {
         watchdog(LOG_LEVELS.TRACE, ...messages);
     }
 
-    public static error(...messages: string[] | Error[]): void {
-        error(...messages);
-        watchdog(LOG_LEVELS.ERROR, ...messages);
-    }
-
     public static warning(...messages: string[] | Error[]): void {
         warning(...messages);
         watchdog(LOG_LEVELS.WARNING, ...messages);
+    }
+
+    public static error(...messages: string[] | Error[]): void {
+        error(...messages);
+        watchdog(LOG_LEVELS.ERROR, ...messages);
     }
 
     public static fatal(...messages: string[] | Error[]): void {
@@ -148,5 +148,17 @@ class Logger {
         watchdog(LOG_LEVELS.FATAL, ...messages);
     }
 }
+
+process.on('uncaughtException', (error) => {
+    return fatal(`Uncaught Exception: ${error.message}`, error.stack || '');
+});
+
+process.on('unhandledRejection', (reason) => {
+    return error(`Unhandled Rejection: ${reason}`);
+});
+
+process.on('warning', (warn) => {
+    return warning(`Warning: ${warn.message}`, warn.stack || '');
+});
 
 export { Logger, log, debug, trace, error, warning, fatal };
