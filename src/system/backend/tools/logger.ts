@@ -102,7 +102,7 @@ function fatal(...messages: string[] | Error[]): void {
 }
 
 function watchdog(logLevel: number, ...messages: string[] | Error[]): void {
-    if (logLevel < watchDogLevel) return;
+    if (logLevel > watchDogLevel) return;
     messages.forEach((message) => {
         if (!webhookClient || webhookClient === null) return;
         webhookClient.send(message.toString()).catch((err) => {
