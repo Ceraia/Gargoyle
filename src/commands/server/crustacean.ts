@@ -347,11 +347,11 @@ class MemberLeave extends GargoyleEvent {
     public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
         const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
 
-        let banned = client.guilds.cache
+        let banned = await client.guilds.cache
             .get(member.guild.id)
             ?.bans.fetch(member.id)
             .catch(() => null);
-        if (banned) crustaceanUser.state = 'banned';
+        if (banned && banned !== null || banned !== undefined ) crustaceanUser.state = 'banned';
         else crustaceanUser.state = 'left';
 
         await crustaceanUser.save();
@@ -382,16 +382,17 @@ class MemberJoin extends GargoyleEvent {
 
         const crustaceanChannel = member.guild.channels.cache.get(crustaceanGuild.channel);
 
-        if (!crustaceanChannel) {
-            crustaceanGuild.enabled = false;
-            await crustaceanGuild.save();
-            return;
-        }
-
         const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
         if (crustaceanUser.state === 'banned' || crustaceanUser.state === 'left') {
             crustaceanUser.state = 'member';
         }
+
+        if (!crustaceanChannel) {
+            return;
+        }
+        
+        crustaceanUser.joinedDate = member.joinedAt || new Date();
+        await crustaceanUser.save();
 
         if (crustaceanChannel.isSendable()) {
             sendAsServer(
@@ -597,14 +598,11 @@ async function updateCrustaceanUserCache(userId: string, guildId: string) {
 
         const guild = client.guilds.cache.get(guildId);
 
-        guild?.bans
-            .fetch(userId)
-            .catch(() => {
-                crustaceanUser.state = 'left';
-            })
-            .then((ban) => {
-                ban ? (crustaceanUser.state = 'banned') : (crustaceanUser.state = 'left');
-            });
+        let banned = await guild
+            ?.bans.fetch(user.id)
+            .catch(() => null);
+        if ((banned && banned !== null) || banned !== undefined) crustaceanUser.state = 'banned';
+        else crustaceanUser.state = 'left';
     } else {
         crustaceanUser.cachedName = member.displayName;
 
