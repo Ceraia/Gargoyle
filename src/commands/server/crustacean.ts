@@ -269,8 +269,8 @@ export default class Crustacean extends GargoyleCommand {
                 return;
             }
 
-            const guildMember = await interaction.guild.members.fetch(userId);
-            if (!guildMember.roles.cache.has(crustaceanGuild.role)) {
+            const guildMember = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+            if (!guildMember?.roles.cache.has(crustaceanGuild.role)) {
                 await interaction.reply({ content: 'You do not have permission to claim an invite.', flags: MessageFlags.Ephemeral });
                 return;
             }
