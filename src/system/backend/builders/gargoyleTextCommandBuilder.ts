@@ -41,8 +41,9 @@ class GargoyleTextCommandBuilder {
     private _name: string | undefined;
     private _description: string | undefined;
     private _aliases: string[] = [];
-    private _contexts: InteractionContextType[] = [];
+    private _contexts: InteractionContextType[] = [InteractionContextType.Guild, InteractionContextType.PrivateChannel, InteractionContextType.BotDM];
     private _guilds: string[] = [];
+    private _private: boolean = false;
 
     setName(name: string): this {
         if (!name || typeof name !== 'string') {
@@ -87,6 +88,20 @@ class GargoyleTextCommandBuilder {
     setContexts(contexts: InteractionContextType[]): this {
         this._contexts = contexts;
         return this;
+    }
+
+    /**
+     * Sets whether the command is private or not.
+     * @param priv Whether the command is private or not, hides it from help messages.
+     * @returns The instance of the builder for chaining.
+     */
+    setPrivate(priv: boolean = true): this {
+        this._private = priv;
+        return this;
+    }
+
+    get private(): boolean {
+        return this._private;
     }
 
     get name(): string {

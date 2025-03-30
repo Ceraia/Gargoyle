@@ -22,23 +22,31 @@ import {
 
 export default class Server extends GargoyleCommand {
     public override category: string = 'server';
-    public override slashCommand = new GargoyleSlashCommandBuilder()
-        .setName('server')
-        .setDescription('Server / community commands')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-        .addSubcommandGroup((subcommandGroup) =>
-            subcommandGroup
-                .setName('send')
-                .setDescription('Send things as the server')
-                .addSubcommand((subcommand) => subcommand.setName('message').setDescription('Send a message as the server'))
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('attachment')
-                        .setDescription('Send an attachment as the server')
-                        .addAttachmentOption((option) => option.setName('attachment').setDescription('Attachment to send').setRequired(true))
-                )
-        )
-        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('server')
+            .setDescription('Server / community commands')
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('prefix')
+                    .setDescription('Set the server prefix')
+                    .addStringOption((option) => option.setName('prefix').setDescription('Prefix to set').setRequired(true))
+            )
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('send')
+                    .setDescription('Send things as the server')
+                    .addSubcommand((subcommand) => subcommand.setName('message').setDescription('Send a message as the server'))
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('attachment')
+                            .setDescription('Send an attachment as the server')
+                            .addAttachmentOption((option) => option.setName('attachment').setDescription('Attachment to send').setRequired(true))
+                    )
+            )
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
+    ];
     public override contextCommands = [
         new ContextMenuCommandBuilder()
             .setContexts(InteractionContextType.Guild)
@@ -47,7 +55,7 @@ export default class Server extends GargoyleCommand {
             .setName('Edit Server Message')
     ];
 
-    public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+    public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommand() === 'message') {
             await interaction.showModal(
                 new GargoyleModalBuilder(this, 'message')
@@ -65,7 +73,24 @@ export default class Server extends GargoyleCommand {
             );
         } else if (interaction.options.getSubcommand() === 'attachment') {
             await interaction.reply({ content: 'Sending attachment, one moment...', flags: MessageFlags.Ephemeral });
-            sendAsServer(client, { files: [interaction.options.getAttachment('attachment')!] }, interaction.channel as TextChannel);
+            return sendAsServer(client, { files: [interaction.options.getAttachment('attachment')!] }, interaction.channel as TextChannel);
+        } else if (interaction.options.getSubcommand() === 'prefix') {
+            const prefix = interaction.options.getString('prefix');
+            if (!prefix) return;
+
+            if (!client.db) return interaction.reply({ content: 'Database not available, please try again later', flags: MessageFlags.Ephemeral });
+
+            let guildDb = await client.db.getGuild(interaction.guildId!);
+
+            guildDb.prefix = prefix;
+            await guildDb
+                .save()
+                .catch(() => {
+                    interaction.reply({ content: 'Failed to set prefix.', flags: MessageFlags.Ephemeral }).catch(() => {});
+                })
+                .then(() => {
+                    interaction.reply({ content: `Server prefix set to \`${prefix}\``, flags: MessageFlags.Ephemeral }).catch(() => {});
+                });
         }
     }
 

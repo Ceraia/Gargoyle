@@ -9,6 +9,7 @@ import { SlashCommandBuilder } from 'discord.js';
  */
 class GargoyleSlashCommandBuilder extends SlashCommandBuilder {
     private _guilds: string[] = [];
+    private _private: boolean = false;
     /**
      * Creates an instance of GargoyleSlashCommandBuilder.
      * @constructor
@@ -31,6 +32,15 @@ class GargoyleSlashCommandBuilder extends SlashCommandBuilder {
         }
         guilds.forEach((guild) => this._guilds.push(guild));
         return this;
+    }
+
+    setPrivate(priv: boolean = true): this {
+        this._private = priv;
+        return this;
+    }
+
+    get private(): boolean {
+        return this._private;
     }
 
     get guilds(): string[] {

@@ -1,3 +1,4 @@
+import { WebhookClient } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -13,7 +14,13 @@ const LOG_LEVELS = {
 };
 
 const currentLogLevel = parseInt(process.env.DEBUG_LEVEL || '4', 10); // Default to INFO (4)
+const watchDogLevel = parseInt(process.env.WATCHDOG_LEVEL || '3', 10); // Default to WARNING (3)
 const logToFile = process.env.LOG_TO_FILE === 'true';
+let webhookClient: WebhookClient | null = null;
+
+if (process.env.WATCHDOG_WEBHOOK) {
+    webhookClient = new WebhookClient({ url: process.env.WATCHDOG_WEBHOOK });
+}
 
 function getLogFilePath(): string {
     if (!fs.existsSync('./log')) {
@@ -94,34 +101,64 @@ function fatal(...messages: string[] | Error[]): void {
     });
 }
 
+function watchdog(logLevel: number, ...messages: string[] | Error[]): void {
+    if (logLevel > watchDogLevel) return;
+    messages.forEach((message) => {
+        if (!webhookClient || webhookClient === null) return;
+        webhookClient.send(message.toString()).catch((err) => {
+            webhookClient = null;
+            error(`Encountered an unexpected error attempting to use watchdog, disabling watchdog monitoring.`, err.stack);
+        });
+    });
+}
+
 class Logger {
     public static log(...messages: string[] | Error[]): void {
         log(...messages);
+        watchdog(LOG_LEVELS.INFO, ...messages);
     }
 
     public static info(...messages: string[] | Error[]): void {
         log(...messages);
+        watchdog(LOG_LEVELS.INFO, ...messages);
     }
 
     public static debug(...messages: string[] | Error[]): void {
         debug(...messages);
+        watchdog(LOG_LEVELS.DEBUG, ...messages);
     }
 
     public static trace(...messages: string[] | Error[]): void {
         trace(...messages);
-    }
-
-    public static error(...messages: string[] | Error[]): void {
-        error(...messages);
+        watchdog(LOG_LEVELS.TRACE, ...messages);
     }
 
     public static warning(...messages: string[] | Error[]): void {
         warning(...messages);
+        watchdog(LOG_LEVELS.WARNING, ...messages);
+    }
+
+    public static error(...messages: string[] | Error[]): void {
+        error(...messages);
+        watchdog(LOG_LEVELS.ERROR, ...messages);
     }
 
     public static fatal(...messages: string[] | Error[]): void {
         fatal(...messages);
+        watchdog(LOG_LEVELS.FATAL, ...messages);
     }
 }
+
+process.on('uncaughtException', (error) => {
+    return fatal(`Uncaught Exception: ${error.message}`, error.stack || '');
+});
+
+process.on('unhandledRejection', (reason) => {
+    return error(`Unhandled Rejection: ${reason}`);
+});
+
+process.on('warning', (warn) => {
+    return warning(`Warning: ${warn.message}`, warn.stack || '');
+});
 
 export { Logger, log, debug, trace, error, warning, fatal };
