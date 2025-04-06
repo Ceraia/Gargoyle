@@ -29,7 +29,7 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
                 (existingSlashCommand && existingSlashCommand.guilds && existingSlashCommand.guilds.length > 0)
             ) {
                 client.logger.info(`Deleting unknown command: ${command.name}`);
-                await command.delete();
+                await command.delete()
             }
         });
     });
