@@ -9,6 +9,7 @@ import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js'
 import client from '@src/system/botClient.js';
 import {
     ActionRowBuilder,
+    AttachmentBuilder,
     ButtonInteraction,
     ButtonStyle,
     ChannelType,
@@ -213,7 +214,14 @@ export default class Crustacean extends GargoyleCommand {
                 return interaction.editReply({ content: 'An error occurred generating the tree, please try again later.' });
             });
 
-            return interaction.editReply({ content: `${tree}` });
+            if (tree.toString().length > 2000) {
+                // Send it as a file instead
+                const buffer = Buffer.from(tree, 'utf-8');
+                const attachment = new AttachmentBuilder(buffer, { name: 'message.txt' });
+
+                return await interaction.editReply({ content: 'The tree is too long, sending as a file.', files: [attachment] }).catch(() => {});
+            } else return interaction.editReply({ content: `${tree}` });
+            
         }
 
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
