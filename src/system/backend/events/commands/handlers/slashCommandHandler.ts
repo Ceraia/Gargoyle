@@ -28,7 +28,16 @@ export default class SlashCommandHandler extends GargoyleEvent {
             });
 
             client.logger.warning(`Command not found: ${interaction.commandName}, deleting command.`);
-            interaction.command?.delete();
+            try {
+                client.logger.debug(`Deleting command ${interaction.commandName}`);
+                interaction.command?.delete().then(() => {
+                    client.logger.debug(`Deleted command ${interaction.command?.name}`);
+                })
+            }
+            catch (err) {
+                client.logger.error(`Failed to delete command ${interaction.commandName}: ${err}`);
+            }
+            return;
         } else {
             command.executeSlashCommand(client, interaction);
             return client.logger.trace(`${interaction.user} used the ${interaction.commandName} command.`);
