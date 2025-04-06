@@ -216,12 +216,17 @@ export default class Crustacean extends GargoyleCommand {
 
             if (tree.toString().length > 2000) {
                 // Send it as a file instead
-                const buffer = Buffer.from(tree, 'utf-8');
+                let content = tree.toString()
+                    // Remove code blocks
+                    .replace(/`/g, '')
+                    // Remove all suffixes and prefixes used in the tree text
+                    .replace(/\[\d+(;\d+)*m/g, '');
+
+                const buffer = Buffer.from(content, 'utf-8');
                 const attachment = new AttachmentBuilder(buffer, { name: 'message.txt' });
 
                 return await interaction.editReply({ content: 'The tree is too long, sending as a file.', files: [attachment] }).catch(() => {});
             } else return interaction.editReply({ content: `${tree}` });
-            
         }
 
         return interaction.reply({ content: 'Not implemented yet, sorry.', flags: MessageFlags.Ephemeral });
@@ -359,7 +364,7 @@ class MemberLeave extends GargoyleEvent {
             .get(member.guild.id)
             ?.bans.fetch(member.id)
             .catch(() => null);
-        if (banned && banned !== null || banned !== undefined ) crustaceanUser.state = 'banned';
+        if ((banned && banned !== null) || banned !== undefined) crustaceanUser.state = 'banned';
         else crustaceanUser.state = 'left';
 
         await crustaceanUser.save();
@@ -398,7 +403,7 @@ class MemberJoin extends GargoyleEvent {
         if (!crustaceanChannel) {
             return;
         }
-        
+
         crustaceanUser.joinedDate = member.joinedAt || new Date();
         await crustaceanUser.save();
 
@@ -464,7 +469,7 @@ class ReputationMessage extends GargoyleEvent {
         const userId = message.author.id;
 
         const crustaceanGuild = await getCrustaceanGuild(guildId);
-        if (!crustaceanGuild.enabled) return; 
+        if (!crustaceanGuild.enabled) return;
 
         const crustaceanUser = await getCrustaceanUser(client, userId, guildId);
         crustaceanUser.cachedName = message.member?.displayName ?? message.author.displayName;
@@ -606,9 +611,7 @@ async function updateCrustaceanUserCache(userId: string, guildId: string) {
 
         const guild = client.guilds.cache.get(guildId);
 
-        let banned = await guild
-            ?.bans.fetch(user.id)
-            .catch(() => null);
+        let banned = await guild?.bans.fetch(user.id).catch(() => null);
         if ((banned && banned !== null) || banned !== undefined) crustaceanUser.state = 'banned';
         else crustaceanUser.state = 'left';
     } else {
