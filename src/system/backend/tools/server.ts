@@ -11,7 +11,7 @@ export function sendAsServer(client: GargoyleClient, message: MessageCreateOptio
 
             if (!webhook) {
                 webhook = await channel.createWebhook({
-                    name: guild ? guild.name : channel.guild?.name || channel.client.user.username,
+                    name: sanitizeNameString(guild ? guild.name : channel.guild?.name || channel.client.user.username),
                     reason: 'Server Message'
                 });
             }
@@ -20,7 +20,7 @@ export function sendAsServer(client: GargoyleClient, message: MessageCreateOptio
 
             await webhook.send({
                 avatarURL: guild ? guild.iconURL() || undefined : channel.guild?.iconURL() || undefined,
-                username: guild ? guild.name : channel.guild?.name || channel.client.user.username,
+                username: sanitizeNameString(guild ? guild.name : channel.guild?.name || channel.client.user.username),
                 ...message
             });
         })
@@ -39,7 +39,7 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
 
             if (!webhook) {
                 webhook = await channel.createWebhook({
-                    name: channel.guild ? channel.guild.name : channel.client.user.username,
+                    name: sanitizeNameString(channel.guild ? channel.guild.name : channel.client.user.username),
                     reason: 'Server Message'
                 });
             }
@@ -65,4 +65,8 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
         .catch(() => {
             return false;
         });
+}
+
+function sanitizeNameString(str: string): string {
+    return str.replace(/discord/gi, '');
 }
