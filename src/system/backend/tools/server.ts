@@ -68,5 +68,5 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
 }
 
 function sanitizeNameString(str: string): string {
-    return str.replace(/discord/gi, '');
+    return str.replaceAll(/discord/gi, 'DC');
 }
