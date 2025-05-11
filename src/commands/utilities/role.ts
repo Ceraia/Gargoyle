@@ -82,7 +82,7 @@ export default class Role extends GargoyleCommand {
                 const colorName = data.name.value;
             
                 const role = await interaction.guild?.roles.create({
-                    name: `Color ${colorName}`,
+                    name: `Color - ${colorName}`,
                     color: color as HexColorString,
                     reason: `Color role created by ${interaction.user.tag}`,
                     permissions: [],
@@ -97,7 +97,7 @@ export default class Role extends GargoyleCommand {
                     return;
                 }
                 await interaction.reply({
-                    content: `Created role ${role.name} with color ${colorName}`,
+                    content: `Created role ${role} with color ${colorName}`,
                     flags: MessageFlags.Ephemeral
                 });
             }
