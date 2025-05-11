@@ -185,19 +185,19 @@ export default class Server extends GargoyleCommand {
                 const embedMatch = messageContent.match(/<\[(.*?)\]>/);
 
                 if (embedMatch) {
-                    const embedDescription = embedMatch[1];
+                    const embedDescription = embedMatch.length > 0 ? embedMatch[1] : undefined;
                     const plainText = messageContent.replace(/<\[.*?\]>/, '').trim();
 
                     message
                         .edit({
                             content: plainText || undefined,
-                            embeds: [{ description: embedDescription }]
+                            embeds: embedDescription ? [{ description: embedDescription }] : undefined
                         })
                         .catch(() => {
                             editAsServer(
                                 {
                                     content: plainText || undefined,
-                                    embeds: [{ description: embedDescription }]
+                                    embeds: embedDescription ? [{ description: embedDescription }] : undefined
                                 },
                                 interaction.channel as TextChannel,
                                 message.id
