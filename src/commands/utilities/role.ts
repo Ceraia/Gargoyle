@@ -9,6 +9,7 @@ import {
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
+    ColorResolvable,
     HexColorString,
     InteractionContextType,
     MessageFlags,
@@ -143,7 +144,7 @@ export default class Role extends GargoyleCommand {
         if (interaction.channel === null) return;
         if (interaction.isRoleSelectMenu()) {
             if (args[0] === 'roles') {
-                let panelMessage = '';
+                let rolesText = '';
 
                 const roles = interaction.values;
                 interaction.update({ content: 'Making the button message...', components: [] });
@@ -163,7 +164,7 @@ export default class Role extends GargoyleCommand {
                     roleCount++;
                     const role = await interaction.guild?.roles.fetch(roleId);
                     if (!role) continue;
-                    panelMessage += `<@&${role.id}>\n`;
+                    rolesText += `<@&${role.id}>\n`;
 
                     if (role.position >= member?.roles.highest.position && member.guild.ownerId !== member.id) {
                         interaction
@@ -189,7 +190,43 @@ export default class Role extends GargoyleCommand {
                     componentCollection.push(actionRow);
                 }
 
-                sendAsServer(client, { content: args.length > 1 && args[1] == 'panel' ? panelMessage : undefined, components: componentCollection }, channel);
+                const averageColor: ColorResolvable = (() => {
+                    const roleColors = roles
+                        .map((roleId) => interaction.guild?.roles.cache.get(roleId)?.color)
+                        .filter((color): color is number => color !== undefined);
+
+                    if (roleColors.length === 0) return 0xFFFFFF; // Default to white if no colors are found
+
+                    const rgbValues = roleColors.map((color) => {
+                        const r = (color >> 16) & 0xff;
+                        const g = (color >> 8) & 0xff;
+                        const b = color & 0xff;
+                        return { r, g, b };
+                    });
+
+                    const averageRgb = rgbValues.reduce(
+                        (acc, rgb) => {
+                            acc.r += rgb.r;
+                            acc.g += rgb.g;
+                            acc.b += rgb.b;
+                            return acc;
+                        },
+                        { r: 0, g: 0, b: 0 }
+                    );
+
+                    averageRgb.r = Math.round(averageRgb.r / rgbValues.length);
+                    averageRgb.g = Math.round(averageRgb.g / rgbValues.length);
+                    averageRgb.b = Math.round(averageRgb.b / rgbValues.length);
+
+                    return (averageRgb.r << 16) + (averageRgb.g << 8) + averageRgb.b;
+                })();
+
+                const panelEmbed = [{
+                    description: rolesText,
+                    color: averageColor
+                }];
+
+                sendAsServer(client, { embeds: args.length > 1 && args[1] == 'panel' ? panelEmbed : undefined, components: componentCollection }, channel);
             }
         }
     }
