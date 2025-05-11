@@ -22,7 +22,7 @@ export default class Role extends GargoyleCommand {
         new GargoyleSlashCommandBuilder()
             .setName('role')
             .setDescription('Role related commands')
-            .addSubcommand((subcommand) => subcommand.setName('button').setDescription('Create a button that gives a role'))
+            .addSubcommand((subcommand) => subcommand.setName('button').setDescription('Create a button that gives a role').addBooleanOption((option) => option.setRequired(false).setName('panel').setDescription('Whether the message contain a panel')))
             .addSubcommandGroup((group) =>
                 group
                     .setName('create')
@@ -33,6 +33,12 @@ export default class Role extends GargoyleCommand {
                             .setDescription('Create a role with a color')
                             .addStringOption((option) => option.setRequired(true).setName('color').setDescription('The color of the role'))
                     )
+            )
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('delete')
+                    .setDescription('Delete a role')
+                    .addRoleOption((option) => option.setRequired(true).setName('role').setDescription('The role to delete'))
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
@@ -52,13 +58,42 @@ export default class Role extends GargoyleCommand {
                     flags: MessageFlags.Ephemeral,
                     components: [
                         new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
-                            new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
+                            new GargoyleRoleSelectMenuBuilder(this, 'roles', interaction.options.getBoolean('panel',false) ? 'panel' : 'nopanel').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
                         )
                     ]
                 });
+            } else if (interaction.options.getSubcommand() === 'delete') {
+                if (!interaction.memberPermissions?.has('ManageRoles')) {
+                    await interaction.reply({
+                        content: 'You do not have the required permissions to use this command.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+                const role = interaction.options.getRole('role', false);
+                if (!role) {
+                    await interaction.reply({
+                        content: 'The role you provided is not valid.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                if ('delete' in role) {
+                    await role.delete(`Role deleted by ${interaction.user.tag}`);
+                } else {
+                    await interaction.reply({
+                        content: 'The role you provided cannot be deleted.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                }
+                await interaction.reply({
+                    content: `Deleted role ${role.name}`,
+                    flags: MessageFlags.Ephemeral
+                });
             }
-        } else if (interaction.options.getSubcommandGroup() === 'create') { 
-            if(interaction.options.getSubcommand() === 'color') {
+        } else if (interaction.options.getSubcommandGroup() === 'create') {
+            if (interaction.options.getSubcommand() === 'color') {
                 if (!interaction.memberPermissions?.has('ManageRoles')) {
                     await interaction.reply({
                         content: 'You do not have the required permissions to use this command.',
@@ -78,16 +113,16 @@ export default class Role extends GargoyleCommand {
                 }
 
                 const response = await fetch('https://www.thecolorapi.com/id?hex=' + color?.substring(1));
-                const data = await response.json() as ColorApiResponse;
+                const data = (await response.json()) as ColorApiResponse;
                 const colorName = data.name.value;
-            
+
                 const role = await interaction.guild?.roles.create({
                     name: `Color - ${colorName}`,
                     color: color as HexColorString,
                     reason: `Color role created by ${interaction.user.tag}`,
                     permissions: [],
-                    mentionable: false,
-                })
+                    mentionable: false
+                });
 
                 if (!role) {
                     await interaction.reply({
@@ -101,13 +136,15 @@ export default class Role extends GargoyleCommand {
                     flags: MessageFlags.Ephemeral
                 });
             }
-        }
+        } 
     }
 
     public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
         if (interaction.channel === null) return;
         if (interaction.isRoleSelectMenu()) {
             if (args[0] === 'roles') {
+                let panelMessage = '';
+
                 const roles = interaction.values;
                 interaction.update({ content: 'Making the button message...', components: [] });
 
@@ -126,6 +163,7 @@ export default class Role extends GargoyleCommand {
                     roleCount++;
                     const role = await interaction.guild?.roles.fetch(roleId);
                     if (!role) continue;
+                    panelMessage += `<@&${role.id}>\n`;
 
                     if (role.position >= member?.roles.highest.position && member.guild.ownerId !== member.id) {
                         interaction
@@ -151,7 +189,7 @@ export default class Role extends GargoyleCommand {
                     componentCollection.push(actionRow);
                 }
 
-                sendAsServer(client, { components: componentCollection }, channel);
+                sendAsServer(client, { content: args.length > 1 && args[1] == 'panel' ? panelMessage : undefined, components: componentCollection }, channel);
             }
         }
     }
@@ -191,7 +229,6 @@ export default class Role extends GargoyleCommand {
         }
     }
 }
-
 
 interface ColorApiResponse {
     hex: {
