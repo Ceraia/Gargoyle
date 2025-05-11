@@ -181,20 +181,35 @@ export default class Server extends GargoyleCommand {
         } else if (args[0] === 'edit') {
             if (!interaction.channel) return;
             (interaction.channel as TextChannel).messages.fetch(args[1]).then((message) => {
-                message
-                    .edit(interaction.fields.getTextInputValue('message'))
-                    .catch(() => {
-                        editAsServer(
-                            { content: interaction.fields.getTextInputValue('message') },
-                            interaction.channel as TextChannel,
-                            message.id
-                        ).catch(() => {
-                            interaction.reply({ content: 'Failed to edit message.', flags: MessageFlags.Ephemeral }).catch(() => {});
+                const messageContent = interaction.fields.getTextInputValue('message');
+                const embedMatch = messageContent.match(/<\[(.*?)\]>/);
+
+                if (embedMatch) {
+                    const embedDescription = embedMatch[1];
+                    const plainText = messageContent.replace(/<\[.*?\]>/, '').trim();
+
+                    message
+                        .edit({
+                            content: plainText || undefined,
+                            embeds: [{ description: embedDescription }]
+                        })
+                        .catch(() => {
+                            editAsServer(
+                                {
+                                    content: plainText || undefined,
+                                    embeds: [{ description: embedDescription }]
+                                },
+                                interaction.channel as TextChannel,
+                                message.id
+                            ).catch(() => {
+                                interaction.reply({ content: 'Failed to edit message with embed.', flags: MessageFlags.Ephemeral }).catch(() => {});
+                            });
+                        })
+                        .then(() => {
+                            interaction.reply({ content: 'Message edited with embed.', flags: MessageFlags.Ephemeral }).catch(() => {});
                         });
-                    })
-                    .then(() => {
-                        interaction.reply({ content: 'Message edited.', flags: MessageFlags.Ephemeral }).catch(() => {});
-                    });
+                    return;
+                }
             });
         }
     }
