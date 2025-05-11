@@ -19,10 +19,10 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 
 export default class ButtonRole extends GargoyleCommand {
     public override category: string = 'server';
-    public override slashCommand = new GargoyleSlashCommandBuilder()
+    public override slashCommands = [new GargoyleSlashCommandBuilder()
         .setName('rolebutton')
         .setDescription('Create a button that gives a role')
-        .setContexts([InteractionContextType.Guild]);
+        .setContexts([InteractionContextType.Guild])];
     public override textCommand = new GargoyleTextCommandBuilder()
         .setName('buttonrole')
         .setDescription('Create a role button')

@@ -70,7 +70,7 @@ export default class TextCommandHandler extends GargoyleEvent {
                 return;
             }
 
-            command.executeTextCommand(client, message);
+            command.executeTextCommand(client, message, ...message.content.slice(client.prefix.length + commandName.length).trim().split(' '));
             client.logger.trace(`${message.author.tag} used the ${textCommand.name} command.`);
         }
     }
