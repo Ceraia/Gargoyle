@@ -9,6 +9,7 @@ import {
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
+    HexColorString,
     InteractionContextType,
     MessageFlags,
     TextChannel
@@ -22,27 +23,84 @@ export default class Role extends GargoyleCommand {
             .setName('role')
             .setDescription('Role related commands')
             .addSubcommand((subcommand) => subcommand.setName('button').setDescription('Create a button that gives a role'))
+            .addSubcommandGroup((group) =>
+                group
+                    .setName('create')
+                    .setDescription('Create a role')
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('color')
+                            .setDescription('Create a role with a color')
+                            .addStringOption((option) => option.setRequired(true).setName('color').setDescription('The color of the role'))
+                    )
+            )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (interaction.options.getSubcommand() === 'button') {
-            if (!interaction.memberPermissions?.has('ManageRoles')) {
+        if (interaction.options.getSubcommandGroup(false) == null) {
+            if (interaction.options.getSubcommand() === 'button') {
+                if (!interaction.memberPermissions?.has('ManageRoles')) {
+                    await interaction.reply({
+                        content: 'You do not have the required permissions to use this command.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
                 await interaction.reply({
-                    content: 'You do not have the required permissions to use this command.',
+                    content: 'What role(s) would you like to give?',
+                    flags: MessageFlags.Ephemeral,
+                    components: [
+                        new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
+                            new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
+                        )
+                    ]
+                });
+            }
+        } else if (interaction.options.getSubcommandGroup() === 'create') { 
+            if(interaction.options.getSubcommand() === 'color') {
+                if (!interaction.memberPermissions?.has('ManageRoles')) {
+                    await interaction.reply({
+                        content: 'You do not have the required permissions to use this command.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                // Check with regex if the color is a valid hex color
+                const color = interaction.options.getString('color', false);
+                if (color && !/^#[0-9A-F]{6}$/i.test(color)) {
+                    await interaction.reply({
+                        content: 'The color you provided is not a valid hex color.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                const response = await fetch('https://www.thecolorapi.com/id?hex=' + color?.substring(1));
+                const data = await response.json() as ColorApiResponse;
+                const colorName = data.name.value;
+            
+                const role = await interaction.guild?.roles.create({
+                    name: `Color ${colorName}`,
+                    color: color as HexColorString,
+                    reason: `Color role created by ${interaction.user.tag}`,
+                    permissions: [],
+                    mentionable: false,
+                })
+
+                if (!role) {
+                    await interaction.reply({
+                        content: 'Failed to create role.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+                await interaction.reply({
+                    content: `Created role ${role.name} with color ${colorName}`,
                     flags: MessageFlags.Ephemeral
                 });
-                return;
             }
-            await interaction.reply({
-                content: 'What role(s) would you like to give?',
-                flags: MessageFlags.Ephemeral,
-                components: [
-                    new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
-                        new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
-                    )
-                ]
-            });
         }
     }
 
@@ -132,4 +190,88 @@ export default class Role extends GargoyleCommand {
             }
         }
     }
+}
+
+
+interface ColorApiResponse {
+    hex: {
+        value: string;
+        clean: string;
+    };
+    rgb: {
+        fraction: {
+            r: number;
+            g: number;
+            b: number;
+        };
+        r: number;
+        g: number;
+        b: number;
+        value: string;
+    };
+    hsl: {
+        fraction: {
+            h: number;
+            s: number;
+            l: number;
+        };
+        h: number;
+        s: number;
+        l: number;
+        value: string;
+    };
+    hsv: {
+        fraction: {
+            h: number;
+            s: number;
+            v: number;
+        };
+        h: number;
+        s: number;
+        v: number;
+        value: string;
+    };
+    name: {
+        value: string;
+        closest_named_hex: string;
+        exact_match_name: boolean;
+        distance: number;
+    };
+    cmyk: {
+        fraction: {
+            c: number;
+            m: number;
+            y: number;
+            k: number;
+        };
+        value: string;
+        c: number;
+        m: number;
+        y: number;
+        k: number;
+    };
+    XYZ: {
+        fraction: {
+            X: number;
+            Y: number;
+            Z: number;
+        };
+        value: string;
+        X: number;
+        Y: number;
+        Z: number;
+    };
+    image: {
+        bare: string;
+        named: string;
+    };
+    contrast: {
+        value: string;
+    };
+    _links: {
+        self: {
+            href: string;
+        };
+    };
+    _embedded: Record<string, unknown>;
 }
