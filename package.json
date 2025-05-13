@@ -12,7 +12,8 @@
         "mongoose": "^8.14.1",
         "ollama": "^0.5.15",
         "path": "^0.12.7",
-        "tsconfig-paths": "^4.2.0"
+        "tsconfig-paths": "^4.2.0",
+        "zod": "^3.24.4"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.1",
