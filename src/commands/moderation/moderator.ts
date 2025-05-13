@@ -4,6 +4,7 @@ import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import {
     ActionRowBuilder,
     ButtonBuilder,
+    ChannelType,
     ChatInputCommandInteraction,
     Events,
     InteractionContextType,
@@ -12,7 +13,6 @@ import {
     PermissionFlagsBits,
     TextChannel
 } from 'discord.js';
-import { Ollama } from 'ollama';
 
 export default class Moderator extends GargoyleCommand {
     public override category: string = 'moderation';
@@ -21,61 +21,30 @@ export default class Moderator extends GargoyleCommand {
         .setName('ai')
         .addGuilds('750209335841390642', '324195889977622530')
         .setDescription('Experimental AI moderation tool')
-        .addStringOption((option) =>
-            option
-                .setName('type')
-                .setDescription('The moderator type')
-                .setRequired(true)
-                .addChoices({ name: 'Detox (Faster)', value: 'detox' }, { name: 'Ollama', value: 'ollama' })
+        .addChannelOption((option) =>
+            option.setName('channel').setDescription('The channel to send alerts to').setRequired(true).addChannelTypes(ChannelType.GuildText)
         )
-        .addStringOption((option) => option.setName('content').setDescription('The content to check').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+        if (!process.env.DETOXIFY_API) return interaction.reply({ content: 'AI moderation is unavailable.' });
         if (interaction.user.id !== '244173330431737866')
             return interaction.reply({ content: 'Sorry, this command is currently only available for beta testers.' });
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        if (interaction.options.getString('type', true) === 'detox') {
-            // Toggle the AI moderation for the guild
-            const guildId = interaction.guildId;
-            const guild = await aiModeratedGuild.findOne({ guildId });
-            if (!guild) {
-                await aiModeratedGuild.create({ guildId, enabled: true });
-                return interaction.editReply({ content: 'AI moderation enabled for this server.' });
-            } else {
-                guild.enabled = !guild.enabled;
-                await guild.save();
-                return interaction.editReply({
-                    content: `AI moderation ${guild.enabled ? 'enabled' : 'disabled'} for this server.`
-                });
-            }
+        const guildId = interaction.guildId;
+        const guild = await aiModeratedGuild.findOne({ guildId });
+        if (!guild) {
+            await aiModeratedGuild.create({ guildId, enabled: true, channelId: interaction.options.getChannel('channel', true).id });
+            return interaction.editReply({ content: 'AI moderation enabled for this server.' });
         } else {
-            const ollama = new Ollama({ host: 'http://127.0.0.1:11434' });
-            const model = 'gemma:2b'; // Gemma 2b seems the most promising for efficient / fast AI moderation of messages
-
-            if (!(await modelInstalled(ollama, model))) {
-                await interaction.editReply({ content: `Model \`${model}\` is not installed. Installing now...` });
-                const success = await installMissing(ollama, model);
-                if (!success) {
-                    return interaction.editReply({ content: 'Failed to install model. Please check Ollama setup.' });
-                }
-            }
-
-            const response = await ollama.chat({
-                model,
-                messages: [
-                    {
-                        role: 'system',
-                        content:
-                            'You are an AI content moderation assistant. If a message is inappropriate, offensive, spam, or harmful, respond with "Flagged". Otherwise, respond with "Safe".'
-                    },
-                    { role: 'user', content: interaction.options.getString('content', true) }
-                ]
+            guild.enabled = !guild.enabled;
+            guild.channelId = interaction.options.getChannel('channel', true).id;
+            await guild.save();
+            return interaction.editReply({
+                content: `AI moderation ${guild.enabled ? 'enabled' : 'disabled'} for this server.`
             });
-
-            return await interaction.editReply({ content: `AI Review: **${response.message.content.trim()}**` });
         }
     }
 
@@ -84,11 +53,13 @@ export default class Moderator extends GargoyleCommand {
 
 class ReputationMessage extends GargoyleEvent {
     public event = Events.MessageCreate as const;
+    private hasErrored = false;
 
     public async execute(client: GargoyleClient, message: Message): Promise<void> {
+        if (!process.env.DETOXIFY_API) return;
+        if (this.hasErrored) return;
         const moderatedGuild = await aiModeratedGuild.findOne({ guildId: message.guildId });
-        if (!moderatedGuild) return;
-        if (!moderatedGuild.enabled) return;
+        if (!moderatedGuild || !moderatedGuild.enabled || !moderatedGuild.channelId) return;
         if (message.author.id === client.user?.id) return;
 
         let toModerate = message.content + ' ';
@@ -102,7 +73,7 @@ class ReputationMessage extends GargoyleEvent {
             ].join(' ')
         );
 
-        const response = await fetch('localhost:8000/predict', {
+        const response = await fetch(process.env.DETOXIFY_API, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -110,14 +81,19 @@ class ReputationMessage extends GargoyleEvent {
             body: JSON.stringify({
                 text: toModerate
             })
+        }).catch((error) => {
+            console.error('Error fetching detoxify moderation:', error, 'Disabling AI moderation');
+            this.hasErrored = true;
         });
 
+        if (this.hasErrored || !response) return;
+
         try {
-            const toxicity = ToxicitySchema.parse(await response.json()) as Toxicity;
-            const flaggedCategories = Object.entries(toxicity).filter(([_, value]) => value > 0.8);
+            const detoxify = DetoxifyResponseSchema.parse(await response.json()) as DetoxifyResponse;
+            const flaggedCategories = Object.entries(detoxify).filter(([_, value]) => value > 0.8);
 
             if (flaggedCategories.length > 0) {
-                const alertChannel = (await client.channels.fetch('1371902057132462141')) as TextChannel;
+                const alertChannel = (await client.channels.fetch(moderatedGuild.channelId)) as TextChannel;
                 if (alertChannel?.isTextBased()) {
                     await alertChannel.send({
                         embeds: [
@@ -137,29 +113,9 @@ class ReputationMessage extends GargoyleEvent {
                 }
             }
         } catch (error) {
-            console.error('Error parsing toxicity response:', error);
+            console.error('Error parsing detoxify response:', error);
             return;
         }
-    }
-}
-
-async function modelInstalled(ollamaClient: Ollama, modelName: string): Promise<boolean> {
-    try {
-        const models = await ollamaClient.list();
-        return models.models.some((m) => m.name === modelName);
-    } catch (error) {
-        console.error('Error checking installed models:', error);
-        return false;
-    }
-}
-
-async function installMissing(ollamaClient: Ollama, modelName: string): Promise<boolean> {
-    try {
-        await ollamaClient.pull({ model: modelName });
-        return true;
-    } catch (error) {
-        console.error(`Error installing model "${modelName}":`, error);
-        return false;
     }
 }
 
@@ -170,6 +126,7 @@ import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuil
 
 const aiModeratedGuildSchema = new Schema({
     guildId: String,
+    channelId: String,
     enabled: {
         type: Boolean,
         default: false
@@ -178,7 +135,7 @@ const aiModeratedGuildSchema = new Schema({
 
 const aiModeratedGuild = model('AIModeratedGuilds', aiModeratedGuildSchema);
 
-const ToxicitySchema = z.object({
+const DetoxifyResponseSchema = z.object({
     toxicity: z.number(),
     severe_toxicity: z.number(),
     obscene: z.number(),
@@ -186,4 +143,4 @@ const ToxicitySchema = z.object({
     insult: z.number(),
     identity_attack: z.number()
 });
-type Toxicity = z.infer<typeof ToxicitySchema>;
+type DetoxifyResponse = z.infer<typeof DetoxifyResponseSchema>;
