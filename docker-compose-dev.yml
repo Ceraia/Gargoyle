@@ -2,6 +2,7 @@ services:
   mongo:
     profiles:
       - db
+      - ai
     hostname: mongo
     image: mongo:latest
     environment:
@@ -31,9 +32,21 @@ services:
     networks:
       - gargoyle
 
+  ollama:
+    hostname: ollama
+    profiles:
+      - ai
+    image: ollama/ollama:latest
+    expose: [11434]
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - gargoyle
+
 networks:
   gargoyle:
     driver: bridge
 
 volumes:
-  ai:
+  ollama:
