@@ -130,13 +130,13 @@ export default class Moderator extends GargoyleCommand {
             });
         } else if (interaction.options.getSubcommandGroup() === 'thresholds') {
             if (interaction.options.getSubcommand() === 'list') {
-                let thresholds = `AI Moderation Thresholds`;
-                thresholds += `Toxicity Threshold ${guild.thresholds.toxicity}\n`;
-                thresholds += `Severe Toxicity Threshold ${guild.thresholds.severe_toxicity}\n`;
-                thresholds += `Obscenity Threshold ${guild.thresholds.obscene}\n`;
-                thresholds += `Threat Threshold ${guild.thresholds.threat}\n`;
-                thresholds += `Insult Threshold ${guild.thresholds.insult}\n`;
-                thresholds += `Identity Attacks Threshold ${guild.thresholds.identity_attack}`;
+                let thresholds = `AI Moderation Thresholds\n`;
+                thresholds += `Toxicity Threshold \`${guild.thresholds.toxicity}\`\n`;
+                thresholds += `Severe Toxicity Threshold \`${guild.thresholds.severe_toxicity}\`\n`;
+                thresholds += `Obscenity Threshold \`${guild.thresholds.obscene}\`\n`;
+                thresholds += `Threat Threshold \`${guild.thresholds.threat}\`\n`;
+                thresholds += `Insult Threshold \`${guild.thresholds.insult}\`\n`;
+                thresholds += `Identity Attacks Threshold \`${guild.thresholds.identity_attack}\``;
 
                 return interaction.editReply({ content: thresholds });
             } else if (interaction.options.getSubcommand() === 'toxicity') {
