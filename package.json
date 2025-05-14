@@ -11,7 +11,8 @@
         "http": "^0.0.1-security",
         "mongoose": "^8.14.1",
         "path": "^0.12.7",
-        "tsconfig-paths": "^4.2.0"
+        "tsconfig-paths": "^4.2.0",
+        "zod": "^3.24.4"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.1",
@@ -35,6 +36,8 @@
         "docker-stop": "docker compose -f ./docker-compose-dev.yml down --remove-orphans",
         "db-on": "docker compose -f ./docker-compose-dev.yml --profile db up -d --remove-orphans ",
         "db-off": "docker compose -f ./docker-compose-dev.yml --profile db down --remove-orphans",
+        "ai-on": "docker compose -f docker-compose-dev.yml --profile ai up -d --remove-orphans",
+        "ai-off": "docker compose -f docker-compose-dev.yml --profile ai down --remove-orphans",
         "build": "tsc",
         "format": "prettier --write \"src/**\"",
         "lint": "eslint src/** ",

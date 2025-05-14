@@ -2,6 +2,7 @@ services:
   mongo:
     profiles:
       - db
+      - ai
     hostname: mongo
     image: mongo:latest
     environment:
@@ -14,26 +15,18 @@ services:
     ports:
       - 27017:27017
 
-  express:
-    profiles:
-      - db
-    image: mongo-express:latest
-    ports:
-      - 80:80
-    depends_on:
-      - mongo
-    environment:
-      ME_CONFIG_BASICAUTH_PASSWORD: ${DBPASSWORD}
-      ME_CONFIG_BASICAUTH_USERNAME: ${DBUSERNAME}
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DBUSERNAME}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DBPASSWORD}
-      ME_CONFIG_MONGODB_URL: mongodb://${DBUSERNAME}:${DBPASSWORD}@mongo:27017/gargoyle?authSource=admin
+  detoxify-api:
+    profiles: 
+      - ai
+    hostname: detoxify-api
+    volumes:
+      - ./container/.cache/application:/root/.cache
+      - ./container/.cache/packages:/.cached_packages
+    expose: [8000]
+    image: ghcr.io/ceraia/detoxify-api:latest
     networks:
       - gargoyle
 
 networks:
   gargoyle:
     driver: bridge
-
-volumes:
-  ai:
