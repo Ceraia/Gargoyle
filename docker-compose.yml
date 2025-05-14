@@ -28,6 +28,18 @@ services:
     networks:
       - gargoyle
 
+  detoxify-api:
+    profiles: 
+      - ai
+    hostname: detoxify-api
+    volumes:
+      - ./container/.cache/application:/root/.cache
+      - ./container/.cache/packages:/.cached_packages
+    expose: [8000]
+    image: ghcr.io/ceraia/detoxify-api:latest
+    networks:
+      - gargoyle
+
 networks:
   gargoyle:
     driver: bridge
