@@ -30,7 +30,6 @@ export default class Moderator extends GargoyleCommand {
                         .setName('state')
                         .setDescription('Whether it is enabled or disabled')
                         .setRequired(true)
-                        .setAutocomplete(true)
                         .setChoices({ name: 'Enabled', value: 'enabled' }, { name: 'Disabled', value: 'disabled' })
                 )
         )
