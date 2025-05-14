@@ -45,6 +45,7 @@ export default class Moderator extends GargoyleCommand {
             subcommandGroup
                 .setName('thresholds')
                 .setDescription('Set the thresholds for the AI moderator')
+                .addSubcommand((subcommand) => subcommand.setName('list').setDescription('List the current thresholds'))
                 .addSubcommand((subcommand) =>
                     subcommand
                         .setName('toxicity')
@@ -128,7 +129,17 @@ export default class Moderator extends GargoyleCommand {
                 content: `AI moderation ${guild.enabled ? 'enabled' : 'disabled'} for this server, with logs sent to <#${guild.channelId}>`
             });
         } else if (interaction.options.getSubcommandGroup() === 'thresholds') {
-            if (interaction.options.getSubcommand() === 'toxicity') {
+            if (interaction.options.getSubcommand() === 'list') {
+                let thresholds = `AI Moderation Thresholds`;
+                thresholds += `Toxicity Threshold ${guild.thresholds.toxicity}\n`;
+                thresholds += `Severe Toxicity Threshold ${guild.thresholds.severe_toxicity}\n`;
+                thresholds += `Obscenity Threshold ${guild.thresholds.obscene}\n`;
+                thresholds += `Threat Threshold ${guild.thresholds.threat}\n`;
+                thresholds += `Insult Threshold ${guild.thresholds.insult}\n`;
+                thresholds += `Identity Attacks Threshold ${guild.thresholds.identity_attack}`;
+
+                return interaction.editReply({ content: thresholds });
+            } else if (interaction.options.getSubcommand() === 'toxicity') {
                 guild.thresholds.toxicity = interaction.options.getNumber('threshold', true);
                 await guild.save();
                 return interaction.editReply({ content: `Set the threshold for \`toxicity\` to \`${guild.thresholds.toxicity}\`` });
