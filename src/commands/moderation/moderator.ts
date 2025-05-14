@@ -21,37 +21,150 @@ export default class Moderator extends GargoyleCommand {
         .setName('ai')
         .addGuilds('750209335841390642', '324195889977622530')
         .setDescription('Experimental AI moderation tool')
-        .addChannelOption((option) =>
-            option.setName('channel').setDescription('The channel to send alerts to').setRequired(true).addChannelTypes(ChannelType.GuildText)
+        .addSubcommand((option) =>
+            option
+                .setName('enable')
+                .setDescription('Whether to enable or disable AI moderation')
+                .addStringOption((option) =>
+                    option
+                        .setName('state')
+                        .setDescription('Whether it is enabled or disabled')
+                        .setRequired(true)
+                        .setAutocomplete(true)
+                        .setChoices({ name: 'Enabled', value: 'enabled' }, { name: 'Disabled', value: 'disabled' })
+                )
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName('channel')
+                .setDescription('Set a channel for alerts')
+                .addChannelOption((option) =>
+                    option.setName('channel').setDescription('The channel to send alerts to').setRequired(true).addChannelTypes(ChannelType.GuildText)
+                )
+        )
+        .addSubcommandGroup((subcommandGroup) =>
+            subcommandGroup
+                .setName('thresholds')
+                .setDescription('Set the thresholds for the AI moderator')
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('toxicity')
+                        .setDescription('Set the threshold for when alerts should be sent')
+                        .addIntegerOption((option) =>
+                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                        )
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('severe_toxicity')
+                        .setDescription('Set the threshold for when alerts should be sent')
+                        .addIntegerOption((option) =>
+                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                        )
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('obscene')
+                        .setDescription('Set the threshold for when alerts should be sent')
+                        .addIntegerOption((option) =>
+                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                        )
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('threat')
+                        .setDescription('Set the threshold for when alerts should be sent')
+                        .addIntegerOption((option) =>
+                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                        )
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('insult')
+                        .setDescription('Set the threshold for when alerts should be sent')
+                        .addIntegerOption((option) =>
+                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                        )
+                )
+                .addSubcommand((subcommand) =>
+                    subcommand
+                        .setName('identity_attack')
+                        .setDescription('Set the threshold for when alerts should be sent')
+                        .addIntegerOption((option) =>
+                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                        )
+                )
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (!process.env.DETOXIFY_API) return interaction.reply({ content: 'AI moderation is unavailable.' });
+        if (!process.env.DETOXIFY_API) return interaction.reply({ content: 'AI moderation is unavailable for this guild.' });
         if (interaction.user.id !== '244173330431737866')
             return interaction.reply({ content: 'Sorry, this command is currently only available for beta testers.' });
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const guildId = interaction.guildId;
-        const guild = await aiModeratedGuild.findOne({ guildId });
-        if (!guild) {
-            await aiModeratedGuild.create({ guildId, enabled: true, channelId: interaction.options.getChannel('channel', true).id });
-            return interaction.editReply({ content: 'AI moderation enabled for this server.' });
-        } else {
-            guild.enabled = !guild.enabled;
+
+        let guild = await aiModeratedGuild.findOne({ guildId });
+
+        if (!guild) guild = await aiModeratedGuild.create({ guildId, enabled: false });
+
+        if (!guild) return await interaction.editReply({ content: 'An unexpected issue has occured with the database.' });
+
+        if (interaction.options.getSubcommand() === 'enable') {
+            if (interaction.options.getString('state', true) === 'enabled') {
+                guild.enabled = true;
+                await guild.save();
+                return interaction.editReply({ content: 'AI moderation enabled for this server.' });
+            } else {
+                guild.enabled = false;
+                await guild.save();
+                return interaction.editReply({ content: 'AI moderation disabled for this server.' });
+            }
+        } else if (interaction.options.getSubcommand() === 'channel') {
             guild.channelId = interaction.options.getChannel('channel', true).id;
             await guild.save();
             return interaction.editReply({
-                content: `AI moderation ${guild.enabled ? 'enabled' : 'disabled'} for this server.`
+                content: `AI moderation ${guild.enabled ? 'enabled' : 'disabled'} for this server, with logs sent to <#${guild.channelId}>`
             });
+        } else if (interaction.options.getSubcommandGroup() === 'thresholds') {
+            if (interaction.options.getSubcommand() === 'toxicity') {
+                guild.thresholds.toxicity = interaction.options.getNumber('threshold', true);
+                await guild.save();
+                return interaction.editReply({ content: `Set the threshold for \`toxicity\` to \`${guild.thresholds.toxicity}\`` });
+            } else if (interaction.options.getSubcommand() === 'severe_toxicity') {
+                guild.thresholds.severe_toxicity = interaction.options.getNumber('threshold', true);
+                await guild.save();
+                return interaction.editReply({ content: `Set the threshold for \`severe_toxicity\` to \`${guild.thresholds.severe_toxicity}\`` });
+            } else if (interaction.options.getSubcommand() === 'obscene') {
+                guild.thresholds.obscene = interaction.options.getNumber('threshold', true);
+                await guild.save();
+                return interaction.editReply({ content: `Set the threshold for \`obscene\` to \`${guild.thresholds.obscene}\`` });
+            } else if (interaction.options.getSubcommand() === 'threat') {
+                guild.thresholds.threat = interaction.options.getNumber('threshold', true);
+                await guild.save();
+                return interaction.editReply({ content: `Set the threshold for \`threat\` to \`${guild.thresholds.threat}\`` });
+            } else if (interaction.options.getSubcommand() === 'insult') {
+                guild.thresholds.insult = interaction.options.getNumber('threshold', true);
+                await guild.save();
+                return interaction.editReply({ content: `Set the threshold for \`insult\` to \`${guild.thresholds.insult}\`` });
+            } else if (interaction.options.getSubcommand() === 'identity_attack') {
+                guild.thresholds.identity_attack = interaction.options.getNumber('threshold', true);
+                await guild.save();
+                return interaction.editReply({ content: `Set the threshold for \`identity_attack\` to \`${guild.thresholds.identity_attack}\`` });
+            } else {
+                return interaction.reply('An unexpected error occured with this command');
+            }
+        } else {
+            return interaction.reply('An unexpected error occured with this command');
         }
     }
 
-    public override events: GargoyleEvent[] = [new ReputationMessage()];
+    public override events: GargoyleEvent[] = [new ModeratedMessage()];
 }
 
-class ReputationMessage extends GargoyleEvent {
+class ModeratedMessage extends GargoyleEvent {
     public event = Events.MessageCreate as const;
     private hasErrored = false;
 
@@ -97,8 +210,12 @@ class ReputationMessage extends GargoyleEvent {
                 if (alertChannel?.isTextBased()) {
                     await alertChannel.send({
                         embeds: [
-                            new GargoyleEmbedBuilder().setTitle('⚠️ Potentially Harmful Message Detected ⚠️').setColor('Yellow')
-                                .setDescription(`**Author:** ${message.author.tag} (${message.author.id})\n**Categories:** ${flaggedCategories.map(([key, value]) => `${key} (${(value * 100).toFixed(2)}%)`).join(', ')}`)
+                            new GargoyleEmbedBuilder()
+                                .setTitle('⚠️ Potentially Harmful Message Detected ⚠️')
+                                .setColor('Yellow')
+                                .setDescription(
+                                    `**Author:** ${message.author.tag} (${message.author.id})\n**Categories:** ${flaggedCategories.map(([key, value]) => `${key} (${(value * 100).toFixed(2)}%)`).join(', ')}`
+                                )
                         ],
                         components: [
                             new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -123,12 +240,46 @@ import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { z } from 'zod';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 
+const thresholdsSchema = new Schema(
+    {
+        toxicity: {
+            type: Number,
+            default: 0.8
+        },
+        severe_toxicity: {
+            type: Number,
+            default: 0.5
+        },
+        obscene: {
+            type: Number,
+            default: 0.8
+        },
+        threat: {
+            type: Number,
+            default: 0.5
+        },
+        insult: {
+            type: Number,
+            default: 0.8
+        },
+        identity_attack: {
+            type: Number,
+            default: 0.5
+        }
+    },
+    { _id: false }
+);
+
 const aiModeratedGuildSchema = new Schema({
     guildId: String,
     channelId: String,
     enabled: {
         type: Boolean,
         default: false
+    },
+    thresholds: {
+        type: thresholdsSchema,
+        default: () => ({})
     }
 });
 
