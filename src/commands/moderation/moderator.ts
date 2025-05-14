@@ -49,7 +49,7 @@ export default class Moderator extends GargoyleCommand {
                     subcommand
                         .setName('toxicity')
                         .setDescription('Set the threshold for when alerts should be sent')
-                        .addIntegerOption((option) =>
+                        .addNumberOption((option) =>
                             option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
                         )
                 )
@@ -57,7 +57,7 @@ export default class Moderator extends GargoyleCommand {
                     subcommand
                         .setName('severe_toxicity')
                         .setDescription('Set the threshold for when alerts should be sent')
-                        .addIntegerOption((option) =>
+                        .addNumberOption((option) =>
                             option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
                         )
                 )
@@ -65,7 +65,7 @@ export default class Moderator extends GargoyleCommand {
                     subcommand
                         .setName('obscene')
                         .setDescription('Set the threshold for when alerts should be sent')
-                        .addIntegerOption((option) =>
+                        .addNumberOption((option) =>
                             option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
                         )
                 )
@@ -73,7 +73,7 @@ export default class Moderator extends GargoyleCommand {
                     subcommand
                         .setName('threat')
                         .setDescription('Set the threshold for when alerts should be sent')
-                        .addIntegerOption((option) =>
+                        .addNumberOption((option) =>
                             option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
                         )
                 )
@@ -81,7 +81,7 @@ export default class Moderator extends GargoyleCommand {
                     subcommand
                         .setName('insult')
                         .setDescription('Set the threshold for when alerts should be sent')
-                        .addIntegerOption((option) =>
+                        .addNumberOption((option) =>
                             option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
                         )
                 )
@@ -89,7 +89,7 @@ export default class Moderator extends GargoyleCommand {
                     subcommand
                         .setName('identity_attack')
                         .setDescription('Set the threshold for when alerts should be sent')
-                        .addIntegerOption((option) =>
+                        .addNumberOption((option) =>
                             option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
                         )
                 )
