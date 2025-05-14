@@ -98,8 +98,7 @@ class ReputationMessage extends GargoyleEvent {
                     await alertChannel.send({
                         embeds: [
                             new GargoyleEmbedBuilder().setTitle('⚠️ Potentially Harmful Message Detected ⚠️').setColor('Yellow')
-                                .setDescription(`**Author:** ${message.author.tag} (${message.author.id})\n
-                                **Categories:** ${flaggedCategories.map(([key, value]) => `${key} (${(value * 100).toFixed(2)}%)`).join(', ')}`)
+                                .setDescription(`**Author:** ${message.author.tag} (${message.author.id})\n**Categories:** ${flaggedCategories.map(([key, value]) => `${key} (${(value * 100).toFixed(2)}%)`).join(', ')}`)
                         ],
                         components: [
                             new ActionRowBuilder<ButtonBuilder>().addComponents(
