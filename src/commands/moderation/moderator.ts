@@ -204,6 +204,16 @@ class ModeratedMessage extends GargoyleEvent {
             const detoxify = DetoxifyResponseSchema.parse(await response.json()) as DetoxifyResponse;
             const flaggedCategories = Object.entries(detoxify).filter(([_, value]) => value > 0.8);
 
+            if (
+                moderatedGuild.thresholds.toxicity > detoxify.toxicity &&
+                moderatedGuild.thresholds.severe_toxicity > detoxify.severe_toxicity &&
+                moderatedGuild.thresholds.obscene > detoxify.obscene &&
+                moderatedGuild.thresholds.threat > detoxify.threat &&
+                moderatedGuild.thresholds.insult > detoxify.insult &&
+                moderatedGuild.thresholds.identity_attack > detoxify.identity_attack
+            )
+                return;
+
             if (flaggedCategories.length > 0) {
                 const alertChannel = (await client.channels.fetch(moderatedGuild.channelId)) as TextChannel;
                 if (alertChannel?.isTextBased()) {
