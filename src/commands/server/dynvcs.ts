@@ -24,6 +24,7 @@ import {
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
+    SectionBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
     TextChannel,
@@ -377,12 +378,8 @@ export default class VoicechatCommand extends GargoyleCommand {
             new ContainerBuilder()
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
-                        '# Voicechat Commands' +
-                            'Create a new VC to use this.\n\n**Buttons**\n' +
-                            '<:Lock:1206326940324331531> Lock/Unlock the VC\n' +
-                            '<:Eye:1206326935303749722> Hide/Show the VC\n' +
-                            '<:Plus:1206326946586300476> Increase the VC limit\n' +
-                            '<:Minus:1206326944979877990> Decrease the VC limit\n' +
+                        '# Voicechat Commands\n' +
+                            '-# Create a new VC to use this.\n\n**Buttons**\n' +
                             '<:Hammer:1206326936612114472> Ban from the VC\n' +
                             '<:Mail:1206667313609187330> Unban / Invite to the VC\n' +
                             '<:I_:1206326937748905985> Rename the VC\n' +
@@ -390,13 +387,33 @@ export default class VoicechatCommand extends GargoyleCommand {
                     )
                 )
                 .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
-                .addActionRowComponents(
-                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
-                        new GargoyleButtonBuilder(this, 'lock').setEmoji('<:Lock:1206326940324331531>').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'hide').setEmoji('<:Eye:1206326935303749722>').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'increase').setEmoji('<:Plus:1206326946586300476>').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'decrease').setEmoji('<:Minus:1206326944979877990>').setStyle(ButtonStyle.Secondary)
-                    ])
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Lock:1206326940324331531> Lock/Unlock the VC'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'lock').setEmoji('<:Lock:1206326940324331531>').setStyle(ButtonStyle.Secondary)
+                        )
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Eye:1206326935303749722> Hide/Show the VC'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'hide').setEmoji('<:Eye:1206326935303749722>').setStyle(ButtonStyle.Secondary)
+                        )
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Plus:1206326946586300476> Increase the VC limit'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'increase').setEmoji('<:Plus:1206326946586300476>').setStyle(ButtonStyle.Secondary)
+                        )
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Minus:1206326944979877990> Decrease the VC limit'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'decrease').setEmoji('<:Minus:1206326944979877990>').setStyle(ButtonStyle.Secondary)
+                        )
                 )
                 .addActionRowComponents(
                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
