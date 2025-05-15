@@ -29,9 +29,18 @@ export default class SlashCommandHandler extends GargoyleEvent {
 
             client.logger.warning(`Command not found: ${interaction.commandName}, deleting command.`);
             try {
-                client.logger.debug(`Deleting command ${interaction.command?.name}`);
-                await interaction.command!.delete()
-                client.logger.debug(`Deleted command ${interaction.command?.name}`)
+                if(interaction.guild){
+                    const discordCommand = await interaction.guild.commands.fetch(interaction.commandId).catch(()=>{return null})
+                    if(discordCommand){
+                        await discordCommand.delete();
+                        client.logger.warning(`Command not found: ${interaction.commandName}, deleted!`)
+                    } else {
+                        client.logger.warning(`Command not found: ${interaction.commandName}, not found in guild either!`)
+                    }
+                } else {
+                    client.logger.debug(`Command not found: ${interaction.commandName}, not in guild.`)
+                    await interaction.command?.delete()
+                }
             }
             catch (err) {
                 client.logger.error(`Failed to delete command ${interaction.commandName}: ${err}`);
