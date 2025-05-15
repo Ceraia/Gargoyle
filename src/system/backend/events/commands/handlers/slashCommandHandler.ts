@@ -5,7 +5,7 @@ import { ChatInputCommandInteraction } from 'discord.js';
 export default class SlashCommandHandler extends GargoyleEvent {
     public event = 'interactionCreate' as const;
 
-    public execute(client: GargoyleClient, interaction: ChatInputCommandInteraction): void {
+    public async execute(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (!interaction.isCommand()) return;
         if (interaction.user.bot) return;
         if (!interaction.isChatInputCommand()) return;
@@ -29,10 +29,9 @@ export default class SlashCommandHandler extends GargoyleEvent {
 
             client.logger.warning(`Command not found: ${interaction.commandName}, deleting command.`);
             try {
-                client.logger.debug(`Deleting command ${interaction.commandName}`);
-                interaction.command?.delete().then(() => {
-                    client.logger.debug(`Deleted command ${interaction.command?.name}`);
-                })
+                client.logger.debug(`Deleting command ${interaction.command?.name}`);
+                await interaction.command!.delete()
+                client.logger.debug(`Deleted command ${interaction.command?.name}`)
             }
             catch (err) {
                 client.logger.error(`Failed to delete command ${interaction.commandName}: ${err}`);
