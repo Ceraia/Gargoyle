@@ -32,7 +32,7 @@ import {
     VoiceState
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
-import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 
 export default class VoicechatCommand extends GargoyleCommand {
     public override category: string = 'server';
@@ -109,12 +109,10 @@ export default class VoicechatCommand extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        if (interaction.message.webhookId)
-            editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id);
-        else
-            interaction.message
-                .delete()
-                .then(() => sendAsServer(client, this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
+        if (interaction.message.webhookId && interaction.message.deletable) {
+            await interaction.message.delete();
+            (interaction.channel as TextChannel).send(this.panelMessage as MessageCreateOptions)
+        }
 
         if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;
