@@ -374,6 +374,7 @@ export default class VoicechatCommand extends GargoyleCommand {
         embeds: [],
         components: [
             new ContainerBuilder()
+            .setId(1)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
                         '# Voicechat Commands' +
