@@ -24,6 +24,8 @@ import {
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
     TextChannel,
     TextDisplayBuilder,
     TextInputBuilder,
@@ -386,13 +388,17 @@ export default class VoicechatCommand extends GargoyleCommand {
                             '<:Mic:1206326943201362060> Claim the VC\n'
                     )
                 )
+                .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
                 .addActionRowComponents(
                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
                         new GargoyleButtonBuilder(this, 'lock').setEmoji('<:Lock:1206326940324331531>').setStyle(ButtonStyle.Secondary),
                         new GargoyleButtonBuilder(this, 'hide').setEmoji('<:Eye:1206326935303749722>').setStyle(ButtonStyle.Secondary),
                         new GargoyleButtonBuilder(this, 'increase').setEmoji('<:Plus:1206326946586300476>').setStyle(ButtonStyle.Secondary),
                         new GargoyleButtonBuilder(this, 'decrease').setEmoji('<:Minus:1206326944979877990>').setStyle(ButtonStyle.Secondary)
-                    ]),
+                    ])
+                )
+                .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+                .addActionRowComponents(
                     new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
                         new GargoyleButtonBuilder(this, 'ban').setEmoji('<:Hammer:1206326936612114472>').setStyle(ButtonStyle.Secondary),
                         new GargoyleButtonBuilder(this, 'invite').setEmoji('<:Mail:1206667313609187330>').setStyle(ButtonStyle.Secondary),
