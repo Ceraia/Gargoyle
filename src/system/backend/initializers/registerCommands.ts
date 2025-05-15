@@ -35,7 +35,6 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
     });
 
     slashCommands.forEach(async (slashCommand) => {
-        client.logger.trace(`Command has slash command: ${slashCommand.name}`);
         if (slashCommand.guilds.length <= 0) {
             client.logger.debug(`Registering slash command: ${slashCommand.name}`);
             await client.application?.commands.create(slashCommand);

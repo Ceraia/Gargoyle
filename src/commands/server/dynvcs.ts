@@ -119,7 +119,6 @@ export default class VoicechatCommand extends GargoyleCommand {
                 .delete()
                 .then(() => sendAsServer(client, this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
 
-
         if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;
         if (client.user === null) return;
@@ -381,12 +380,7 @@ export default class VoicechatCommand extends GargoyleCommand {
             new ContainerBuilder()
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
-                        '# Voicechat Commands\n' +
-                            '-# Create a new VC to use this.\n\n**Buttons**\n' +
-                            '<:Hammer:1206326936612114472> Ban from the VC\n' +
-                            '<:Mail:1206667313609187330> Unban / Invite to the VC\n' +
-                            '<:I_:1206326937748905985> Rename the VC\n' +
-                            '<:Mic:1206326943201362060> Claim the VC\n'
+                        '# Voicechat Commands\n' + '-# Create a new  Dynamic VC to use this.'
                     )
                 )
                 .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
@@ -418,13 +412,33 @@ export default class VoicechatCommand extends GargoyleCommand {
                             new GargoyleButtonBuilder(this, 'decrease').setEmoji('<:Minus:1206326944979877990>').setStyle(ButtonStyle.Secondary)
                         )
                 )
-                .addActionRowComponents(
-                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
-                        new GargoyleButtonBuilder(this, 'ban').setEmoji('<:Hammer:1206326936612114472>').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'invite').setEmoji('<:Mail:1206667313609187330>').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'rename').setEmoji('<:I_:1206326937748905985>').setStyle(ButtonStyle.Secondary),
-                        new GargoyleButtonBuilder(this, 'claim').setEmoji('<:Mic:1206326943201362060>').setStyle(ButtonStyle.Secondary)
-                    ])
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Hammer:1206326936612114472> Ban from the VC'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'ban').setEmoji('<:Hammer:1206326936612114472>').setStyle(ButtonStyle.Secondary)
+                        )
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Mail:1206667313609187330> Unban / Invite to the VC'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'invite').setEmoji('<:Mail:1206667313609187330>').setStyle(ButtonStyle.Secondary)
+                        )
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:I_:1206326937748905985> Rename the VC'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'rename').setEmoji('<:I_:1206326937748905985>').setStyle(ButtonStyle.Secondary)
+                        )
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Mic:1206326943201362060> Claim the VC'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'claim').setEmoji('<:Mic:1206326943201362060>').setStyle(ButtonStyle.Secondary)
+                        )
                 )
         ]
     };
