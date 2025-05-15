@@ -1,5 +1,6 @@
 import { Guild, MessageCreateOptions, MessageResolvable, TextChannel, WebhookMessageEditOptions } from 'discord.js';
 import GargoyleClient from '../classes/gargoyleClient.js';
+import client from '@src/system/botClient.js';
 
 export function sendAsServer(client: GargoyleClient, message: MessageCreateOptions, channel: TextChannel, guild?: Guild): Promise<void> {
     return channel
@@ -57,12 +58,14 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
                 .then(() => {
                     return true;
                 })
-                .catch(() => {
+                .catch((err) => {
+                    client.logger.error(err)
                     return false;
                 });
             return false;
         })
-        .catch(() => {
+        .catch((err) => {
+            client.logger.error(err)
             return false;
         });
 }
