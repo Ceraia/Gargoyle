@@ -409,9 +409,10 @@ class RolePrefix extends GargoyleEvent {
         let username = updatedMember.nickname?.split(' ').slice(1).join(' ') || updatedMember.user.username;
         if (updatedMember.user.id === '287497254330302464') username = 'NutZak';
         if (updatedMember.user.id === '688098242067562601') username = 'Pixllty';
-        if (updatedMember.user.id === '726753052157018162') username = 'lmascrub';
-        if (updatedMember.user.id === '891612809123741716') username = 'GIide';
-        
+        if (updatedMember.user.id === '726753052157018162') username = 'lmaʂcrub';
+        if (updatedMember.user.id === '522098971426947072') username = 'Junnpy';
+        if (updatedMember.user.id === '891612809123741716') username = 'GIⅰde';
+
 
         namePrefix += `] ${username}`;
 
