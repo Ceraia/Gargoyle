@@ -222,7 +222,7 @@ export default class RoleCommand extends GargoyleCommand {
 
                     container.setAccentColor(averageRole);
                     container.setId(interaction.message.components.length)
-                    
+
                     message = { components: [container, ...interaction.message.components], flags: [MessageFlags.IsComponentsV2] };
                 } else {
                     const componentCollection: ActionRowBuilder<GargoyleButtonBuilder>[] = [];
@@ -311,7 +311,7 @@ export default class RoleCommand extends GargoyleCommand {
             if (!interaction.guild) return;
             const message: MessageCreateOptions = {
                 content: undefined,
-                components: [...(interaction.message.components ?? []).slice(0, -1)],
+                components: [...(interaction.message.components ?? []).slice(0, -2)],
                 flags: interaction.message.flags.bitfield
             };
             await interaction.update({
