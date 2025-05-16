@@ -95,7 +95,7 @@ export default class Help extends GargoyleCommand {
             for (const slashCommand of command.slashCommands) {
                 if (slashCommand.private) continue;
 
-                if (slashCommand.guilds && guild) {
+                if (slashCommand.guilds.length > 0 && guild) {
                     if (!slashCommand.guilds.includes(guild.id)) continue;
                 }
                 commandText += `\`${slashCommand.name}\` \n> ${slashCommand.description}\n\n`;
@@ -121,7 +121,7 @@ export default class Help extends GargoyleCommand {
             for (const textCommand of command.textCommands) {
                 if (textCommand.private) continue;
 
-                if (textCommand.guilds && guild) {
+                if (textCommand.guilds.length > 0  && guild) {
                     if (!textCommand.guilds.includes(guild.id)) continue;
                 }
                 commandText += `\`${textCommand.name}\` ${textCommand.aliases.length > 0 ? `(${textCommand.aliases.join('|')})` : null}\n> ${textCommand.description}\n\n`;
