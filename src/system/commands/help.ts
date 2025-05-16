@@ -98,7 +98,7 @@ export default class Help extends GargoyleCommand {
                 if (slashCommand.guilds.length > 0 && guild) {
                     if (!slashCommand.guilds.includes(guild.id)) continue;
                 }
-                commandText += `\`${slashCommand.name}\` \n> ${slashCommand.description}\n\n`;
+                commandText += `\`/${slashCommand.name}\` \n> ${slashCommand.description}\n\n`;
             }
         }
 
@@ -113,6 +113,9 @@ export default class Help extends GargoyleCommand {
     private async generateTextHelpMessage(client: GargoyleClient, guild?: Guild): Promise<object> {
         const container = new ContainerBuilder();
 
+        let prefix = client.prefix;
+        if(client.db && guild) prefix = (await client.db.getGuild(guild.id)).prefix
+
         container.addTextDisplayComponents(new TextDisplayBuilder().setContent('Text Commands'));
         container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
 
@@ -124,7 +127,7 @@ export default class Help extends GargoyleCommand {
                 if (textCommand.guilds.length > 0  && guild) {
                     if (!textCommand.guilds.includes(guild.id)) continue;
                 }
-                commandText += `\`${textCommand.name}\` ${textCommand.aliases.length > 0 ? `(${textCommand.aliases.join('|')})` : null}\n> ${textCommand.description}\n\n`;
+                commandText += `\`${prefix}${textCommand.name} ${textCommand.aliases.length > 0 ? `(${textCommand.aliases.join('|')})\`` : ``}\n> ${textCommand.description}\n\n`;
             }
         }
 
