@@ -359,9 +359,9 @@ export default class RoleCommand extends GargoyleCommand {
 }
 
 function averageRoleColor(roles: Role[]) {
-    const roleColors = roles.map((role) => role.color).filter((color): color is number => color !== undefined);
+    const roleColors = roles.map((role) => role.color).filter((color) => color !== undefined && typeof color === 'number' && color !== 0);
 
-    if (roleColors.length === 0) return 0xffffff; // Default to white if no colors are found
+    if (roleColors.length === 0) return 0x2b2d31; // Default to discord default color if no roles are found
 
     const rgbValues = roleColors.map((color) => {
         const r = (color >> 16) & 0xff;

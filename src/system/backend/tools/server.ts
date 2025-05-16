@@ -17,8 +17,6 @@ export function sendAsServer(client: GargoyleClient, message: MessageCreateOptio
                 });
             }
 
-            client.logger.trace(JSON.stringify(webhook));
-
             await webhook.send({
                 avatarURL: guild ? guild.iconURL() || undefined : channel.guild?.iconURL() || undefined,
                 username: sanitizeNameString(guild ? guild.name : channel.guild?.name || channel.client.user.username),
