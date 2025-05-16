@@ -221,6 +221,8 @@ export default class RoleCommand extends GargoyleCommand {
                     const averageRole = averageRoleColor(rolesFetched);
 
                     container.setAccentColor(averageRole);
+                    container.setId(interaction.message.components.length)
+                    
                     message = { components: [container, ...interaction.message.components], flags: [MessageFlags.IsComponentsV2] };
                 } else {
                     const componentCollection: ActionRowBuilder<GargoyleButtonBuilder>[] = [];
