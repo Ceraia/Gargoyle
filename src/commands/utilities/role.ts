@@ -12,10 +12,12 @@ import {
     ColorResolvable,
     HexColorString,
     InteractionContextType,
+    Message,
     MessageFlags,
     TextChannel
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 
 export default class Role extends GargoyleCommand {
     public override category: string = 'utilities';
@@ -23,7 +25,12 @@ export default class Role extends GargoyleCommand {
         new GargoyleSlashCommandBuilder()
             .setName('role')
             .setDescription('Role related commands')
-            .addSubcommand((subcommand) => subcommand.setName('button').setDescription('Create a button that gives a role').addBooleanOption((option) => option.setRequired(false).setName('panel').setDescription('Whether the message contain a panel')))
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('button')
+                    .setDescription('Create a button that gives a role')
+                    .addBooleanOption((option) => option.setRequired(false).setName('panel').setDescription('Whether the message contain a panel'))
+            )
             .addSubcommandGroup((group) =>
                 group
                     .setName('create')
@@ -44,6 +51,14 @@ export default class Role extends GargoyleCommand {
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
+    public override textCommand = new GargoyleTextCommandBuilder()
+        .setName('buttonrole')
+        .setDescription('Create a role button')
+        .addAlias('br')
+        .addAlias('rolebutton')
+        .addAlias('rb')
+        .setContexts([InteractionContextType.Guild]);
+
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommandGroup(false) == null) {
             if (interaction.options.getSubcommand() === 'button') {
@@ -59,7 +74,10 @@ export default class Role extends GargoyleCommand {
                     flags: MessageFlags.Ephemeral,
                     components: [
                         new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
-                            new GargoyleRoleSelectMenuBuilder(this, 'roles', interaction.options.getBoolean('panel',false) ? 'panel' : 'nopanel').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
+                            new GargoyleRoleSelectMenuBuilder(this, 'roles', interaction.options.getBoolean('panel', false) ? 'panel' : 'nopanel')
+                                .setMaxValues(25)
+                                .setMinValues(1)
+                                .setPlaceholder('Select role(s) to give')
                         )
                     ]
                 });
@@ -137,7 +155,22 @@ export default class Role extends GargoyleCommand {
                     flags: MessageFlags.Ephemeral
                 });
             }
-        } 
+        }
+    }
+
+    public override async executeTextCommand(_client: GargoyleClient, message: Message) {
+        if (!message.member?.permissions?.has('ManageRoles')) {
+            await message.reply({ content: 'You do not have the required permissions to use this command.' });
+            return;
+        }
+        (message.channel as TextChannel).send({
+            content: 'What role(s) would you like to give?',
+            components: [
+                new ActionRowBuilder<GargoyleRoleSelectMenuBuilder>().addComponents(
+                    new GargoyleRoleSelectMenuBuilder(this, 'roles').setMaxValues(25).setMinValues(1).setPlaceholder('Select role(s) to give')
+                )
+            ]
+        });
     }
 
     public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
@@ -195,7 +228,7 @@ export default class Role extends GargoyleCommand {
                         .map((roleId) => interaction.guild?.roles.cache.get(roleId)?.color)
                         .filter((color): color is number => color !== undefined);
 
-                    if (roleColors.length === 0) return 0xFFFFFF; // Default to white if no colors are found
+                    if (roleColors.length === 0) return 0xffffff; // Default to white if no colors are found
 
                     const rgbValues = roleColors.map((color) => {
                         const r = (color >> 16) & 0xff;
@@ -221,12 +254,18 @@ export default class Role extends GargoyleCommand {
                     return (averageRgb.r << 16) + (averageRgb.g << 8) + averageRgb.b;
                 })();
 
-                const panelEmbed = [{
-                    description: rolesText,
-                    color: averageColor
-                }];
+                const panelEmbed = [
+                    {
+                        description: rolesText,
+                        color: averageColor
+                    }
+                ];
 
-                sendAsServer(client, { embeds: args.length > 1 && args[1] == 'panel' ? panelEmbed : undefined, components: componentCollection }, channel);
+                sendAsServer(
+                    client,
+                    { embeds: args.length > 1 && args[1] == 'panel' ? panelEmbed : undefined, components: componentCollection },
+                    channel
+                );
             }
         }
     }
