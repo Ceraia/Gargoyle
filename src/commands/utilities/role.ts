@@ -260,6 +260,7 @@ export default class RoleCommand extends GargoyleCommand {
                 }
 
                 message = {
+                    content: '',
                     components: [
                         ...(message.components ?? []),
                         new ActionRowBuilder<GargoyleButtonBuilder>().setComponents(new GargoyleButtonBuilder(this, 'submit').setLabel('Submit'))
