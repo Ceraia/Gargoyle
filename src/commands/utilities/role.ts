@@ -225,7 +225,7 @@ export default class RoleCommand extends GargoyleCommand {
 
                     let components = [container, ...interaction.message.components.filter((component)=>component.type !== ComponentType.Container)]
 
-                    message = { components: [container, ...interaction.message.components], flags: [MessageFlags.IsComponentsV2] };
+                    message = { components: components, flags: [MessageFlags.IsComponentsV2] };
                 } else {
                     const componentCollection: ActionRowBuilder<GargoyleButtonBuilder>[] = [];
 
