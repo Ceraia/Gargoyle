@@ -10,7 +10,7 @@ export default class Manage extends GargoyleCommand {
     ];
 
     public override async executeTextCommand(client: GargoyleClient, message: Message, ...args: string[]): Promise<void> {
-        if(message.author.id !== "244173330431737866")
+        if(message.author.id !== "244173330431737866") return;
         if(args.length > 0) {
             if(args[0] === "guilds") {
                 const guilds = await client.guilds.fetch();
