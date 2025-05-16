@@ -321,11 +321,39 @@ export default class RoleCommand extends GargoyleCommand {
                 components: [...(interaction.message.components ?? []).slice(0, -2)],
                 flags: interaction.message.flags.bitfield
             };
-            await interaction.update({
-                components: [new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent('Making server message...'))]
-            });
+            try {
+                await interaction.update({
+                    components: [
+                        new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
+                            new GargoyleRoleSelectMenuBuilder(this, 'roles', args.length > 1 && args[1] == 'panel' ? 'panel' : 'nopanel')
+                                .setMaxValues(25)
+                                .setMinValues(1)
+                                .setDefaultRoles()
+                                .setPlaceholder('Select role(s) to give')
+                        )
+                    ]
+                });
 
-            await sendAsServer(client, message, interaction.channel as TextChannel);
+                await sendAsServer(client, message, interaction.channel as TextChannel);
+            } catch (err) {
+                client.logger.error('Failed to make panel', err as string);
+                await interaction.update({
+                    components: [
+                        new ContainerBuilder().addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                'Failed to make server message. Did you submit any roles? And do I have the right permissions?'
+                            )
+                        ),
+                        new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
+                            new GargoyleRoleSelectMenuBuilder(this, 'roles', args.length > 1 && args[1] == 'panel' ? 'panel' : 'nopanel')
+                                .setMaxValues(25)
+                                .setMinValues(1)
+                                .setDefaultRoles()
+                                .setPlaceholder('Select role(s) to give')
+                        )
+                    ]
+                });
+            }
         }
     }
 }
