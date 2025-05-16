@@ -14,6 +14,7 @@ import {
     InteractionContextType,
     Message,
     MessageCreateOptions,
+    MessageEditOptions,
     MessageFlags,
     Role,
     SectionBuilder,
@@ -22,6 +23,7 @@ import {
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
+import client from '@src/system/botClient.js';
 
 export default class RoleCommand extends GargoyleCommand {
     public override category: string = 'utilities';
@@ -62,6 +64,13 @@ export default class RoleCommand extends GargoyleCommand {
         .addAlias('rolebutton')
         .addAlias('rb')
         .setContexts([InteractionContextType.Guild]);
+
+    /**
+     * @argument number is equal to the message ID
+     * @argument map is a map of which index has what roles
+     * @argument role is a collection of the roles for that message
+     */
+    private rolePanelBuilderCache: Map<number, Map<number, Role[]>> = new Map()
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommandGroup(false) == null) {
@@ -181,21 +190,18 @@ export default class RoleCommand extends GargoyleCommand {
         if (interaction.channel === null) return;
         if (interaction.isRoleSelectMenu()) {
             if (args[0] === 'roles') {
-                let rolesText = '';
-
                 const roles = interaction.values;
-                interaction.update({ content: 'Making the button message...', components: [] });
 
                 const member = await interaction.guild?.members.fetch(interaction.user.id);
                 const channel = (await client.channels.fetch(interaction.channel.id)) as TextChannel;
 
                 if (!member || !channel) {
-                    interaction.update({ content: 'An unexpected error occured, are you in a guild?' });
+                    await interaction.update({ content: 'An unexpected error occured, are you in a guild?' });
                     return;
                 }
 
                 
-                let message: MessageCreateOptions = {content: 'Internal Component Message'}
+                let message: MessageEditOptions = {content: 'Internal Component Message, if you see this then something has gone pretty wrong...'}
 
                 if (args.length > 1 && args[1] == 'panel') {
                     const container = new ContainerBuilder();
@@ -209,7 +215,7 @@ export default class RoleCommand extends GargoyleCommand {
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(`<@&${roleId}>`))
                                 .setButtonAccessory(
                                     new GargoyleButtonBuilder(this, 'addrole', roleId)
-                                        .setLabel(role?.name || 'Add Role')
+                                        .setLabel('Add Role')
                                         .setStyle(ButtonStyle.Secondary)
                                 )
                         );
@@ -218,7 +224,7 @@ export default class RoleCommand extends GargoyleCommand {
                     const averageRole = averageRoleColor(rolesFetched)
 
                     container.setAccentColor(averageRole)
-                    message = { components: [container], flags: [MessageFlags.IsComponentsV2] }
+                    message = { components: [container, ...interaction.message.components ], flags: [MessageFlags.IsComponentsV2] }
                 } else {
                     const componentCollection: ActionRowBuilder<GargoyleButtonBuilder>[] = [];
 
@@ -228,7 +234,6 @@ export default class RoleCommand extends GargoyleCommand {
                         roleCount++;
                         const role = await interaction.guild?.roles.fetch(roleId);
                         if (!role) continue;
-                        rolesText += `<@&${role.id}>\n`;
 
                         if (role.position >= member.roles.highest.position && member.guild.ownerId !== member.id) {
                             interaction
@@ -257,11 +262,9 @@ export default class RoleCommand extends GargoyleCommand {
                     message = {components: componentCollection}
                 }
 
-                sendAsServer(
-                    client,
-                    message,
-                    channel
-                );
+                message = {components: [...(message.components ?? []), new ActionRowBuilder<GargoyleButtonBuilder>().setComponents(new GargoyleButtonBuilder(this, 'submit').setLabel("Submit"))]}
+
+                await interaction.update(message)
             }
         }
     }
@@ -298,6 +301,14 @@ export default class RoleCommand extends GargoyleCommand {
                         interaction.reply({ content: `Added role ${role.name}`, flags: MessageFlags.Ephemeral });
                     });
             }
+        } else if (args[0]==="submit"){
+            if(!interaction.guild)return;
+            const message:MessageCreateOptions = {
+                components: [...(interaction.message.components ?? []).slice(0, -1)]
+            }
+            await interaction.update({content: 'Making server message...', components: []});
+            
+            await sendAsServer(client, message, interaction.channel as TextChannel)
         }
     }
 }
