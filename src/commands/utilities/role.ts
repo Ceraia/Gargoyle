@@ -308,9 +308,11 @@ export default class RoleCommand extends GargoyleCommand {
         } else if (args[0] === 'submit') {
             if (!interaction.guild) return;
             const message: MessageCreateOptions = {
-                components: [...(interaction.message.components ?? []).slice(0, -1)]
+                content: undefined,
+                components: [...(interaction.message.components ?? []).slice(0, -1)],
+                flags: interaction.message.flags.bitfield
             };
-            await interaction.update({ content: 'Making server message...', components: [] });
+            await interaction.update({ content: 'Making server message...', components: [], flags: [] });
 
             await sendAsServer(client, message, interaction.channel as TextChannel);
         }
