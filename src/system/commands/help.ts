@@ -127,7 +127,7 @@ export default class Help extends GargoyleCommand {
                 if (textCommand.guilds.length > 0  && guild) {
                     if (!textCommand.guilds.includes(guild.id)) continue;
                 }
-                commandText += `\`${prefix}${textCommand.name} ${textCommand.aliases.length > 0 ? `(${textCommand.aliases.join('|')})` : ``}\`\n> ${textCommand.description}\n\n`;
+                commandText += `\`${prefix}${textCommand.name}${textCommand.aliases.length > 0 ? ` (${textCommand.aliases.join('|')})` : ``}\`\n> ${textCommand.description}\n\n`;
             }
         }
 
