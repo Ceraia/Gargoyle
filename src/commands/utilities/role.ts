@@ -9,6 +9,7 @@ import {
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
+    ComponentType,
     ContainerBuilder,
     HexColorString,
     InteractionContextType,
@@ -221,6 +222,8 @@ export default class RoleCommand extends GargoyleCommand {
                     const averageRole = averageRoleColor(rolesFetched);
 
                     container.setAccentColor(averageRole);
+
+                    let components = [container, ...interaction.message.components.filter((component)=>component.type !== ComponentType.Container)]
 
                     message = { components: [container, ...interaction.message.components], flags: [MessageFlags.IsComponentsV2] };
                 } else {
