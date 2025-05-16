@@ -18,6 +18,7 @@ import {
     MessageEditOptions,
     MessageFlags,
     Role,
+    RoleSelectMenuBuilder,
     SectionBuilder,
     TextChannel,
     TextDisplayBuilder
@@ -223,8 +224,6 @@ export default class RoleCommand extends GargoyleCommand {
 
                     container.setAccentColor(averageRole);
 
-                    // let components = [container, ...interaction.message.components.filter((component)=>component.type == ComponentType.Container)]
-
                     message = { components: [container], flags: [MessageFlags.IsComponentsV2] };
                 } else {
                     const componentCollection: ActionRowBuilder<GargoyleButtonBuilder>[] = [];
@@ -267,7 +266,15 @@ export default class RoleCommand extends GargoyleCommand {
                     content: '',
                     components: [
                         ...(message.components ?? []),
-                        new ActionRowBuilder<GargoyleButtonBuilder>().setComponents(new GargoyleButtonBuilder(this, 'submit').setLabel('Submit'))
+                        new ActionRowBuilder<GargoyleButtonBuilder | RoleSelectMenuBuilder>().setComponents(
+                            new GargoyleRoleSelectMenuBuilder(this, 'roles', args.length > 1 && args[1] == 'panel' ? 'panel' : 'nopanel')
+                                .setMaxValues(25)
+                                .setMinValues(1)
+                                .setDefaultRoles(roles)
+                                .setPlaceholder('Select role(s) to give'),
+
+                            new GargoyleButtonBuilder(this, 'submit').setLabel('Submit')
+                        )
                     ],
                     flags: message.flags
                 };
