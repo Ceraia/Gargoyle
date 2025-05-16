@@ -9,17 +9,21 @@ import {
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
-    ColorResolvable,
+    ContainerBuilder,
     HexColorString,
     InteractionContextType,
     Message,
+    MessageCreateOptions,
     MessageFlags,
-    TextChannel
+    Role,
+    SectionBuilder,
+    TextChannel,
+    TextDisplayBuilder
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 
-export default class Role extends GargoyleCommand {
+export default class RoleCommand extends GargoyleCommand {
     public override category: string = 'utilities';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
@@ -183,87 +187,79 @@ export default class Role extends GargoyleCommand {
                 interaction.update({ content: 'Making the button message...', components: [] });
 
                 const member = await interaction.guild?.members.fetch(interaction.user.id);
-                if (!member) return;
-
                 const channel = (await client.channels.fetch(interaction.channel.id)) as TextChannel;
-                if (!channel) return;
 
-                const componentCollection: ActionRowBuilder<GargoyleButtonBuilder>[] = [];
+                if (!member || !channel) {
+                    interaction.update({ content: 'An unexpected error occured, are you in a guild?' });
+                    return;
+                }
 
-                // For every 5 roles create a new action row
-                let roleCount = 0;
-                let actionRow = new ActionRowBuilder<GargoyleButtonBuilder>();
-                for (const roleId of roles) {
-                    roleCount++;
-                    const role = await interaction.guild?.roles.fetch(roleId);
-                    if (!role) continue;
-                    rolesText += `<@&${role.id}>\n`;
+                
+                let message: MessageCreateOptions = {content: 'Internal Component Message'}
 
-                    if (role.position >= member?.roles.highest.position && member.guild.ownerId !== member.id) {
-                        interaction
-                            .reply({
-                                content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
-                                flags: MessageFlags.Ephemeral
-                            })
-                            .catch(() => {});
+                if (args.length > 1 && args[1] == 'panel') {
+                    const container = new ContainerBuilder();
+                    let rolesFetched: Role[] = [];
 
-                        return;
+                    for (const roleId of roles) {
+                        const role = interaction.guild?.roles.cache.get(roleId)
+                        role ? rolesFetched.push(role) : null;
+                        container.addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`<@&${roleId}>`))
+                                .setButtonAccessory(
+                                    new GargoyleButtonBuilder(this, 'addrole', roleId)
+                                        .setLabel(role?.name || 'Add Role')
+                                        .setStyle(ButtonStyle.Secondary)
+                                )
+                        );
                     }
 
-                    actionRow.addComponents(
-                        new GargoyleButtonBuilder(this, 'addrole', role?.id).setLabel(role?.name).setStyle(ButtonStyle.Secondary)
-                    );
-                    if (roleCount === 5) {
-                        roleCount = 0;
+                    const averageRole = averageRoleColor(rolesFetched)
+
+                    container.setAccentColor(averageRole)
+                    message = { components: [container], flags: [MessageFlags.IsComponentsV2] }
+                } else {
+                    const componentCollection: ActionRowBuilder<GargoyleButtonBuilder>[] = [];
+
+                    let roleCount = 0;
+                    let actionRow = new ActionRowBuilder<GargoyleButtonBuilder>();
+                    for (const roleId of roles) {
+                        roleCount++;
+                        const role = await interaction.guild?.roles.fetch(roleId);
+                        if (!role) continue;
+                        rolesText += `<@&${role.id}>\n`;
+
+                        if (role.position >= member.roles.highest.position && member.guild.ownerId !== member.id) {
+                            interaction
+                                .reply({
+                                    content: `You cannot give yourself the role ${role.name} as it is higher than your highest role.`,
+                                    flags: MessageFlags.Ephemeral
+                                })
+                                .catch(() => {});
+
+                            return;
+                        }
+
+                        actionRow.addComponents(
+                            new GargoyleButtonBuilder(this, 'addrole', role?.id).setLabel(role?.name).setStyle(ButtonStyle.Secondary)
+                        );
+                        if (roleCount === 5) {
+                            roleCount = 0;
+                            componentCollection.push(actionRow);
+                            actionRow = new ActionRowBuilder<GargoyleButtonBuilder>();
+                        }
+                    }
+                    if (roleCount > 0) {
                         componentCollection.push(actionRow);
-                        actionRow = new ActionRowBuilder<GargoyleButtonBuilder>();
                     }
+
+                    message = {components: componentCollection}
                 }
-                if (roleCount > 0) {
-                    componentCollection.push(actionRow);
-                }
-
-                const averageColor: ColorResolvable = (() => {
-                    const roleColors = roles
-                        .map((roleId) => interaction.guild?.roles.cache.get(roleId)?.color)
-                        .filter((color): color is number => color !== undefined);
-
-                    if (roleColors.length === 0) return 0xffffff; // Default to white if no colors are found
-
-                    const rgbValues = roleColors.map((color) => {
-                        const r = (color >> 16) & 0xff;
-                        const g = (color >> 8) & 0xff;
-                        const b = color & 0xff;
-                        return { r, g, b };
-                    });
-
-                    const averageRgb = rgbValues.reduce(
-                        (acc, rgb) => {
-                            acc.r += rgb.r;
-                            acc.g += rgb.g;
-                            acc.b += rgb.b;
-                            return acc;
-                        },
-                        { r: 0, g: 0, b: 0 }
-                    );
-
-                    averageRgb.r = Math.round(averageRgb.r / rgbValues.length);
-                    averageRgb.g = Math.round(averageRgb.g / rgbValues.length);
-                    averageRgb.b = Math.round(averageRgb.b / rgbValues.length);
-
-                    return (averageRgb.r << 16) + (averageRgb.g << 8) + averageRgb.b;
-                })();
-
-                const panelEmbed = [
-                    {
-                        description: rolesText,
-                        color: averageColor
-                    }
-                ];
 
                 sendAsServer(
                     client,
-                    { embeds: args.length > 1 && args[1] == 'panel' ? panelEmbed : undefined, components: componentCollection },
+                    message,
                     channel
                 );
             }
@@ -304,6 +300,35 @@ export default class Role extends GargoyleCommand {
             }
         }
     }
+}
+
+function averageRoleColor(roles: Role[]) {
+    const roleColors = roles.map((role) => role.color).filter((color): color is number => color !== undefined);
+
+    if (roleColors.length === 0) return 0xffffff; // Default to white if no colors are found
+
+    const rgbValues = roleColors.map((color) => {
+        const r = (color >> 16) & 0xff;
+        const g = (color >> 8) & 0xff;
+        const b = color & 0xff;
+        return { r, g, b };
+    });
+
+    const averageRgb = rgbValues.reduce(
+        (acc, rgb) => {
+            acc.r += rgb.r;
+            acc.g += rgb.g;
+            acc.b += rgb.b;
+            return acc;
+        },
+        { r: 0, g: 0, b: 0 }
+    );
+
+    averageRgb.r = Math.round(averageRgb.r / rgbValues.length);
+    averageRgb.g = Math.round(averageRgb.g / rgbValues.length);
+    averageRgb.b = Math.round(averageRgb.b / rgbValues.length);
+
+    return (averageRgb.r << 16) + (averageRgb.g << 8) + averageRgb.b;
 }
 
 interface ColorApiResponse {
