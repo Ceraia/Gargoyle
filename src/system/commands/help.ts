@@ -6,21 +6,26 @@ import {
     AnySelectMenuInteraction,
     ButtonInteraction,
     ChatInputCommandInteraction,
+    ContainerBuilder,
     EmbedBuilder,
     Guild,
     Message,
+    MessageEditOptions,
     MessageFlags,
+    MessageReplyOptions,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
     StringSelectMenuBuilder,
-    StringSelectMenuOptionBuilder
+    StringSelectMenuOptionBuilder,
+    TextDisplayBuilder
 } from 'discord.js';
-import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
 import { GargoyleStringSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashCommandBuilder.js';
 
 export default class Help extends GargoyleCommand {
     override category: string = 'base';
-    override slashCommand = new GargoyleSlashCommandBuilder().setName('help').setDescription('Replies with bot information');
-    override textCommand = new GargoyleTextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h');
+    override slashCommands = [new GargoyleSlashCommandBuilder().setName('help').setDescription('Replies with bot information')];
+    override textCommands = [new GargoyleTextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h')];
     private readonly selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
         new GargoyleStringSelectMenuBuilder(this, 'commands').addOptions(
             new StringSelectMenuOptionBuilder().setLabel('Info Message').setValue('info'),
@@ -28,29 +33,31 @@ export default class Help extends GargoyleCommand {
             new StringSelectMenuOptionBuilder().setLabel('Text Commands').setValue('text')
         )
     );
-    private readonly helpMessage = {
-        embeds: [
-            new EmbedBuilder()
-                .setTitle('Gargoyle')
-                .setColor(0x2b2d31)
-                .setDescription(
+    private readonly helpMessage: MessageEditOptions = {
+        content: undefined,
+        embeds: [],
+        components: [
+            new ContainerBuilder().addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
                     'A bot made by [Axodouble](https://axodouble.com).\n' +
                         'Distriobuted, hosted & developed by [Ceraia](https://ceraia.com).' +
                         'This bot is built on Gargoyle, a custom bot framework.\n\n' +
                         'This bot is still in very early development and major changes are expected,\n' +
                         'If you have any suggestions or issues, please contact Axodouble.'
                 )
+            ),
+            this.selectMenu
         ],
-        components: [this.selectMenu]
+        flags: [MessageFlags.IsComponentsV2]
     };
 
     override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        interaction.followUp(this.helpMessage);
+        interaction.editReply(this.helpMessage);
     }
 
     override executeTextCommand(_client: GargoyleClient, message: Message) {
-        message.reply(this.helpMessage);
+        message.reply(this.helpMessage as MessageReplyOptions);
     }
 
     override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...argument: string[]): Promise<void> {
@@ -78,72 +85,54 @@ export default class Help extends GargoyleCommand {
     }
 
     private async generateSlashHelpMessage(client: GargoyleClient, guild?: Guild): Promise<object> {
-        const embed = new GargoyleEmbedBuilder().setTitle('Slash Commands');
-        await client.commands.forEach((command) => {
-            if (command.slashCommand) {
-                if (!command.slashCommand.private) return;
+        const container = new ContainerBuilder();
 
-                if (command.slashCommand.guilds && guild) {
-                    if (!command.slashCommand.guilds.includes(guild.id)) return;
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent('Slash Commands'));
+        container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+
+        let commandText = ``;
+        for (const command of client.commands) {
+            for (const slashCommand of command.slashCommands) {
+                if (slashCommand.private) continue;
+
+                if (slashCommand.guilds && guild) {
+                    if (!slashCommand.guilds.includes(guild.id)) continue;
                 }
-
-                embed.addFields({ name: command.slashCommand?.name, value: command.slashCommand?.description });
+                commandText += `\`${slashCommand.name}\` \n> ${slashCommand.description}\n\n`;
             }
+        }
 
-            if (command.slashCommands) {
-                command.slashCommands.forEach((slashCommand) => {
-                    if (slashCommand.private) return;
-
-                    if (slashCommand.guilds && guild) {
-                        if (!slashCommand.guilds.includes(guild.id)) return;
-                    }
-
-                    embed.addFields({ name: slashCommand.name, value: slashCommand.description });
-                });
-            }
-        });
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(commandText));
 
         return {
-            embeds: [embed],
-            components: [this.selectMenu]
+            components: [container, this.selectMenu],
+            flags: [MessageFlags.IsComponentsV2]
         };
     }
 
     private async generateTextHelpMessage(client: GargoyleClient, guild?: Guild): Promise<object> {
-        const embed = new GargoyleEmbedBuilder().setTitle('Text Commands');
-        await client.commands.forEach((command) => {
-            if (command.textCommand) {
-                if (command.textCommand.private) return;
+        const container = new ContainerBuilder();
 
-                if (command.textCommand.guilds && guild) {
-                    if (!command.textCommand.guilds.includes(guild.id)) return;
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent('Text Commands'));
+        container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+
+        let commandText = ``;
+        for (const command of client.commands) {
+            for (const textCommand of command.textCommands) {
+                if (textCommand.private) continue;
+
+                if (textCommand.guilds && guild) {
+                    if (!textCommand.guilds.includes(guild.id)) continue;
                 }
-
-                let name = command.textCommand.name;
-                if (command.textCommand?.aliases) {
-                    name += command.textCommand.aliases.length > 0 ? ` (${command.textCommand.aliases.join(', ')})` : '';
-                }
-                embed.addFields({ name: name, value: command.textCommand.description });
-            } else if (command.textCommands) {
-                command.textCommands.forEach((textCommand) => {
-                    if (textCommand.private) return;
-
-                    if (textCommand.guilds && guild) {
-                        if (!textCommand.guilds.includes(guild.id)) return;
-                    }
-
-                    let name = textCommand.name;
-                    if (textCommand.aliases) {
-                        name += textCommand.aliases.length > 0 ? ` (${textCommand.aliases.join(', ')})` : '';
-                    }
-                    embed.addFields({ name: name, value: textCommand.description });
-                });
+                commandText += `\`${textCommand.name}\` ${textCommand.aliases.length > 0 ? `(${textCommand.aliases.join('|')})` : null}\n> ${textCommand.description}\n\n`;
             }
-        });
+        }
+
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(commandText));
 
         return {
-            embeds: [embed],
-            components: [this.selectMenu]
+            components: [container, this.selectMenu],
+            flags: [MessageFlags.IsComponentsV2]
         };
     }
 }

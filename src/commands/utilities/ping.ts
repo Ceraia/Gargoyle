@@ -5,15 +5,15 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import { ChatInputCommandInteraction, InteractionContextType, Message, TextChannel } from 'discord.js';
 export default class Ping extends GargoyleCommand {
     public override category: string = 'utilities';
-    public override slashCommand = new GargoyleSlashCommandBuilder()
+    public override slashCommands = [new GargoyleSlashCommandBuilder()
         .setName('ping')
         .setDescription('Replies with Pong!')
-        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]);
-    public override textCommand = new GargoyleTextCommandBuilder()
+        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM])];
+    public override textCommands = [new GargoyleTextCommandBuilder()
         .setName('ping')
         .setDescription('Replies with Pong!')
         .addAlias('p')
-        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]);
+        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM])];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         const start = Date.now();

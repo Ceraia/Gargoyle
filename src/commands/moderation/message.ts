@@ -16,7 +16,7 @@ import {
 
 export default class Moderation extends GargoyleCommand {
     public override category: string = 'moderation';
-    public override slashCommand = new GargoyleSlashCommandBuilder()
+    public override slashCommands = [new GargoyleSlashCommandBuilder()
         .setName('messages')
         .setDescription('Message moderation commands')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
@@ -28,8 +28,8 @@ export default class Moderation extends GargoyleCommand {
                     option.setName('amount').setDescription('The amount of messages to delete').setRequired(true).setMaxValue(50)
                 )
         )
-
-        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
+        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder];
+        
     public override contextCommands = [
         new ContextMenuCommandBuilder()
             .setContexts(InteractionContextType.Guild)

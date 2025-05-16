@@ -59,13 +59,13 @@ export default class RoleCommand extends GargoyleCommand {
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
-    public override textCommand = new GargoyleTextCommandBuilder()
+    public override textCommands = [new GargoyleTextCommandBuilder()
         .setName('buttonrole')
         .setDescription('Create a role button')
         .addAlias('br')
         .addAlias('rolebutton')
         .addAlias('rb')
-        .setContexts([InteractionContextType.Guild]);
+        .setContexts([InteractionContextType.Guild])];
 
     /**
      * @argument number is equal to the message ID

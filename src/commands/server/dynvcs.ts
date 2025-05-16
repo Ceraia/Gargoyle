@@ -39,7 +39,7 @@ import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js'
 
 export default class VoicechatCommand extends GargoyleCommand {
     public override category: string = 'server';
-    public override slashCommand = new GargoyleSlashCommandBuilder()
+    public override slashCommands = [new GargoyleSlashCommandBuilder()
         .setName('vc')
         .setDescription('Voicechat related commands.')
         .setContexts([InteractionContextType.Guild])
@@ -55,14 +55,14 @@ export default class VoicechatCommand extends GargoyleCommand {
                         .setDescription('The VC that will create the dynamic vcs')
                         .addChannelTypes(ChannelType.GuildVoice)
                 )
-        ) as GargoyleSlashCommandBuilder;
+        ) as GargoyleSlashCommandBuilder];
 
-    public override textCommand = new GargoyleTextCommandBuilder()
+    public override textCommands = [new GargoyleTextCommandBuilder()
         .setName('voice')
         .setDescription('Get voicechat interaction panel')
         .addAlias('vc')
         .addAlias('voicechat')
-        .setContexts([InteractionContextType.Guild]);
+        .setContexts([InteractionContextType.Guild])];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommand() === 'panel') {

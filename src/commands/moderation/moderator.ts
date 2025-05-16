@@ -17,7 +17,7 @@ import {
 export default class Moderator extends GargoyleCommand {
     public override category: string = 'moderation';
 
-    public override slashCommand = new GargoyleSlashCommandBuilder()
+    public override slashCommands = [new GargoyleSlashCommandBuilder()
         .setName('ai')
         .addGuilds('750209335841390642', '324195889977622530')
         .setDescription('Experimental AI moderation tool')
@@ -96,7 +96,7 @@ export default class Moderator extends GargoyleCommand {
                 )
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder;
+        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (!process.env.DETOXIFY_API) return interaction.reply({ content: 'AI moderation is unavailable for this guild.' });
