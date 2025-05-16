@@ -9,6 +9,7 @@ import {
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
+    ComponentType,
     ContainerBuilder,
     HexColorString,
     InteractionContextType,
@@ -326,7 +327,7 @@ export default class RoleCommand extends GargoyleCommand {
                 await interaction.update({
                     components: [
                         new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
-                            new GargoyleRoleSelectMenuBuilder(this, 'roles', args.length > 1 && args[1] == 'panel' ? 'panel' : 'nopanel')
+                            new GargoyleRoleSelectMenuBuilder(this, 'roles', interaction.message.components.filter((component)=>component.type === ComponentType.Container).length > 0 ? 'panel' : 'nopanel')
                                 .setMaxValues(25)
                                 .setMinValues(1)
                                 .setDefaultRoles()
