@@ -17,8 +17,8 @@ export default class Mentioned extends GargoyleEvent {
 
         let prefix = client.prefix;
 
-        if (client.db) {
-            client.db.getGuild(message.guild!.id).then((guild) => {
+        if (client.db && message.guild) {
+            client.db.getGuild(message.guild.id).then((guild) => {
                 if (guild && guild.prefix) {
                     prefix = guild.prefix;
                 }
@@ -27,7 +27,7 @@ export default class Mentioned extends GargoyleEvent {
 
         const mentions = message.mentions.users;
         if (mentions.has(client.user!.id)) {
-            message.reply({ content: `Hello! Use \`${prefix}\`help\` to get a better overview of my commands and features.` });
+            message.reply({ content: `Hello! Use \`${prefix}help\` to get a better overview of my commands and features.` });
         }
     }
 }
