@@ -312,7 +312,9 @@ export default class RoleCommand extends GargoyleCommand {
                 components: [...(interaction.message.components ?? []).slice(0, -1)],
                 flags: interaction.message.flags.bitfield
             };
-            await interaction.update({ content: 'Making server message...', components: [], flags: [] });
+            await interaction.update({
+                components: [new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent('Making server message...'))]
+            });
 
             await sendAsServer(client, message, interaction.channel as TextChannel);
         }
