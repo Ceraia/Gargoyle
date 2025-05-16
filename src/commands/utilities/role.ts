@@ -70,7 +70,7 @@ export default class RoleCommand extends GargoyleCommand {
      * @argument map is a map of which index has what roles
      * @argument role is a collection of the roles for that message
      */
-    private rolePanelBuilderCache: Map<number, Map<number, Role[]>> = new Map()
+    private rolePanelBuilderCache: Map<number, Map<number, Role[]>> = new Map();
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommandGroup(false) == null) {
@@ -200,31 +200,28 @@ export default class RoleCommand extends GargoyleCommand {
                     return;
                 }
 
-                
-                let message: MessageEditOptions = {content: 'Internal Component Message, if you see this then something has gone pretty wrong...'}
+                let message: MessageEditOptions = { content: 'Internal Component Message, if you see this then something has gone pretty wrong...' };
 
                 if (args.length > 1 && args[1] == 'panel') {
                     const container = new ContainerBuilder();
                     let rolesFetched: Role[] = [];
 
                     for (const roleId of roles) {
-                        const role = interaction.guild?.roles.cache.get(roleId)
+                        const role = interaction.guild?.roles.cache.get(roleId);
                         role ? rolesFetched.push(role) : null;
                         container.addSectionComponents(
                             new SectionBuilder()
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(`<@&${roleId}>`))
                                 .setButtonAccessory(
-                                    new GargoyleButtonBuilder(this, 'addrole', roleId)
-                                        .setLabel('Add Role')
-                                        .setStyle(ButtonStyle.Secondary)
+                                    new GargoyleButtonBuilder(this, 'addrole', roleId).setLabel('Add Role').setStyle(ButtonStyle.Secondary)
                                 )
                         );
                     }
 
-                    const averageRole = averageRoleColor(rolesFetched)
+                    const averageRole = averageRoleColor(rolesFetched);
 
-                    container.setAccentColor(averageRole)
-                    message = { components: [container, ...interaction.message.components ], flags: [MessageFlags.IsComponentsV2] }
+                    container.setAccentColor(averageRole);
+                    message = { components: [container, ...interaction.message.components], flags: [MessageFlags.IsComponentsV2] };
                 } else {
                     const componentCollection: ActionRowBuilder<GargoyleButtonBuilder>[] = [];
 
@@ -259,12 +256,18 @@ export default class RoleCommand extends GargoyleCommand {
                         componentCollection.push(actionRow);
                     }
 
-                    message = {components: componentCollection}
+                    message = { components: componentCollection };
                 }
 
-                message = {components: [...(message.components ?? []), new ActionRowBuilder<GargoyleButtonBuilder>().setComponents(new GargoyleButtonBuilder(this, 'submit').setLabel("Submit"))]}
+                message = {
+                    components: [
+                        ...(message.components ?? []),
+                        new ActionRowBuilder<GargoyleButtonBuilder>().setComponents(new GargoyleButtonBuilder(this, 'submit').setLabel('Submit'))
+                    ],
+                    flags: message.flags
+                };
 
-                await interaction.update(message)
+                await interaction.update(message);
             }
         }
     }
@@ -301,14 +304,14 @@ export default class RoleCommand extends GargoyleCommand {
                         interaction.reply({ content: `Added role ${role.name}`, flags: MessageFlags.Ephemeral });
                     });
             }
-        } else if (args[0]==="submit"){
-            if(!interaction.guild)return;
-            const message:MessageCreateOptions = {
+        } else if (args[0] === 'submit') {
+            if (!interaction.guild) return;
+            const message: MessageCreateOptions = {
                 components: [...(interaction.message.components ?? []).slice(0, -1)]
-            }
-            await interaction.update({content: 'Making server message...', components: []});
-            
-            await sendAsServer(client, message, interaction.channel as TextChannel)
+            };
+            await interaction.update({ content: 'Making server message...', components: [] });
+
+            await sendAsServer(client, message, interaction.channel as TextChannel);
         }
     }
 }
