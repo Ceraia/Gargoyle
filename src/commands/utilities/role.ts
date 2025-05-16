@@ -36,7 +36,7 @@ export default class RoleCommand extends GargoyleCommand {
                 subcommand
                     .setName('button')
                     .setDescription('Create a button that gives a role')
-                    .addBooleanOption((option) => option.setRequired(false).setName('panel').setDescription('Whether the message contain a panel'))
+                    .addBooleanOption((option) => option.setRequired(true).setName('panel').setDescription('Whether the message contain a panel'))
             )
             .addSubcommandGroup((group) =>
                 group
@@ -319,7 +319,8 @@ export default class RoleCommand extends GargoyleCommand {
             const message: MessageCreateOptions = {
                 content: undefined,
                 components: [...(interaction.message.components ?? []).slice(0, -2)],
-                flags: interaction.message.flags.bitfield
+                flags: interaction.message.flags.bitfield,
+                allowedMentions: { parse: [] }
             };
             try {
                 await interaction.update({
