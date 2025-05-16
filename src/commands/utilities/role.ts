@@ -9,7 +9,6 @@ import {
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
-    ComponentType,
     ContainerBuilder,
     HexColorString,
     InteractionContextType,
@@ -266,15 +265,14 @@ export default class RoleCommand extends GargoyleCommand {
                     content: '',
                     components: [
                         ...(message.components ?? []),
-                        new ActionRowBuilder<GargoyleButtonBuilder | RoleSelectMenuBuilder>().setComponents(
+                        new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
                             new GargoyleRoleSelectMenuBuilder(this, 'roles', args.length > 1 && args[1] == 'panel' ? 'panel' : 'nopanel')
                                 .setMaxValues(25)
                                 .setMinValues(1)
                                 .setDefaultRoles(roles)
-                                .setPlaceholder('Select role(s) to give'),
-
-                            new GargoyleButtonBuilder(this, 'submit').setLabel('Submit')
-                        )
+                                .setPlaceholder('Select role(s) to give')
+                        ),
+                        new ActionRowBuilder<GargoyleButtonBuilder>().setComponents(new GargoyleButtonBuilder(this, 'submit').setLabel('Submit'))
                     ],
                     flags: message.flags
                 };
