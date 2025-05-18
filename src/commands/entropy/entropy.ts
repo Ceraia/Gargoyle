@@ -414,7 +414,6 @@ class RolePrefix extends GargoyleEvent {
         if (updatedMember.user.id === '503158802003132416') username = 'Eĸstacy';
         if (updatedMember.user.id === '891612809123741716') username = 'GIⅰde';
 
-
         namePrefix += `] ${username}`;
 
         updatedMember.setNickname(namePrefix).catch(() => {});

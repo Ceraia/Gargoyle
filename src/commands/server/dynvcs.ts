@@ -39,30 +39,34 @@ import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js'
 
 export default class VoicechatCommand extends GargoyleCommand {
     public override category: string = 'server';
-    public override slashCommands = [new GargoyleSlashCommandBuilder()
-        .setName('vc')
-        .setDescription('Voicechat related commands.')
-        .setContexts([InteractionContextType.Guild])
-        .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Get the voicechat panel'))
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('create')
-                .setDescription("Create dynamic vc's")
-                .addChannelOption((option) =>
-                    option
-                        .setName('vc')
-                        .setRequired(false)
-                        .setDescription('The VC that will create the dynamic vcs')
-                        .addChannelTypes(ChannelType.GuildVoice)
-                )
-        ) as GargoyleSlashCommandBuilder];
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('vc')
+            .setDescription('Voicechat related commands.')
+            .setContexts([InteractionContextType.Guild])
+            .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Get the voicechat panel'))
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('create')
+                    .setDescription("Create dynamic vc's")
+                    .addChannelOption((option) =>
+                        option
+                            .setName('vc')
+                            .setRequired(false)
+                            .setDescription('The VC that will create the dynamic vcs')
+                            .addChannelTypes(ChannelType.GuildVoice)
+                    )
+            ) as GargoyleSlashCommandBuilder
+    ];
 
-    public override textCommands = [new GargoyleTextCommandBuilder()
-        .setName('voice')
-        .setDescription('Get voicechat interaction panel')
-        .addAlias('vc')
-        .addAlias('voicechat')
-        .setContexts([InteractionContextType.Guild])];
+    public override textCommands = [
+        new GargoyleTextCommandBuilder()
+            .setName('voice')
+            .setDescription('Get voicechat interaction panel')
+            .addAlias('vc')
+            .addAlias('voicechat')
+            .setContexts([InteractionContextType.Guild])
+    ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommand() === 'panel') {
@@ -378,11 +382,7 @@ export default class VoicechatCommand extends GargoyleCommand {
         flags: [MessageFlags.IsComponentsV2],
         components: [
             new ContainerBuilder()
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        '# Voicechat Commands\n' + '-# Create a new  Dynamic VC to use this.'
-                    )
-                )
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Voicechat Commands\n' + '-# Create a new  Dynamic VC to use this.'))
                 .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
                 .addSectionComponents(
                     new SectionBuilder()

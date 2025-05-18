@@ -16,20 +16,22 @@ import {
 
 export default class Moderation extends GargoyleCommand {
     public override category: string = 'moderation';
-    public override slashCommands = [new GargoyleSlashCommandBuilder()
-        .setName('messages')
-        .setDescription('Message moderation commands')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('delete')
-                .setDescription('Delete a certain amount of messages')
-                .addNumberOption((option) =>
-                    option.setName('amount').setDescription('The amount of messages to delete').setRequired(true).setMaxValue(50)
-                )
-        )
-        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder];
-        
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('messages')
+            .setDescription('Message moderation commands')
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('delete')
+                    .setDescription('Delete a certain amount of messages')
+                    .addNumberOption((option) =>
+                        option.setName('amount').setDescription('The amount of messages to delete').setRequired(true).setMaxValue(50)
+                    )
+            )
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
+    ];
+
     public override contextCommands = [
         new ContextMenuCommandBuilder()
             .setContexts(InteractionContextType.Guild)
@@ -46,7 +48,9 @@ export default class Moderation extends GargoyleCommand {
             const channel = (await interaction.channel?.fetch()) as TextChannel;
 
             if (!channel || channel.type !== ChannelType.GuildText)
-                return interaction.editReply({ content: 'Channel not found ? Or is not a text channel? This is unexpected. Please try again later.' });
+                return interaction.editReply({
+                    content: 'Channel not found ? Or is not a text channel? This is unexpected. Please try again later.'
+                });
 
             channel
                 .bulkDelete(amount)
@@ -55,7 +59,9 @@ export default class Moderation extends GargoyleCommand {
                 })
                 .catch((err) => {
                     client.logger.error(err);
-                    return interaction.editReply({ content: `Failed deleting ${amount} messages.\n-# You can only bulk-delete messages that are under 14 days old, this is a limitation presented by Discord themselves unfortunately.` });
+                    return interaction.editReply({
+                        content: `Failed deleting ${amount} messages.\n-# You can only bulk-delete messages that are under 14 days old, this is a limitation presented by Discord themselves unfortunately.`
+                    });
                 });
         }
 

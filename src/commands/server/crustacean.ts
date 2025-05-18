@@ -216,7 +216,8 @@ export default class Crustacean extends GargoyleCommand {
 
             if (tree.toString().length > 2000) {
                 // Send it as a file instead
-                let content = tree.toString()
+                let content = tree
+                    .toString()
                     // Remove code blocks
                     .replace(/`/g, '')
                     // Remove all suffixes and prefixes used in the tree text

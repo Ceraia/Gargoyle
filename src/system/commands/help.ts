@@ -7,7 +7,6 @@ import {
     ButtonInteraction,
     ChatInputCommandInteraction,
     ContainerBuilder,
-    EmbedBuilder,
     Guild,
     Message,
     MessageEditOptions,
@@ -114,7 +113,7 @@ export default class Help extends GargoyleCommand {
         const container = new ContainerBuilder();
 
         let prefix = client.prefix;
-        if(client.db && guild) prefix = (await client.db.getGuild(guild.id)).prefix
+        if (client.db && guild) prefix = (await client.db.getGuild(guild.id)).prefix;
 
         container.addTextDisplayComponents(new TextDisplayBuilder().setContent('Text Commands'));
         container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
@@ -124,7 +123,7 @@ export default class Help extends GargoyleCommand {
             for (const textCommand of command.textCommands) {
                 if (textCommand.private) continue;
 
-                if (textCommand.guilds.length > 0  && guild) {
+                if (textCommand.guilds.length > 0 && guild) {
                     if (!textCommand.guilds.includes(guild.id)) continue;
                 }
                 commandText += `\`${prefix}${textCommand.name}${textCommand.aliases.length > 0 ? ` (${textCommand.aliases.join('|')})` : ``}\`\n> ${textCommand.description}\n\n`;

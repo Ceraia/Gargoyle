@@ -5,56 +5,64 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse } from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
-    public override slashCommands = [new GargoyleSlashCommandBuilder()
-        .setName('fun')
-        .setDescription('Fun related commands!')
-        .addSubcommandGroup((subcommandGroup) =>
-            subcommandGroup
-                .setName('text')
-                .setDescription('Text related commands.')
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('aesthetic')
-                        .setDescription('Change text to look like ｔｈｉｓ.')
-                        .addStringOption((option) =>
-                            option.setName('text').setDescription('The text to change.').setRequired(true).setMaxLength(2000)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('upside-down')
-                        .setDescription('Flip text.')
-                        .addStringOption((option) => option.setName('text').setDescription('The text to flip.').setRequired(true).setMaxLength(2000))
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('uwu')
-                        .setDescription('UwUify text.')
-                        .addStringOption((option) =>
-                            option.setName('text').setDescription('The text to UwUify.').setRequired(true).setMaxLength(2000)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('mock')
-                        .setDescription('Mock text.')
-                        .addStringOption((option) => option.setName('text').setDescription('The text to mock.').setRequired(true).setMaxLength(2000))
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('clap')
-                        .setDescription('Clap text.')
-                        .addStringOption((option) => option.setName('text').setDescription('The text to clap.').setRequired(true).setMaxLength(2000))
-                )
-        )
-        .addSubcommand((subcommand) => subcommand.setName('truth-or-dare').setDescription('Truth or dare related commands.'))
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('8ball')
-                .setDescription('Ask the magic 8ball a question.')
-                .addStringOption((option) => option.setName('question').setDescription('The question to ask the magic 8ball.').setRequired(true))
-        )
-        .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as GargoyleSlashCommandBuilder];
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('fun')
+            .setDescription('Fun related commands!')
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('text')
+                    .setDescription('Text related commands.')
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('aesthetic')
+                            .setDescription('Change text to look like ｔｈｉｓ.')
+                            .addStringOption((option) =>
+                                option.setName('text').setDescription('The text to change.').setRequired(true).setMaxLength(2000)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('upside-down')
+                            .setDescription('Flip text.')
+                            .addStringOption((option) =>
+                                option.setName('text').setDescription('The text to flip.').setRequired(true).setMaxLength(2000)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('uwu')
+                            .setDescription('UwUify text.')
+                            .addStringOption((option) =>
+                                option.setName('text').setDescription('The text to UwUify.').setRequired(true).setMaxLength(2000)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('mock')
+                            .setDescription('Mock text.')
+                            .addStringOption((option) =>
+                                option.setName('text').setDescription('The text to mock.').setRequired(true).setMaxLength(2000)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('clap')
+                            .setDescription('Clap text.')
+                            .addStringOption((option) =>
+                                option.setName('text').setDescription('The text to clap.').setRequired(true).setMaxLength(2000)
+                            )
+                    )
+            )
+            .addSubcommand((subcommand) => subcommand.setName('truth-or-dare').setDescription('Truth or dare related commands.'))
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('8ball')
+                    .setDescription('Ask the magic 8ball a question.')
+                    .addStringOption((option) => option.setName('question').setDescription('The question to ask the magic 8ball.').setRequired(true))
+            )
+            .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as GargoyleSlashCommandBuilder
+    ];
 
     public override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         const subcommandGroup = interaction.options.getSubcommandGroup();

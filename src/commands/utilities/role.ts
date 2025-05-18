@@ -59,13 +59,15 @@ export default class RoleCommand extends GargoyleCommand {
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
-    public override textCommands = [new GargoyleTextCommandBuilder()
-        .setName('buttonrole')
-        .setDescription('Create a role button')
-        .addAlias('br')
-        .addAlias('rolebutton')
-        .addAlias('rb')
-        .setContexts([InteractionContextType.Guild])];
+    public override textCommands = [
+        new GargoyleTextCommandBuilder()
+            .setName('buttonrole')
+            .setDescription('Create a role button')
+            .addAlias('br')
+            .addAlias('rolebutton')
+            .addAlias('rb')
+            .setContexts([InteractionContextType.Guild])
+    ];
 
     /**
      * @argument number is equal to the message ID
@@ -327,7 +329,13 @@ export default class RoleCommand extends GargoyleCommand {
                 await interaction.update({
                     components: [
                         new ActionRowBuilder<RoleSelectMenuBuilder>().setComponents(
-                            new GargoyleRoleSelectMenuBuilder(this, 'roles', interaction.message.components.filter((component)=>component.type === ComponentType.Container).length > 0 ? 'panel' : 'nopanel')
+                            new GargoyleRoleSelectMenuBuilder(
+                                this,
+                                'roles',
+                                interaction.message.components.filter((component) => component.type === ComponentType.Container).length > 0
+                                    ? 'panel'
+                                    : 'nopanel'
+                            )
                                 .setMaxValues(25)
                                 .setMinValues(1)
                                 .setDefaultRoles()

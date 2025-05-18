@@ -17,86 +17,92 @@ import {
 export default class Moderator extends GargoyleCommand {
     public override category: string = 'moderation';
 
-    public override slashCommands = [new GargoyleSlashCommandBuilder()
-        .setName('ai')
-        .addGuilds('750209335841390642', '324195889977622530')
-        .setDescription('Experimental AI moderation tool')
-        .addSubcommand((option) =>
-            option
-                .setName('enable')
-                .setDescription('Whether to enable or disable AI moderation')
-                .addStringOption((option) =>
-                    option
-                        .setName('state')
-                        .setDescription('Whether it is enabled or disabled')
-                        .setRequired(true)
-                        .setChoices({ name: 'Enabled', value: 'enabled' }, { name: 'Disabled', value: 'disabled' })
-                )
-        )
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName('channel')
-                .setDescription('Set a channel for alerts')
-                .addChannelOption((option) =>
-                    option.setName('channel').setDescription('The channel to send alerts to').setRequired(true).addChannelTypes(ChannelType.GuildText)
-                )
-        )
-        .addSubcommandGroup((subcommandGroup) =>
-            subcommandGroup
-                .setName('thresholds')
-                .setDescription('Set the thresholds for the AI moderator')
-                .addSubcommand((subcommand) => subcommand.setName('list').setDescription('List the current thresholds'))
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('toxicity')
-                        .setDescription('Set the threshold for when alerts should be sent')
-                        .addNumberOption((option) =>
-                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('severe_toxicity')
-                        .setDescription('Set the threshold for when alerts should be sent')
-                        .addNumberOption((option) =>
-                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('obscene')
-                        .setDescription('Set the threshold for when alerts should be sent')
-                        .addNumberOption((option) =>
-                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('threat')
-                        .setDescription('Set the threshold for when alerts should be sent')
-                        .addNumberOption((option) =>
-                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('insult')
-                        .setDescription('Set the threshold for when alerts should be sent')
-                        .addNumberOption((option) =>
-                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
-                        )
-                )
-                .addSubcommand((subcommand) =>
-                    subcommand
-                        .setName('identity_attack')
-                        .setDescription('Set the threshold for when alerts should be sent')
-                        .addNumberOption((option) =>
-                            option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
-                        )
-                )
-        )
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-        .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder];
+    public override slashCommands = [
+        new GargoyleSlashCommandBuilder()
+            .setName('ai')
+            .addGuilds('750209335841390642', '324195889977622530')
+            .setDescription('Experimental AI moderation tool')
+            .addSubcommand((option) =>
+                option
+                    .setName('enable')
+                    .setDescription('Whether to enable or disable AI moderation')
+                    .addStringOption((option) =>
+                        option
+                            .setName('state')
+                            .setDescription('Whether it is enabled or disabled')
+                            .setRequired(true)
+                            .setChoices({ name: 'Enabled', value: 'enabled' }, { name: 'Disabled', value: 'disabled' })
+                    )
+            )
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('channel')
+                    .setDescription('Set a channel for alerts')
+                    .addChannelOption((option) =>
+                        option
+                            .setName('channel')
+                            .setDescription('The channel to send alerts to')
+                            .setRequired(true)
+                            .addChannelTypes(ChannelType.GuildText)
+                    )
+            )
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('thresholds')
+                    .setDescription('Set the thresholds for the AI moderator')
+                    .addSubcommand((subcommand) => subcommand.setName('list').setDescription('List the current thresholds'))
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('toxicity')
+                            .setDescription('Set the threshold for when alerts should be sent')
+                            .addNumberOption((option) =>
+                                option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('severe_toxicity')
+                            .setDescription('Set the threshold for when alerts should be sent')
+                            .addNumberOption((option) =>
+                                option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('obscene')
+                            .setDescription('Set the threshold for when alerts should be sent')
+                            .addNumberOption((option) =>
+                                option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('threat')
+                            .setDescription('Set the threshold for when alerts should be sent')
+                            .addNumberOption((option) =>
+                                option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('insult')
+                            .setDescription('Set the threshold for when alerts should be sent')
+                            .addNumberOption((option) =>
+                                option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('identity_attack')
+                            .setDescription('Set the threshold for when alerts should be sent')
+                            .addNumberOption((option) =>
+                                option.setName('threshold').setDescription('The threshold').setMinValue(0).setMaxValue(1).setRequired(true)
+                            )
+                    )
+            )
+            .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
+    ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (!process.env.DETOXIFY_API) return interaction.reply({ content: 'AI moderation is unavailable for this guild.' });

@@ -57,13 +57,13 @@ export function editAsServer(message: MessageCreateOptions, channel: TextChannel
                     return true;
                 })
                 .catch((err) => {
-                    client.logger.error(err)
+                    client.logger.error(err);
                     return false;
                 });
             return false;
         })
         .catch((err) => {
-            client.logger.error(err)
+            client.logger.error(err);
             return false;
         });
 }
