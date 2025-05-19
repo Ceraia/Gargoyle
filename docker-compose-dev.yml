@@ -3,10 +3,10 @@ services:
     build:
       context: .
       dockerfile: ./docker/dev/Dockerfile
+    profiles:
+      - app
     volumes:
       - .:/workspace/gargoyle
-    depends_on:
-      - mongo
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       PREFIX: ','
@@ -19,6 +19,8 @@ services:
   mongo:
     hostname: mongo
     image: mongo:latest
+    profiles:
+      - aux
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DBUSERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${DBPASSWORD}
@@ -30,6 +32,8 @@ services:
 
   detoxify-api:
     hostname: detoxify-api
+    profiles:
+      - aux
     volumes:
       - ./container/.cache/application:/root/.cache
       - ./container/.cache/packages:/.cached_packages
