@@ -267,7 +267,7 @@ const thresholdsSchema = new Schema(
     {
         toxicity: {
             type: Number,
-            default: 0.8
+            default: 1.0
         },
         severe_toxicity: {
             type: Number,
@@ -275,15 +275,15 @@ const thresholdsSchema = new Schema(
         },
         obscene: {
             type: Number,
-            default: 0.8
+            default: 1.0
         },
         threat: {
             type: Number,
-            default: 0.5
+            default: 0.8
         },
         insult: {
             type: Number,
-            default: 0.8
+            default: 1.0
         },
         identity_attack: {
             type: Number,
