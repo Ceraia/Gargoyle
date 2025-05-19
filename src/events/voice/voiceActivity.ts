@@ -82,10 +82,7 @@ export default class VoiceActivity extends GargoyleEvent {
                     await voiceTime.save();
                 }
 
-                if (voiceTime.activity.length > 999) {
-                    voiceTime.activity.shift();
-                    await voiceTime.save();
-                }
+            await voiceTime.save();
             });
         }
     }
