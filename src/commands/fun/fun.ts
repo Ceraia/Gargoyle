@@ -1,8 +1,9 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleContainerBuilder.js';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
-import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse } from 'discord.js';
+import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse, MessageFlags } from 'discord.js';
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
     public override slashCommands = [
@@ -438,15 +439,14 @@ function truthDare(interaction: ChatInputCommandInteraction): Promise<Interactio
     ];
 
     return interaction.reply({
-        embeds: [
-            new GargoyleEmbedBuilder()
-                .setTitle('Truth or Dare')
-                .setDescription(
-                    `Truth or dare?\n**Truth :** ${truths[Math.floor(Math.random() * truths.length)]}\n**Dare :** ${
-                        dares[Math.floor(Math.random() * dares.length)]
-                    }`
-                )
-        ]
+        components: [
+            new GargoyleContainerBuilder(
+                `Truth or dare?\n**Truth :** ${truths[Math.floor(Math.random() * truths.length)]}\n**Dare :** ${
+                    dares[Math.floor(Math.random() * dares.length)]
+                }`
+            )
+        ],
+        flags: [MessageFlags.IsComponentsV2]
     });
 }
 

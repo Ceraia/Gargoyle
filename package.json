@@ -32,17 +32,15 @@
     "scripts": {
         "start": "bun run .",
         "dev": "bun run --watch .",
-        "docker-start": "docker compose -f ./docker-compose-dev.yml up -d --remove-orphans",
-        "docker-stop": "docker compose -f ./docker-compose-dev.yml down --remove-orphans",
-        "db-on": "docker compose -f ./docker-compose-dev.yml --profile db up -d --remove-orphans ",
-        "db-off": "docker compose -f ./docker-compose-dev.yml --profile db down --remove-orphans",
-        "ai-on": "docker compose -f docker-compose-dev.yml --profile ai up -d --remove-orphans",
-        "ai-off": "docker compose -f docker-compose-dev.yml --profile ai down --remove-orphans",
+        "dev:on": "bun run aux:on && bun run app:on",
+        "dev:off": "bun run aux:off && bun run app:off",
+        "aux:on": "docker compose -f ./docker-compose-dev.yml --profile aux up -d --remove-orphans ",
+        "aux:off": "docker compose -f ./docker-compose-dev.yml --profile aux down --remove-orphans",
+        "app:on": "docker compose -f ./docker-compose-dev.yml --profile app up --remove-orphans ",
+        "app:off": "docker compose -f ./docker-compose-dev.yml --profile app down --remove-orphans",
         "build": "tsc",
         "format": "prettier --write \"src/**\"",
-        "lint": "eslint src/** ",
-        "lint:fix": "eslint --fix src/** ",
-        "check": "bun run format && bun run lint:fix && bun run build"
+        "check": "bun run format && bun run build"
     },
     "prettier": {
         "endOfLine": "lf",

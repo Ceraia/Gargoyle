@@ -1,24 +1,39 @@
 services:
-  mongo:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/dev/Dockerfile
     profiles:
-      - db
-      - ai
+      - app
+    volumes:
+      - .:/workspace/gargoyle
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      PREFIX: ','
+      MONGO_URI: ${MONGO_URI}
+      DEBUG_LEVEL: 6
+      LOG_TO_FILE: false
+    networks:
+      - gargoyle
+
+  mongo:
     hostname: mongo
     image: mongo:latest
+    profiles:
+      - aux
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DBUSERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${DBPASSWORD}
     volumes:
       - ./container/db:/data/db
+      - ./container/configdb:/data/configdb
     networks:
       - gargoyle
-    ports:
-      - 27017:27017
 
   detoxify-api:
-    profiles: 
-      - ai
     hostname: detoxify-api
+    profiles:
+      - aux
     volumes:
       - ./container/.cache/application:/root/.cache
       - ./container/.cache/packages:/.cached_packages

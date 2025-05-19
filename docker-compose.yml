@@ -1,22 +1,8 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: ./docker/dev/Dockerfile
-    volumes:
-      - .:/workspace/gargoyle
-    depends_on:
-      - mongo
-    environment:
-      DISCORD_TOKEN: ${DISCORD_TOKEN}
-      MONGO_URI: mongodb://${DBUSERNAME}:${DBPASSWORD}@mongo:27017/gargoyle?authSource=admin
-      DEBUG: true
-    labels:
-      traefik.enable: 'false'
-    networks:
-      - gargoyle
-
   mongo:
+    profiles:
+      - db
+      - ai
     hostname: mongo
     image: mongo:latest
     environment:
@@ -24,9 +10,10 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${DBPASSWORD}
     volumes:
       - ./container/db:/data/db
-      - ./container/configdb:/data/configdb
     networks:
       - gargoyle
+    ports:
+      - 27017:27017
 
   detoxify-api:
     profiles: 

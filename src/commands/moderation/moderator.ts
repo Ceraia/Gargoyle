@@ -105,6 +105,7 @@ export default class Moderator extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+        if(!client.db || client.db.readyState !== 1) return interaction.reply({ content: 'AI moderation is unavailable at this time.' });
         if (!process.env.DETOXIFY_API) return interaction.reply({ content: 'AI moderation is unavailable for this guild.' });
         if (interaction.user.id !== '244173330431737866')
             return interaction.reply({ content: 'Sorry, this command is currently only available for beta testers.' });
@@ -185,6 +186,7 @@ class ModeratedMessage extends GargoyleEvent {
     private hasErrored = false;
 
     public async execute(client: GargoyleClient, message: Message): Promise<void> {
+        if(!client.db || client.db.readyState !== 1) return;
         if (!process.env.DETOXIFY_API) return;
         if (this.hasErrored) return;
         const moderatedGuild = await aiModeratedGuild.findOne({ guildId: message.guildId });
@@ -265,12 +267,13 @@ import { Schema, model } from 'mongoose';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { z } from 'zod';
 import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
+import client from '@src/system/botClient.js';
 
 const thresholdsSchema = new Schema(
     {
         toxicity: {
             type: Number,
-            default: 0.8
+            default: 1.0
         },
         severe_toxicity: {
             type: Number,
@@ -278,15 +281,15 @@ const thresholdsSchema = new Schema(
         },
         obscene: {
             type: Number,
-            default: 0.8
+            default: 1.0
         },
         threat: {
             type: Number,
-            default: 0.5
+            default: 0.8
         },
         insult: {
             type: Number,
-            default: 0.8
+            default: 1.0
         },
         identity_attack: {
             type: Number,
