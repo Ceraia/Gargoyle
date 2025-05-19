@@ -29,8 +29,6 @@ services:
       - gargoyle
 
   detoxify-api:
-    profiles: 
-      - ai
     hostname: detoxify-api
     volumes:
       - ./container/.cache/application:/root/.cache
