@@ -1,9 +1,9 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleContainerBuilder.js';
-import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse, MessageFlags } from 'discord.js';
+
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
     public override slashCommands = [
