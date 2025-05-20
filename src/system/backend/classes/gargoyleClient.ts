@@ -4,7 +4,6 @@ import { Logger } from '../tools/logger.js';
 import registerEvents from '../initializers/registerEvents.js';
 import GargoyleCommand from './gargoyleCommand.js';
 import loadCommands from '../initializers/loadCommands.js';
-import http from 'http';
 
 /**
  * Represents a client for the Gargoyle system, extending the base Client class.
@@ -132,19 +131,17 @@ class GargoyleClient extends Client {
      * Responds with 'Not Found' otherwise.
      */
     private startHealthCheckServer() {
-        const server = http.createServer((req, res) => {
-            if (req.url === '/health' && this.isReady() && this.ws.status === 0) {
-                res.writeHead(200, { 'Content-Type': 'text/plain' });
-                res.end('OK');
+        Bun.serve({
+            port: 3000,
+            fetch: (req) => {
+            if (new URL(req.url).pathname === '/health' && this.isReady() && this.ws.status === 0) {
+                return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } });
             } else {
-                res.writeHead(404, { 'Content-Type': 'text/plain' });
-                res.end('Not Found');
+                return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
+            }
             }
         });
-
-        server.listen(3000, () => {
-            this.logger.log('Health check server is running on port 3000');
-        });
+        this.logger.log('Health check server is running on port 3000');
     }
 }
 
