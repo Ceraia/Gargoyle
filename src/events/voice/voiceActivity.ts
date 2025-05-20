@@ -82,7 +82,7 @@ export default class VoiceActivity extends GargoyleEvent {
                     await voiceTime.save();
                 }
 
-            await voiceTime.save();
+                await voiceTime.save();
             });
         }
     }

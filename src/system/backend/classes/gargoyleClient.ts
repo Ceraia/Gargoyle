@@ -134,11 +134,11 @@ class GargoyleClient extends Client {
         Bun.serve({
             port: 3000,
             fetch: (req) => {
-            if (new URL(req.url).pathname === '/health' && this.isReady() && this.ws.status === 0) {
-                return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } });
-            } else {
-                return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
-            }
+                if (new URL(req.url).pathname === '/health' && this.isReady() && this.ws.status === 0) {
+                    return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+                } else {
+                    return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
+                }
             }
         });
         this.logger.log('Health check server is running on port 3000');

@@ -85,7 +85,10 @@ export default class Crustacean extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if(!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) { await interaction.reply({content:'Sorry, this is unavailable at this time.'});return;}
+        if (!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) {
+            await interaction.reply({ content: 'Sorry, this is unavailable at this time.' });
+            return;
+        }
         if (interaction.options.getSubcommand() === 'info') {
             return interaction.reply({
                 embeds: [
@@ -235,7 +238,10 @@ export default class Crustacean extends GargoyleCommand {
     }
 
     public override async executeTextCommand(client: GargoyleClient, message: Message<boolean>): Promise<void> {
-        if(!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) { await message.reply({content:'Sorry, this is unavailable at this time.'});return;}
+        if (!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) {
+            await message.reply({ content: 'Sorry, this is unavailable at this time.' });
+            return;
+        }
         if (!message.guild) {
             await message.reply('This command can only be used in a guild');
             return;
@@ -252,7 +258,10 @@ export default class Crustacean extends GargoyleCommand {
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
-        if(!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) { await interaction.reply({content:'Sorry, this is unavailable at this time.'});return;}
+        if (!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) {
+            await interaction.reply({ content: 'Sorry, this is unavailable at this time.' });
+            return;
+        }
         if (interaction.guild === null) return;
 
         if (args[0] === 'invite') {
@@ -362,7 +371,7 @@ class MemberLeave extends GargoyleEvent {
     public event = Events.GuildMemberRemove as const;
 
     public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
-        if(!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return;
+        if (!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return;
         const crustaceanUser = await getCrustaceanUser(client, member.id, member.guild.id);
 
         let banned = await client.guilds.cache
@@ -395,7 +404,7 @@ class MemberJoin extends GargoyleEvent {
     public event = Events.GuildMemberAdd as const;
 
     public async execute(_client: GargoyleClient, member: GuildMember): Promise<void> {
-        if(!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return;
+        if (!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return;
         const crustaceanGuild = await getCrustaceanGuild(member.guild.id);
         if (!crustaceanGuild.enabled) return;
 
@@ -431,7 +440,7 @@ class MemberJoin extends GargoyleEvent {
 }
 
 async function getReputationTotal(client: GargoyleClient, userId: string, guildId: string): Promise<number> {
-    if(!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return 0;
+    if (!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return 0;
     const crustaceanUser = await getCrustaceanUser(client, userId, guildId);
     let total = crustaceanUser.reputation;
 
@@ -467,7 +476,7 @@ class ReputationMessage extends GargoyleEvent {
     private thanksCache = new Map<string, Date>();
 
     public async execute(client: GargoyleClient, message: Message): Promise<void> {
-        if(!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return;
+        if (!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return;
         if (message.author.bot) return;
         if (message.channel.type !== ChannelType.GuildText) return;
 

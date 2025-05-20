@@ -15,9 +15,9 @@ class GargoyleContainerBuilder extends ContainerBuilder {
      */
     constructor(...messages: string[]) {
         super();
-        if(messages.length > 0){
-            for (const message of messages){
-                this.addTextDisplayComponents(new TextDisplayBuilder().setContent(message))
+        if (messages.length > 0) {
+            for (const message of messages) {
+                this.addTextDisplayComponents(new TextDisplayBuilder().setContent(message));
             }
         }
     }
