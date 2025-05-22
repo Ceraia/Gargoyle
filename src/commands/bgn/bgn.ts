@@ -55,22 +55,13 @@ export default class Brads extends GargoyleCommand {
                 .addSectionComponents(
                     new SectionBuilder()
                         .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(
-                                '# 👮 Faction Support\n> Report a faction member or ask questions about a faction (for in-game factions, Smugglers, Police, Hitman)'
-                            )
-                        )
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'faction').setLabel('Factions').setStyle(ButtonStyle.Secondary).setEmoji('👮')
-                        )
-                )
-                .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
-                .addSectionComponents(
-                    new SectionBuilder()
-                        .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent('# 📦 Staff Matters\n> Applications, reports & questions relating to staff.')
                         )
                         .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'staff').setLabel('Staff Matters').setStyle(ButtonStyle.Secondary).setEmoji('📦')
+                            new GargoyleButtonBuilder(this, 'staff', '1160189039454982316')
+                                .setLabel('Staff Matters')
+                                .setStyle(ButtonStyle.Secondary)
+                                .setEmoji('📦')
                         )
                 )
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
@@ -104,33 +95,99 @@ export default class Brads extends GargoyleCommand {
                 interaction.reply('You can only use this interaction in channels.');
                 return;
             }
-            const channel = await client.channels.fetch(interaction.channel.id);
+            const channel = (await client.channels.fetch(interaction.channel.id)) as TextChannel;
 
             if (!channel) {
                 interaction.reply('I cannot find the channel to send this to');
                 return;
             }
 
-            (channel as TextChannel).send(this.panelMessage).catch((err) => client.logger.error(err.stack));
+            try {
+                await sendAsServer(client, this.panelMessage, channel);
+                await interaction.reply({ content: 'Sent the panel to the channel.', flags: [MessageFlags.Ephemeral] });
+            } catch (err) {
+                client.logger.error(err as string);
+                await interaction.reply({ content: 'Failed to send the panel.', flags: [MessageFlags.Ephemeral] });
+            }
         }
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        if (!interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
-            await interaction.editReply({ content: 'This command is only available in guild message channels.' });
+
+        if (!interaction.guild || !interaction.channel) {
+            interaction.editReply({ content: 'This can only be used in a guild channel.' });
             return;
         }
-        if (args.length > 0 && args[0] === 'support') {
-            const role = interaction.guild.roles.cache.find((role) => role.name.toLowerCase() === args[0].toLowerCase());
+        if (args[0] === 'archive') {
             const member = await interaction.guild.members.fetch(interaction.user.id);
 
-            if (!role) {
-                await interaction.editReply({ content: `Failed to find ${args[0]} role.` });
+            if (!interaction.channel.isThread()) {
+                await interaction.editReply({ content: 'This is only available in threads.' });
                 return;
             }
 
-            const ticket = await this.makeTicketThread(interaction.channel, { members: [member], roles: [role] });
+            await interaction.channel.send({ content: `<@!${interaction.user.id}> is closing the ticket.` }).catch((err) => client.logger.error(err));
+
+            if (member.roles.cache.has(args[1])) {
+                await (interaction.channel as PrivateThreadChannel).setArchived(true);
+                await interaction.editReply({ content: 'Ticket archived.' });
+            } else {
+                for (const member of await (interaction.channel as PrivateThreadChannel).members.fetch()) {
+                    client.guilds.cache.get(interaction.guild.id)?.members.cache.get(member[0])?.roles.cache.has(args[1])
+                        ? null
+                        : await member[1].remove().catch((err) => {
+                              client.logger.error(err);
+                          });
+                }
+            }
+
+            return;
+        } else if (args[0] === 'lock') {
+            if (!interaction.channel.isThread()) {
+                await interaction.editReply({ content: 'This is only available in threads.' });
+                return;
+            }
+
+            await (interaction.channel as PrivateThreadChannel).setInvitable(!(interaction.channel as PrivateThreadChannel).invitable);
+            await interaction.editReply({
+                content: `${(interaction.channel as PrivateThreadChannel).invitable ? 'Unlocked' : 'Locked'} the thread.`
+            });
+            return;
+        } else if (args[0] === 'archive') {
+            const member = await interaction.guild.members.fetch(interaction.user.id);
+
+            if (!interaction.channel.isThread()) {
+                await interaction.editReply({ content: 'This is only available in threads.' });
+                return;
+            }
+
+            if (!member.roles.cache.has(args[1])) {
+                await interaction.editReply({ content: 'You do not have permission to archive this ticket.' });
+                return;
+            }
+
+            await (interaction.channel as PrivateThreadChannel).setArchived(true);
+            await interaction.editReply({ content: 'Ticket archived.' });
+            return;
+        }
+
+        if (interaction.channel.type !== ChannelType.GuildText) {
+            await interaction.editReply({ content: 'This command is only available in guild message channels.' });
+            return;
+        }
+
+        if (args.length > 0) {
+            const role = interaction.guild.roles.cache.find((role) => role.name.toLowerCase() === args[0].toLowerCase());
+
+            const extraRole = interaction.guild.roles.cache.get(args[1]);
+
+            const member = await interaction.guild.members.fetch(interaction.user.id);
+
+            const ticket = await this.makeTicketThread(interaction.channel, args[0], {
+                members: [member],
+                roles: role ? [role, extraRole].filter((r): r is Role => r !== null && r !== undefined) : []
+            });
 
             if (typeof ticket === 'string') {
                 await interaction.editReply({ content: `Failed to create a ticket: ${ticket}` });
@@ -142,20 +199,30 @@ export default class Brads extends GargoyleCommand {
         }
     }
 
-    private async makeTicketThread(channel: TextChannel, access: { members: GuildMember[]; roles: Role[] }): Promise<PrivateThreadChannel | string> {
+    private async makeTicketThread(
+        channel: TextChannel,
+        category: string,
+        access: { members: GuildMember[]; roles?: Role[] }
+    ): Promise<PrivateThreadChannel | string> {
         if (access.members.length === 0) return 'No members were supplied when opening a ticket.';
         try {
-            const threadName = `${channel.name}-${access.members[0].user.username}`;
+            const threadName = `${category}-${access.members[0].user.username}`;
             const hasThread = channel.threads.cache.filter((thread) => thread.name === threadName && !thread.locked && !thread.archived);
 
-            if (hasThread) return `User already has a thread, <#${hasThread}>`;
+            if (hasThread) {
+                const fetch = await channel.threads.fetchActive(true);
+                if (fetch.threads.find((thread) => thread.name === threadName && !thread.locked && !thread.archived)) {
+                    return `User already has a thread, <#${hasThread.first()!.id}>`;
+                }
+            }
 
             const thread = (await channel.threads
                 .create({
                     reason: `Ticket opened by ${access.members[0].user.username}`,
                     name: threadName,
                     type: ChannelType.PrivateThread,
-                    invitable: true
+                    invitable: true,
+                    autoArchiveDuration: 1440 // 1 day
                 })
                 .catch((err) => {
                     return null;
@@ -171,10 +238,33 @@ export default class Brads extends GargoyleCommand {
                             new SectionBuilder()
                                 .addTextDisplayComponents(
                                     new TextDisplayBuilder().setContent(
-                                        '## Close Ticket\n> By closing the ticket, the ticket will be archived and may later be reopened if necessary.'
+                                        '### Archive Ticket\n> Close the ticket and archive it if it is no longer needed.'
                                     )
                                 )
-                                .setButtonAccessory(new GargoyleButtonBuilder(this, 'close').setStyle(ButtonStyle.Danger).setLabel('Close Ticket'))
+                                .setButtonAccessory(
+                                    new GargoyleButtonBuilder(
+                                        this,
+                                        'archive',
+                                        access.roles && access.roles.length > 0 ? access.roles[0].id : channel.guild.roles.everyone.id
+                                    )
+                                        .setLabel('Archive Ticket')
+                                        .setStyle(ButtonStyle.Secondary)
+                                        .setEmoji('📦')
+                                )
+                        )
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent('### Lock Ticket\n> Lock the ticket to prevent adding new members.')
+                                )
+                                .setButtonAccessory(
+                                    new GargoyleButtonBuilder(this, 'lock').setLabel('Lock Ticket').setStyle(ButtonStyle.Secondary).setEmoji('🔒')
+                                )
+                        )
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                '### Add Participants\n> To add participants to the ticket, you can mention them in the channel.'
+                            )
                         )
                         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                         .addTextDisplayComponents(
@@ -183,11 +273,8 @@ export default class Brads extends GargoyleCommand {
                                     .map((entry) => {
                                         return `<@!${entry.id}>`;
                                     })
-                                    .join(', ')}, ${access.roles
-                                    .map((entry) => {
-                                        return `<@&${entry.id}>`;
-                                    })
-                                    .join(', ')}`
+                                    .join(', ')}${access.roles ? access.roles.map((entry) => `<@&${entry.id}>`).join('') : ''}
+                                    ) : ''}.`
                             )
                         )
                 ]
@@ -206,7 +293,7 @@ export default class Brads extends GargoyleCommand {
             return 'An unknown error occured';
         }
     }
-    
+
     private async isTicketChannel(client: GargoyleClient, channelInput: TextChannel): Promise<boolean> {
         if (!client.user) return false;
         const channel = (await client.channels.fetch(channelInput.id)) as TextChannel;
@@ -236,4 +323,3 @@ export default class Brads extends GargoyleCommand {
         }
     }
 }
-            
