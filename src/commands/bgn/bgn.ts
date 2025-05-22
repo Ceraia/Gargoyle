@@ -2,10 +2,14 @@ import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import {
     ButtonStyle,
+    ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
+    GuildMember,
+    GuildTextChannelType,
     MessageCreateOptions,
     MessageFlags,
+    PermissionFlagsBits,
     SectionBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
@@ -48,7 +52,9 @@ export default class Brads extends GargoyleCommand {
                 .addSectionComponents(
                     new SectionBuilder()
                         .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent('# 👮 Faction Support\n> Report a faction member or ask questions about a faction (for in-game factions, Smugglers, Police, Hitman)')
+                            new TextDisplayBuilder().setContent(
+                                '# 👮 Faction Support\n> Report a faction member or ask questions about a faction (for in-game factions, Smugglers, Police, Hitman)'
+                            )
                         )
                         .setButtonAccessory(
                             new GargoyleButtonBuilder(this, 'faction').setLabel('Factions').setStyle(ButtonStyle.Secondary).setEmoji('👮')
@@ -73,14 +79,16 @@ export default class Brads extends GargoyleCommand {
                         .setButtonAccessory(
                             new GargoyleButtonBuilder(this, 'ban').setLabel('Ban Appeals').setStyle(ButtonStyle.Secondary).setEmoji('🔨')
                         )
-                ).addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                                .addSectionComponents(
+                )
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent('# 🛒 Store\n> For if you want to donate to Brad\'s Network')
-                        )
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent("# 🛒 Store\n> For if you want to donate to Brad's Network"))
                         .setButtonAccessory(
-                            new GargoyleURLButtonBuilder("https://store.bradsnetwork.com/").setLabel('Donate').setStyle(ButtonStyle.Link).setEmoji('🛒')
+                            new GargoyleURLButtonBuilder('https://store.bradsnetwork.com/')
+                                .setLabel('Donate')
+                                .setStyle(ButtonStyle.Link)
+                                .setEmoji('🛒')
                         )
                 )
         ],
@@ -102,5 +110,35 @@ export default class Brads extends GargoyleCommand {
 
             (channel as TextChannel).send(this.panelMessage).catch((err) => client.logger.error(err.stack));
         }
+    }
+}
+
+async function isTicketChannel(client: GargoyleClient, channelInput: TextChannel): Promise<boolean> {
+    if (!client.user) return false;
+    const channel = (await client.channels.fetch(channelInput.id)) as TextChannel;
+    if (
+        channel.permissionOverwrites.resolve(client.user) &&
+        channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendTTSMessages) &&
+        channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendVoiceMessages)
+    ) {
+        return true;
+    }
+    return false;
+}
+
+async function makeTicketChannel(client: GargoyleClient, category: string, member: GuildMember): Promise<TextChannel | null>{
+    try {
+        const parent = (await member.guild.channels.fetch(category))
+
+        if(!parent) return null;
+
+        return await member.guild.channels.create({
+            name: `${parent.name}-${member.displayName}`,
+            type: ChannelType.GuildText,
+            parent: parent.id,
+            permissionOverwrites: [{id: member.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel]}]
+        })
+    } catch (err) {
+        return null;
     }
 }
