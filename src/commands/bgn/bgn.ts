@@ -1,15 +1,17 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import {
+    ButtonInteraction,
     ButtonStyle,
     ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
     GuildMember,
-    GuildTextChannelType,
     MessageCreateOptions,
     MessageFlags,
     PermissionFlagsBits,
+    PrivateThreadChannel,
+    Role,
     SectionBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
@@ -19,6 +21,7 @@ import {
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
 import GargoyleButtonBuilder, { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
 
 export default class Brads extends GargoyleCommand {
     public override category: string = 'bgn';
@@ -111,6 +114,41 @@ export default class Brads extends GargoyleCommand {
             (channel as TextChannel).send(this.panelMessage).catch((err) => client.logger.error(err.stack));
         }
     }
+
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        if (!interaction.guild) {
+            await interaction.editReply({ content: 'This command is only available in guilds.' });
+            return;
+        }
+        if (args.length > 0 && args[0] === 'support') {
+            const channel = interaction.guild.channels.cache.find(
+                (channel) => channel.name.toLowerCase() === args[0].toLowerCase() && channel.type === ChannelType.GuildText
+            ) as TextChannel;
+            const role = interaction.guild.roles.cache.find((role) => role.name.toLowerCase() === args[0].toLowerCase());
+            const member = await interaction.guild.members.fetch(interaction.user.id);
+
+            if (!channel) {
+                await interaction.editReply({ content: `Failed to find ${args[0]} channel` });
+                return;
+            }
+
+            if (!role) {
+                await interaction.editReply({ content: `Failed to find ${args[0]} role.` });
+                return;
+            }
+
+            const ticket = await makeTicketThread(channel, { members: [member], roles: [role] });
+
+            if (typeof ticket === 'string') {
+                await interaction.editReply({ content: `Failed to create a ticket: ${ticket}` });
+                return;
+            }
+
+            await interaction.editReply({ content: `Ticket has been made, you can view it here <#${ticket.id}>` });
+            return;
+        }
+    }
 }
 
 async function isTicketChannel(client: GargoyleClient, channelInput: TextChannel): Promise<boolean> {
@@ -126,19 +164,64 @@ async function isTicketChannel(client: GargoyleClient, channelInput: TextChannel
     return false;
 }
 
-async function makeTicketChannel(client: GargoyleClient, category: string, member: GuildMember): Promise<TextChannel | null>{
+async function makeTicketChannel(client: GargoyleClient, category: string, member: GuildMember): Promise<TextChannel | null> {
     try {
-        const parent = (await member.guild.channels.fetch(category))
+        const parent = await member.guild.channels.fetch(category);
 
-        if(!parent) return null;
+        if (!parent) return null;
 
         return await member.guild.channels.create({
             name: `${parent.name}-${member.displayName}`,
             type: ChannelType.GuildText,
             parent: parent.id,
-            permissionOverwrites: [{id: member.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel]}]
-        })
+            permissionOverwrites: [{ id: member.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }]
+        });
     } catch (err) {
         return null;
+    }
+}
+
+async function makeTicketThread(channel: TextChannel, access: { members: GuildMember[]; roles: Role[] }): Promise<PrivateThreadChannel | string> {
+    if (access.members.length === 0) return "No members were supplied when opening a ticket."
+    try {
+        const thread = (await channel.threads.create({
+            reason: `Ticket opened by ${access.members[0].user.username}`,
+            name: `${channel.name}-${access.members[0].user.username}`,
+            type: ChannelType.PrivateThread,
+            invitable: true
+        }).catch((err)=>{return null})) as PrivateThreadChannel | null;
+
+        if (!thread) return `Failed to create thread, likely no permissions.`
+
+        const message = {
+            flags: [MessageFlags.IsComponentsV2],
+            components: [
+                new ContainerBuilder().addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `-# Involved Parties ${access.members
+                            .map((entry) => {
+                                return `<@!${entry.id}>`;
+                            })
+                            .join(', ')}, ${access.roles
+                            .map((entry) => {
+                                return `<@&${entry.id}>`;
+                            })
+                            .join(', ')}`
+                    )
+                )
+            ]
+        } as MessageCreateOptions;
+
+        await sendAsServer(client, {...message, allowedMentions: {}}, thread)
+
+        /* 
+         * This might look odd, but mentioning a user in a webhook does not add them to a thread.
+        **/
+        await thread.send(message).then((msg)=>msg.delete()) 
+
+        return thread;
+    } catch (err) {
+        client.logger.error(err as string)
+        return 'An unknown error occured'
     }
 }
