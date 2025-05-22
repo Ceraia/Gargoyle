@@ -117,28 +117,20 @@ export default class Brads extends GargoyleCommand {
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        if (!interaction.guild) {
-            await interaction.editReply({ content: 'This command is only available in guilds.' });
+        if (!interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
+            await interaction.editReply({ content: 'This command is only available in guild message channels.' });
             return;
         }
         if (args.length > 0 && args[0] === 'support') {
-            const channel = interaction.guild.channels.cache.find(
-                (channel) => channel.name.toLowerCase() === args[0].toLowerCase() && channel.type === ChannelType.GuildText
-            ) as TextChannel;
             const role = interaction.guild.roles.cache.find((role) => role.name.toLowerCase() === args[0].toLowerCase());
             const member = await interaction.guild.members.fetch(interaction.user.id);
-
-            if (!channel) {
-                await interaction.editReply({ content: `Failed to find ${args[0]} channel` });
-                return;
-            }
 
             if (!role) {
                 await interaction.editReply({ content: `Failed to find ${args[0]} role.` });
                 return;
             }
 
-            const ticket = await makeTicketThread(channel, { members: [member], roles: [role] });
+            const ticket = await this.makeTicketThread(interaction.channel, { members: [member], roles: [role] });
 
             if (typeof ticket === 'string') {
                 await interaction.editReply({ content: `Failed to create a ticket: ${ticket}` });
@@ -149,79 +141,99 @@ export default class Brads extends GargoyleCommand {
             return;
         }
     }
-}
 
-async function isTicketChannel(client: GargoyleClient, channelInput: TextChannel): Promise<boolean> {
-    if (!client.user) return false;
-    const channel = (await client.channels.fetch(channelInput.id)) as TextChannel;
-    if (
-        channel.permissionOverwrites.resolve(client.user) &&
-        channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendTTSMessages) &&
-        channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendVoiceMessages)
-    ) {
-        return true;
+    private async isTicketChannel(client: GargoyleClient, channelInput: TextChannel): Promise<boolean> {
+        if (!client.user) return false;
+        const channel = (await client.channels.fetch(channelInput.id)) as TextChannel;
+        if (
+            channel.permissionOverwrites.resolve(client.user) &&
+            channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendTTSMessages) &&
+            channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendVoiceMessages)
+        ) {
+            return true;
+        }
+        return false;
     }
-    return false;
-}
 
-async function makeTicketChannel(client: GargoyleClient, category: string, member: GuildMember): Promise<TextChannel | null> {
-    try {
-        const parent = await member.guild.channels.fetch(category);
+    private async makeTicketChannel(client: GargoyleClient, category: string, member: GuildMember): Promise<TextChannel | null> {
+        try {
+            const parent = await member.guild.channels.fetch(category);
 
-        if (!parent) return null;
+            if (!parent) return null;
 
-        return await member.guild.channels.create({
-            name: `${parent.name}-${member.displayName}`,
-            type: ChannelType.GuildText,
-            parent: parent.id,
-            permissionOverwrites: [{ id: member.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }]
-        });
-    } catch (err) {
-        return null;
+            return await member.guild.channels.create({
+                name: `${parent.name}-${member.displayName}`,
+                type: ChannelType.GuildText,
+                parent: parent.id,
+                permissionOverwrites: [{ id: member.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }]
+            });
+        } catch (err) {
+            return null;
+        }
     }
-}
 
-async function makeTicketThread(channel: TextChannel, access: { members: GuildMember[]; roles: Role[] }): Promise<PrivateThreadChannel | string> {
-    if (access.members.length === 0) return "No members were supplied when opening a ticket."
-    try {
-        const thread = (await channel.threads.create({
-            reason: `Ticket opened by ${access.members[0].user.username}`,
-            name: `${channel.name}-${access.members[0].user.username}`,
-            type: ChannelType.PrivateThread,
-            invitable: true
-        }).catch((err)=>{return null})) as PrivateThreadChannel | null;
+    private async makeTicketThread(channel: TextChannel, access: { members: GuildMember[]; roles: Role[] }): Promise<PrivateThreadChannel | string> {
+        if (access.members.length === 0) return 'No members were supplied when opening a ticket.';
+        try {
+            const threadName = `${channel.name}-${access.members[0].user.username}`
+            const hasThread = channel.threads.cache.filter((thread)=>thread.name === threadName && !thread.locked && !thread.archived)
 
-        if (!thread) return `Failed to create thread, likely no permissions.`
+            if(hasThread) return `User already has a thread, <#${hasThread}>`
 
-        const message = {
-            flags: [MessageFlags.IsComponentsV2],
-            components: [
-                new ContainerBuilder().addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `-# Involved Parties ${access.members
-                            .map((entry) => {
-                                return `<@!${entry.id}>`;
-                            })
-                            .join(', ')}, ${access.roles
-                            .map((entry) => {
-                                return `<@&${entry.id}>`;
-                            })
-                            .join(', ')}`
-                    )
-                )
-            ]
-        } as MessageCreateOptions;
+            const thread = (await channel.threads
+                .create({
+                    reason: `Ticket opened by ${access.members[0].user.username}`,
+                    name: threadName,
+                    type: ChannelType.PrivateThread,
+                    invitable: true
+                })
+                .catch((err) => {
+                    return null;
+                })) as PrivateThreadChannel | null;
 
-        await sendAsServer(client, {...message, allowedMentions: {}}, thread)
+            if (!thread) return `Failed to create thread, likely no permissions.`;
 
-        /* 
-         * This might look odd, but mentioning a user in a webhook does not add them to a thread.
-        **/
-        await thread.send(message).then((msg)=>msg.delete()) 
+            const message = {
+                flags: [MessageFlags.IsComponentsV2],
+                components: [
+                    new ContainerBuilder()
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(
+                                        '## Close Ticket\n> By closing the ticket, the ticket will be archived and may later be reopened if necessary.'
+                                    )
+                                )
+                                .setButtonAccessory(new GargoyleButtonBuilder(this, 'close').setStyle(ButtonStyle.Danger).setLabel('Close Ticket'))
+                        )
+                        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `-# Initially involved parties ${access.members
+                                    .map((entry) => {
+                                        return `<@!${entry.id}>`;
+                                    })
+                                    .join(', ')}, ${access.roles
+                                    .map((entry) => {
+                                        return `<@&${entry.id}>`;
+                                    })
+                                    .join(', ')}`
+                            )
+                        )
+                ]
+            } as MessageCreateOptions;
 
-        return thread;
-    } catch (err) {
-        client.logger.error(err as string)
-        return 'An unknown error occured'
+            await sendAsServer(client, { ...message, allowedMentions: {} }, thread);
+
+            /*
+             * This might look odd, but mentioning a user in a webhook does not add them to a thread.
+             **/
+            await thread.send(message).then((msg) => msg.delete());
+
+            return thread;
+        } catch (err) {
+            client.logger.error(err as string);
+            return 'An unknown error occured';
+        }
     }
 }
