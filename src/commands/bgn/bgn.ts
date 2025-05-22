@@ -142,43 +142,13 @@ export default class Brads extends GargoyleCommand {
         }
     }
 
-    private async isTicketChannel(client: GargoyleClient, channelInput: TextChannel): Promise<boolean> {
-        if (!client.user) return false;
-        const channel = (await client.channels.fetch(channelInput.id)) as TextChannel;
-        if (
-            channel.permissionOverwrites.resolve(client.user) &&
-            channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendTTSMessages) &&
-            channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendVoiceMessages)
-        ) {
-            return true;
-        }
-        return false;
-    }
-
-    private async makeTicketChannel(client: GargoyleClient, category: string, member: GuildMember): Promise<TextChannel | null> {
-        try {
-            const parent = await member.guild.channels.fetch(category);
-
-            if (!parent) return null;
-
-            return await member.guild.channels.create({
-                name: `${parent.name}-${member.displayName}`,
-                type: ChannelType.GuildText,
-                parent: parent.id,
-                permissionOverwrites: [{ id: member.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }]
-            });
-        } catch (err) {
-            return null;
-        }
-    }
-
     private async makeTicketThread(channel: TextChannel, access: { members: GuildMember[]; roles: Role[] }): Promise<PrivateThreadChannel | string> {
         if (access.members.length === 0) return 'No members were supplied when opening a ticket.';
         try {
-            const threadName = `${channel.name}-${access.members[0].user.username}`
-            const hasThread = channel.threads.cache.filter((thread)=>thread.name === threadName && !thread.locked && !thread.archived)
+            const threadName = `${channel.name}-${access.members[0].user.username}`;
+            const hasThread = channel.threads.cache.filter((thread) => thread.name === threadName && !thread.locked && !thread.archived);
 
-            if(hasThread) return `User already has a thread, <#${hasThread}>`
+            if (hasThread) return `User already has a thread, <#${hasThread}>`;
 
             const thread = (await channel.threads
                 .create({
@@ -236,4 +206,34 @@ export default class Brads extends GargoyleCommand {
             return 'An unknown error occured';
         }
     }
+    
+    private async isTicketChannel(client: GargoyleClient, channelInput: TextChannel): Promise<boolean> {
+        if (!client.user) return false;
+        const channel = (await client.channels.fetch(channelInput.id)) as TextChannel;
+        if (
+            channel.permissionOverwrites.resolve(client.user) &&
+            channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendTTSMessages) &&
+            channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendVoiceMessages)
+        ) {
+            return true;
+        }
+        return false;
+    }
+    private async makeTicketChannel(client: GargoyleClient, category: string, member: GuildMember): Promise<TextChannel | null> {
+        try {
+            const parent = await member.guild.channels.fetch(category);
+
+            if (!parent) return null;
+
+            return await member.guild.channels.create({
+                name: `${parent.name}-${member.displayName}`,
+                type: ChannelType.GuildText,
+                parent: parent.id,
+                permissionOverwrites: [{ id: member.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }]
+            });
+        } catch (err) {
+            return null;
+        }
+    }
 }
+            
