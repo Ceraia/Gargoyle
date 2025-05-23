@@ -124,6 +124,8 @@ export default class Entropy extends GargoyleCommand {
             if (channel && channel.isVoiceBased()) {
                 playAudio(client, channel as VoiceChannel, 'gong.mp3');
             }
+
+            message.delete().catch(()=>{})
         }
     }
 
