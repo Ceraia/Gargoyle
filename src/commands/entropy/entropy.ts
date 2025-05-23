@@ -445,8 +445,10 @@ class Chinese extends GargoyleEvent {
                 playAudio(client, message.member.voice.channel as VoiceChannel, 'gong.mp3');
             } else {
                 if (message.content.toLowerCase().startsWith(',chinese')) {
+                    client.logger.log("chinese triggered")
                     const match = message.content.match(/,chinese\s+<#(\d+)>/);
                     if (match) {
+                        client.logger.log(match.join(','))
                         const channelId = match[1];
                         const channel = await message.guild!.channels.fetch(channelId);
                         if (channel && channel.isVoiceBased()) {
