@@ -3,13 +3,17 @@
     "main": "src/index.ts",
     "type": "module",
     "dependencies": {
+        "@discordjs/voice": "^0.18.0",
         "colorette": "^2.0.20",
         "discord.js": "^14.19.3",
         "figlet": "^1.8.1",
         "fs": "^0.0.2",
         "gradient-string": "^3.0.0",
+        "libsodium-wrappers": "^0.7.15",
         "mongoose": "^8.15.0",
+        "opusscript": "^0.1.1",
         "path": "^0.12.7",
+        "sodium": "^3.0.2",
         "tsconfig-paths": "^4.2.0",
         "zod": "^3.24.4"
     },

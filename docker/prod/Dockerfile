@@ -2,7 +2,7 @@ FROM oven/bun:alpine
 
 COPY . .
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl ffmpeg
 
 RUN bun install
 

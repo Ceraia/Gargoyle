@@ -2,7 +2,7 @@ FROM oven/bun:alpine
 
 WORKDIR /workspace/gargoyle
 
-RUN apk add --no-cache git curl
+RUN apk add --no-cache git curl ffmpeg
 
 COPY package.json ./package.json
 
