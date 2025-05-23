@@ -440,7 +440,7 @@ class Chinese extends GargoyleEvent {
     public event = Events.MessageCreate as const;
 
     public async execute(client: GargoyleClient, message: Message) {
-        if (!message.guild || message.guild.id !== '1009048008857493624') {
+        if (!message.guild || message.guild.id !== '1009048008857493624') return;
             if (message.content.toLowerCase().includes('china') && message.member && message.member.voice.channel) {
                 playAudio(client, message.member.voice.channel as VoiceChannel, 'gong.mp3');
             } else {
@@ -457,7 +457,7 @@ class Chinese extends GargoyleEvent {
                     }
                 }
             }
-        }
+        
     }
 }
 
