@@ -38,6 +38,9 @@
 			"@src/*": [
 				"./src/*"
 			],
+			"@media/*": [
+				"./media/*"
+			],
 			"@database/*": [
 				"./src/system/backend/database/*"
 			],
