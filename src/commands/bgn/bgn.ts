@@ -1,6 +1,8 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import {
+    ActionRowBuilder,
+    AnySelectMenuInteraction,
     ButtonInteraction,
     ButtonStyle,
     ChannelType,
@@ -8,6 +10,7 @@ import {
     ContainerBuilder,
     GuildMember,
     MessageCreateOptions,
+    MessageEditOptions,
     MessageFlags,
     PermissionFlagsBits,
     PrivateThreadChannel,
@@ -15,13 +18,16 @@ import {
     SectionBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
+    StringSelectMenuBuilder,
     TextChannel,
-    TextDisplayBuilder
+    TextDisplayBuilder,
+    UserSelectMenuBuilder
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
 import GargoyleButtonBuilder, { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
-import { sendAsServer } from '@src/system/backend/tools/server.js';
+import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
+import { GargoyleStringSelectMenuBuilder, GargoyleUserSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 
 export default class Brads extends GargoyleCommand {
     public override category: string = 'bgn';
@@ -54,14 +60,20 @@ export default class Brads extends GargoyleCommand {
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent('# 📦 Staff Matters\n> Applications, reports & questions relating to staff.')
-                        )
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# 📝 Staff Reports\n> Reports & questions relating to staff.'))
                         .setButtonAccessory(
                             new GargoyleButtonBuilder(this, 'staff', '1160189039454982316')
-                                .setLabel('Staff Matters')
+                                .setLabel('Staff Reports')
                                 .setStyle(ButtonStyle.Secondary)
-                                .setEmoji('📦')
+                                .setEmoji('📝')
+                        )
+                )
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# 🚪 Staff Applications\n> Apply to staff.'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'apply').setLabel('Staff Applications').setStyle(ButtonStyle.Secondary).setEmoji('🚪')
                         )
                 )
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
@@ -71,7 +83,10 @@ export default class Brads extends GargoyleCommand {
                             new TextDisplayBuilder().setContent('# 🔨 Ban Appeals\n> For if you want to appeal or question an in-game ban.')
                         )
                         .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'ban').setLabel('Ban Appeals').setStyle(ButtonStyle.Secondary).setEmoji('🔨')
+                            new GargoyleButtonBuilder(this, 'ban', '1160189039454982316')
+                                .setLabel('Ban Appeals')
+                                .setStyle(ButtonStyle.Secondary)
+                                .setEmoji('🔨')
                         )
                 )
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
@@ -85,6 +100,7 @@ export default class Brads extends GargoyleCommand {
                                 .setEmoji('🛒')
                         )
                 )
+                .setAccentColor(0x0ed6ff)
         ],
         flags: [MessageFlags.IsComponentsV2]
     } as MessageCreateOptions;
@@ -109,6 +125,16 @@ export default class Brads extends GargoyleCommand {
                 client.logger.error(err as string);
                 await interaction.reply({ content: 'Failed to send the panel.', flags: [MessageFlags.Ephemeral] });
             }
+        }
+    }
+
+    public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'remove') {
+            await interaction.deferUpdate();
+            for (const userId of interaction.values) {
+                await (interaction.channel as PrivateThreadChannel).members.remove(userId).catch(() => {});
+            }
+            interaction.editReply({ content: 'Removed all of the selected members.', components: [] });
         }
     }
 
@@ -154,21 +180,44 @@ export default class Brads extends GargoyleCommand {
                 content: `${(interaction.channel as PrivateThreadChannel).invitable ? 'Unlocked' : 'Locked'} the thread.`
             });
             return;
-        } else if (args[0] === 'archive') {
+        } else if (args[0] === 'kick') {
             const member = await interaction.guild.members.fetch(interaction.user.id);
 
-            if (!interaction.channel.isThread()) {
+            if (!interaction.channel.isThread() || !interaction.guild) {
                 await interaction.editReply({ content: 'This is only available in threads.' });
                 return;
             }
 
-            if (!member.roles.cache.has(args[1])) {
-                await interaction.editReply({ content: 'You do not have permission to archive this ticket.' });
-                return;
+            if (member.roles.cache.has(args[1])) {
+                const options = (await (interaction.channel as PrivateThreadChannel).members.fetch())
+                    .filter((user) => !user.user?.bot)
+                    .map((user) => {
+                        return {
+                            label:
+                                user.guildMember?.displayName ||
+                                user.user?.displayName ||
+                                interaction.guild?.members.cache.get(user.id)?.displayName ||
+                                client.users.cache.get(user.id)?.displayName ||
+                                user.id,
+                            value: user.id
+                        };
+                    }); // A carefully designed monster to just add everyone who is not a member of that role
+
+                await interaction.editReply({
+                    content: null,
+                    components: [
+                        new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+                            new GargoyleStringSelectMenuBuilder(this, 'remove')
+                                .setPlaceholder('Members to remove')
+                                .setMaxValues(options.length > 25 ? 25 : options.length)
+                                .setOptions(options)
+                        )
+                    ]
+                });
+            } else {
+                await interaction.editReply({ content: 'You do not have permission to remove people from this ticket.' });
             }
 
-            await (interaction.channel as PrivateThreadChannel).setArchived(true);
-            await interaction.editReply({ content: 'Ticket archived.' });
             return;
         }
 
@@ -178,15 +227,19 @@ export default class Brads extends GargoyleCommand {
         }
 
         if (args.length > 0) {
+            await interaction.message.edit(this.panelMessage as MessageEditOptions).catch(async () => {
+                await editAsServer(this.panelMessage, interaction.channel as TextChannel, interaction.message.id);
+            });
+
             const role = interaction.guild.roles.cache.find((role) => role.name.toLowerCase() === args[0].toLowerCase());
 
-            const extraRole = interaction.guild.roles.cache.get(args[1]);
+            const roleOverride = interaction.guild.roles.cache.get(args[1]);
 
             const member = await interaction.guild.members.fetch(interaction.user.id);
 
             const ticket = await this.makeTicketThread(interaction.channel, args[0], {
                 members: [member],
-                roles: role ? [role, extraRole].filter((r): r is Role => r !== null && r !== undefined) : []
+                roles: roleOverride ? [roleOverride] : role ? [role] : []
             });
 
             if (typeof ticket === 'string') {
@@ -254,6 +307,20 @@ export default class Brads extends GargoyleCommand {
                         )
                         .addSectionComponents(
                             new SectionBuilder()
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent('### Kick User\n> Kick a user from the ticket.'))
+                                .setButtonAccessory(
+                                    new GargoyleButtonBuilder(
+                                        this,
+                                        'kick',
+                                        access.roles && access.roles.length > 0 ? access.roles[0].id : channel.guild.roles.everyone.id
+                                    )
+                                        .setLabel('Kick Members')
+                                        .setStyle(ButtonStyle.Secondary)
+                                        .setEmoji('🥾')
+                                )
+                        )
+                        .addSectionComponents(
+                            new SectionBuilder()
                                 .addTextDisplayComponents(
                                     new TextDisplayBuilder().setContent('### Lock Ticket\n> Lock the ticket to prevent adding new members.')
                                 )
@@ -273,8 +340,7 @@ export default class Brads extends GargoyleCommand {
                                     .map((entry) => {
                                         return `<@!${entry.id}>`;
                                     })
-                                    .join(', ')}${access.roles ? access.roles.map((entry) => `<@&${entry.id}>`).join('') : ''}
-                                    ) : ''}.`
+                                    .join(', ')}${access.roles ? access.roles.map((entry) => `<@&${entry.id}>`).join('') : ''}`
                             )
                         )
                 ]
