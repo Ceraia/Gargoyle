@@ -4,14 +4,12 @@ import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
 import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
-import { sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
-    ClientEvents,
     Events,
     GuildMember,
     InteractionContextType,
@@ -56,9 +54,9 @@ export default class Entropy extends GargoyleCommand {
     ];
     public override textCommands = [
         new GargoyleTextCommandBuilder()
-            .setName('entropy')
+            .setName('chinese')
             .setPrivate(true)
-            .setDescription('Open an entropy application panel')
+            .setDescription('Chinese Gong')
             .setContexts([InteractionContextType.Guild])
     ];
 
@@ -119,24 +117,14 @@ export default class Entropy extends GargoyleCommand {
     }
 
     public override async executeTextCommand(client: GargoyleClient, message: Message): Promise<void> {
-        if (message.author.username !== 'axodouble') return;
-        await message.delete();
-        const entropyGuild = client.guilds.cache.get('1009048008857493624');
-        await sendAsServer(
-            client,
-            {
-                embeds: [
-                    new GargoyleEmbedBuilder().setTitle('Entropy Application').setDescription('Gen.4 Entropy. Apply now, you will be notified.')
-                ],
-                components: [
-                    new ActionRowBuilder<ButtonBuilder>().addComponents(
-                        new GargoyleButtonBuilder(this, 'apply').setLabel('Apply').setStyle(ButtonStyle.Secondary)
-                    )
-                ]
-            },
-            message.channel as TextChannel,
-            entropyGuild
-        );
+        const match = message.content.match(/,chinese\s+<#(\d+)>/);
+        if (match) {
+            const channelId = match[1];
+            const channel = await message.guild!.channels.fetch(channelId);
+            if (channel && channel.isVoiceBased()) {
+                playAudio(client, channel as VoiceChannel, 'gong.mp3');
+            }
+        }
     }
 
     public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
@@ -386,7 +374,7 @@ export default class Entropy extends GargoyleCommand {
         }
     }
 
-    public override events = [new RolePrefix(), new LeaveLog(), new Chinese()];
+    public override events = [new RolePrefix(), new LeaveLog()];
 }
 
 class RolePrefix extends GargoyleEvent {
@@ -433,31 +421,6 @@ class LeaveLog extends GargoyleEvent {
         if (!channel) return;
 
         channel.send({ embeds: [new GargoyleEmbedBuilder().setDescription(`User ${member.user.tag} (<@!${member.user.id}>) has left the server.`)] });
-    }
-}
-
-class Chinese extends GargoyleEvent {
-    public event = Events.MessageCreate as const;
-
-    public async execute(client: GargoyleClient, message: Message) {
-        if (!message.guild || message.guild.id !== '1009048008857493624') return;
-            if (message.content.toLowerCase().includes('china') && message.member && message.member.voice.channel) {
-                playAudio(client, message.member.voice.channel as VoiceChannel, 'gong.mp3');
-            } else {
-                if (message.content.toLowerCase().startsWith(',chinese')) {
-                    client.logger.log("chinese triggered")
-                    const match = message.content.match(/,chinese\s+<#(\d+)>/);
-                    if (match) {
-                        client.logger.log(match.join(','))
-                        const channelId = match[1];
-                        const channel = await message.guild!.channels.fetch(channelId);
-                        if (channel && channel.isVoiceBased()) {
-                            playAudio(client, channel as VoiceChannel, 'gong.mp3');
-                        }
-                    }
-                }
-            }
-        
     }
 }
 
