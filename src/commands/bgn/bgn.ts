@@ -12,6 +12,7 @@ import {
     MessageCreateOptions,
     MessageEditOptions,
     MessageFlags,
+    ModalActionRowComponentBuilder,
     PermissionFlagsBits,
     PrivateThreadChannel,
     Role,
@@ -21,6 +22,8 @@ import {
     StringSelectMenuBuilder,
     TextChannel,
     TextDisplayBuilder,
+    TextInputBuilder,
+    TextInputStyle,
     UserSelectMenuBuilder
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
@@ -28,6 +31,7 @@ import client from '@src/system/botClient.js';
 import GargoyleButtonBuilder, { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import { GargoyleStringSelectMenuBuilder, GargoyleUserSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
+import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 
 export default class Brads extends GargoyleCommand {
     public override category: string = 'bgn';
@@ -218,6 +222,20 @@ export default class Brads extends GargoyleCommand {
                 await interaction.editReply({ content: 'You do not have permission to remove people from this ticket.' });
             }
 
+            return;
+        } else if (args[0] === 'apply') {
+            interaction.showModal(
+                new GargoyleModalBuilder(this, 'apply')
+                    .setTitle("Brad's RP Staff Application")
+                    .setComponents(
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                            new TextInputBuilder()
+                                .setLabel('Steam Profile Link')
+                                .setStyle(TextInputStyle.Short)
+                                .setPlaceholder('https://steamcommunity.com/profiles/1234567890')
+                        )
+                    )
+            );
             return;
         }
 
