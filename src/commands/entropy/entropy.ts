@@ -11,6 +11,7 @@ import {
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
+    ClientEvents,
     Events,
     GuildMember,
     InteractionContextType,
@@ -21,12 +22,14 @@ import {
     PermissionFlagsBits,
     TextChannel,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    VoiceChannel
 } from 'discord.js';
 import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
+import { playAudio } from '@src/system/backend/tools/voice.js';
 
 export default class Entropy extends GargoyleCommand {
     public override category: string = 'entropy';
@@ -383,7 +386,7 @@ export default class Entropy extends GargoyleCommand {
         }
     }
 
-    public override events = [new RolePrefix(), new LeaveLog()];
+    public override events = [new RolePrefix(), new LeaveLog(), new Chinese()];
 }
 
 class RolePrefix extends GargoyleEvent {
@@ -430,6 +433,29 @@ class LeaveLog extends GargoyleEvent {
         if (!channel) return;
 
         channel.send({ embeds: [new GargoyleEmbedBuilder().setDescription(`User ${member.user.tag} (<@!${member.user.id}>) has left the server.`)] });
+    }
+}
+
+class Chinese extends GargoyleEvent {
+    public event = Events.MessageCreate as const;
+
+    public async execute(client: GargoyleClient, message: Message) {
+        if (!message.guild || message.guild.id !== '1009048008857493624') {
+            if (message.content.toLowerCase().includes('china') && message.member && message.member.voice.channel) {
+                playAudio(client, message.member.voice.channel as VoiceChannel, 'gong.mp3');
+            } else {
+                if (message.content.toLowerCase().startsWith(',chinese')) {
+                    const match = message.content.match(/,chinese\s+<#(\d+)>/);
+                    if (match) {
+                        const channelId = match[1];
+                        const channel = await message.guild!.channels.fetch(channelId);
+                        if (channel && channel.isVoiceBased()) {
+                            playAudio(client, channel as VoiceChannel, 'gong.mp3');
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
