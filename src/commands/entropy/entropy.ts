@@ -19,7 +19,8 @@ import {
     PermissionFlagsBits,
     TextChannel,
     TextInputBuilder,
-    TextInputStyle} from 'discord.js';
+    TextInputStyle
+} from 'discord.js';
 import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
@@ -47,8 +48,7 @@ export default class Entropy extends GargoyleCommand {
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
-    public override textCommands = [
-    ];
+    public override textCommands = [];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.options.getSubcommand() === 'calculate') {

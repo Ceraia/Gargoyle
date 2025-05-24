@@ -12,7 +12,7 @@ import { createReadStream } from 'node:fs';
 import { join } from 'node:path';
 import GargoyleClient from '../classes/gargoyleClient.js';
 
-export async function playAudio(client: GargoyleClient,channel: VoiceChannel, media: string) {
+export async function playAudio(client: GargoyleClient, channel: VoiceChannel, media: string) {
     const connection = joinVoiceChannel({
         channelId: channel.id,
         guildId: channel.guild.id,
@@ -22,7 +22,7 @@ export async function playAudio(client: GargoyleClient,channel: VoiceChannel, me
     try {
         await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
     } catch (error) {
-        client.logger.error(error as string)
+        client.logger.error(error as string);
         connection.destroy();
         return;
     }
@@ -43,7 +43,7 @@ export async function playAudio(client: GargoyleClient,channel: VoiceChannel, me
     });
 
     player.on('error', (error) => {
-        client.logger.error(error)
+        client.logger.error(error);
         connection.destroy();
     });
 }
