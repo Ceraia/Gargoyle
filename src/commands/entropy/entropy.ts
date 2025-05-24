@@ -13,21 +13,16 @@ import {
     Events,
     GuildMember,
     InteractionContextType,
-    Message,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
     TextChannel,
     TextInputBuilder,
-    TextInputStyle,
-    VoiceChannel
-} from 'discord.js';
+    TextInputStyle} from 'discord.js';
 import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
-import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
-import { playAudio } from '@src/system/backend/tools/voice.js';
 
 export default class Entropy extends GargoyleCommand {
     public override category: string = 'entropy';
@@ -53,11 +48,6 @@ export default class Entropy extends GargoyleCommand {
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
     public override textCommands = [
-        new GargoyleTextCommandBuilder()
-            .setName('chinese')
-            .setPrivate(true)
-            .setDescription('Chinese Gong')
-            .setContexts([InteractionContextType.Guild])
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
@@ -113,19 +103,6 @@ export default class Entropy extends GargoyleCommand {
             const userVoiceActivity = await getUserVoiceActivity(user.id, interaction.guild.id, 7 * 24 * 60);
 
             await interaction.editReply({ content: `Voice activity for ${user.username} in the past 7 days: ${userVoiceActivity} minutes` });
-        }
-    }
-
-    public override async executeTextCommand(client: GargoyleClient, message: Message): Promise<void> {
-        const match = message.content.match(/,chinese\s+<#(\d+)>/);
-        if (match) {
-            const channelId = match[1];
-            const channel = await message.guild!.channels.fetch(channelId);
-            if (channel && channel.isVoiceBased()) {
-                playAudio(client, channel as VoiceChannel, 'gong.mp3');
-            }
-
-            message.delete().catch(()=>{})
         }
     }
 

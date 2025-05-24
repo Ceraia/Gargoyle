@@ -2,7 +2,8 @@ import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleContainerBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
-import { ChatInputCommandInteraction, InteractionContextType, InteractionResponse, MessageFlags } from 'discord.js';
+import { playAudio } from '@src/system/backend/tools/voice.js';
+import { ChannelType, ChatInputCommandInteraction, GuildMember, InteractionContextType, InteractionResponse, MessageFlags, VoiceChannel } from 'discord.js';
 
 export default class Fun extends GargoyleCommand {
     public override category: string = 'fun';
@@ -61,11 +62,21 @@ export default class Fun extends GargoyleCommand {
                     .setName('8ball')
                     .setDescription('Ask the magic 8ball a question.')
                     .addStringOption((option) => option.setName('question').setDescription('The question to ask the magic 8ball.').setRequired(true))
-            )
+        ).addSubcommand((subcommand) =>
+            subcommand.setName('gong')
+                .setDescription('Play a gong sound effect. This command is only available in voice channels.')
+                .addChannelOption((option) =>
+                    option
+                        .setName('channel')
+                        .setDescription('The voice channel to play the gong sound effect in.')
+                        .addChannelTypes(ChannelType.GuildVoice) 
+                        .setRequired(false)
+                )
+        )
             .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]) as GargoyleSlashCommandBuilder
     ];
 
-    public override executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+    public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         const subcommandGroup = interaction.options.getSubcommandGroup();
         const subcommand = interaction.options.getSubcommand();
 
@@ -79,6 +90,32 @@ export default class Fun extends GargoyleCommand {
 
         if (subcommand === '8ball') {
             return eightBall(interaction);
+        }
+
+        if (subcommand === 'gong') {
+            if(!interaction.guild) {
+                return interaction.reply({
+                    content: 'This command can only be used in a guild.',
+                    flags: [MessageFlags.Ephemeral]
+                });
+            }
+            let channel = interaction.options.getChannel('channel');
+            if (!channel) {
+                if ('voice' in (interaction.member ?? {})) {
+                    channel = (interaction.member as GuildMember).voice.channel;
+                }
+            }
+            if (!channel || channel.type !== ChannelType.GuildVoice) {
+                return interaction.reply({
+                    content: 'You must be in a voice channel or specify a valid voice channel to play the gong sound effect.',
+                    flags: [MessageFlags.Ephemeral]
+                });
+            }
+            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            await playAudio(client, channel as VoiceChannel, 'gong.mp3');
+            await interaction.editReply({
+                content: 'Gong',
+            });
         }
 
         return null;
