@@ -309,6 +309,18 @@ export default class Brads extends GargoyleCommand {
         }
 
         if (args.length > 0) {
+            if (
+                interaction.guild?.members.cache
+                    .get(interaction.user.id)
+                    ?.roles.cache.filter((role) => role.name.toLowerCase().includes(`${args[0].toLowerCase()} blacklist`))
+            ) {
+                await interaction.reply({
+                    content: `You are blacklisted from using any ${args[0].toLowerCase()} commands.`,
+                    flags: [MessageFlags.Ephemeral]
+                });
+                return;
+            }
+
             await interaction.message.edit(this.panelMessage as MessageEditOptions).catch(async () => {
                 await editAsServer(this.panelMessage, interaction.channel as TextChannel, interaction.message.id);
             });
