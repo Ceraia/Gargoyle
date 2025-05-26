@@ -312,7 +312,7 @@ export default class Brads extends GargoyleCommand {
             if (
                 interaction.guild?.members.cache
                     .get(interaction.user.id)
-                    ?.roles.cache.filter((role) => role.name.toLowerCase().includes(`${args[0].toLowerCase()} blacklist`))
+                    ?.roles.cache.some((role) => role.name.toLowerCase().includes(`${args[0].toLowerCase()} blacklist`))
             ) {
                 await interaction.editReply({
                     content: `You are blacklisted from using any ${args[0].toLowerCase()} commands.`,
