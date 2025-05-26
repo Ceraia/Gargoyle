@@ -13,7 +13,7 @@ import {
     MessageEditOptions,
     MessageFlags,
     ModalActionRowComponentBuilder,
-    PermissionFlagsBits,
+    ModalSubmitInteraction,
     PrivateThreadChannel,
     Role,
     SectionBuilder,
@@ -23,14 +23,13 @@ import {
     TextChannel,
     TextDisplayBuilder,
     TextInputBuilder,
-    TextInputStyle,
-    UserSelectMenuBuilder
+    TextInputStyle
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
 import GargoyleButtonBuilder, { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
-import { GargoyleStringSelectMenuBuilder, GargoyleUserSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
+import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 
 export default class Brads extends GargoyleCommand {
@@ -132,7 +131,7 @@ export default class Brads extends GargoyleCommand {
         }
     }
 
-    public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
+    public override async executeSelectMenuCommand(_client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'remove') {
             await interaction.deferUpdate();
             for (const userId of interaction.values) {
@@ -141,8 +140,87 @@ export default class Brads extends GargoyleCommand {
             interaction.editReply({ content: 'Removed all of the selected members.', components: [] });
         }
     }
-
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'apply') {
+            if (args.length === 1) {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                await interaction.editReply({
+                    components: [
+                        new ContainerBuilder()
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    'You can apply for staff by clicking the button below. You will be asked to fill out a form with some questions, please answer them as best as you can.'
+                                ),
+                                new TextDisplayBuilder().setContent(
+                                    '## Requirements' +
+                                        '\n> - You must be at least 15 years old.' +
+                                        '\n> - You must have at least had 50 hours of gameplay on the server.' +
+                                        '\n> - You must have linked steam with your discord account.' +
+                                        '\n> - You must have a good understanding of the rules.' +
+                                        '\n> - You must not have received any form of punishment 2 weeks before/after applying.' +
+                                        '\n> - You must not be on a Permanent ban agreement when applying, You may apply once it is over.'
+                                )
+                            )
+                            .addActionRowComponents(
+                                new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                                    new GargoyleButtonBuilder(this, 'apply', 'apply')
+                                        .setLabel('Apply for Staff')
+                                        .setStyle(ButtonStyle.Primary)
+                                        .setEmoji('🚪')
+                                )
+                            )
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+            } else {
+                await interaction
+                    .showModal(
+                        new GargoyleModalBuilder(this, 'apply')
+                            .setTitle('Staff Application')
+                            .setComponents(
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                                    new TextInputBuilder()
+                                        .setLabel('Steam Profile Link')
+                                        .setCustomId('steam')
+                                        .setStyle(TextInputStyle.Short)
+                                        .setPlaceholder('https://steamcommunity.com/profiles/1234567890')
+                                ),
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                                    new TextInputBuilder()
+                                        .setLabel('What timezone are you in?')
+                                        .setCustomId('timezone')
+                                        .setStyle(TextInputStyle.Short)
+                                        .setPlaceholder('Amsterdam, Berlin, Rome, Stockholm, Vienna (UTC+1)')
+                                ),
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                                    new TextInputBuilder()
+                                        .setLabel('Do you have other staff experience?')
+                                        .setCustomId('other')
+                                        .setStyle(TextInputStyle.Paragraph)
+                                        .setPlaceholder('If so, please list them here and explain your role in them.')
+                                ),
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                                    new TextInputBuilder()
+                                        .setLabel('Why do you want to be staff?')
+                                        .setCustomId('reason')
+                                        .setStyle(TextInputStyle.Paragraph)
+                                        .setPlaceholder('Please explain why you want to be staff.')
+                                ),
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                                    new TextInputBuilder()
+                                        .setLabel('What makes you stand out?')
+                                        .setCustomId('stand')
+                                        .setStyle(TextInputStyle.Paragraph)
+                                        .setPlaceholder('Please explain what makes you stand out from other applicants.')
+                                )
+                            )
+                    )
+                    .catch((err) => {
+                        client.logger.error(`Failed to show application modal : ${err.stack}`);
+                    });
+            }
+            return;
+        }
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         if (!interaction.guild || !interaction.channel) {
@@ -223,20 +301,6 @@ export default class Brads extends GargoyleCommand {
             }
 
             return;
-        } else if (args[0] === 'apply') {
-            interaction.showModal(
-                new GargoyleModalBuilder(this, 'apply')
-                    .setTitle("Brad's RP Staff Application")
-                    .setComponents(
-                        new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
-                            new TextInputBuilder()
-                                .setLabel('Steam Profile Link')
-                                .setStyle(TextInputStyle.Short)
-                                .setPlaceholder('https://steamcommunity.com/profiles/1234567890')
-                        )
-                    )
-            );
-            return;
         }
 
         if (interaction.channel.type !== ChannelType.GuildText) {
@@ -269,6 +333,55 @@ export default class Brads extends GargoyleCommand {
             return;
         }
     }
+    
+    public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
+        if (args[0] === 'apply') {
+            const steam = interaction.fields.getTextInputValue('steam');
+            const timezone = interaction.fields.getTextInputValue('timezone');
+            const other = interaction.fields.getTextInputValue('other');
+            const reason = interaction.fields.getTextInputValue('reason');
+            const stand = interaction.fields.getTextInputValue('stand');
+
+            if (!interaction.guild) {
+                interaction.reply({ content: 'This can only be used in a guild channel.', flags: [MessageFlags.Ephemeral] });
+                return;
+            }
+
+            const applicationChannel = client.guilds.cache
+                .get(interaction.guild.id)!
+                .channels.cache.find((channel) => channel.type === ChannelType.GuildText && channel.name === 'staff-applications');
+            if (!applicationChannel || applicationChannel.type !== ChannelType.GuildText) {
+                interaction.reply({
+                    content: 'The staff applications channel does not exist or is not a text channel.',
+                    flags: [MessageFlags.Ephemeral]
+                });
+                return;
+            }
+
+            (applicationChannel as TextChannel)
+                .send({
+                    content:
+                        `**New Staff Application from <@!${interaction.user.id}>**\n` +
+                        `**Steam Profile:** ${steam}\n` +
+                        `**Timezone:** ${timezone}\n` +
+                        `**Other Experience:** ${other}\n` +
+                        `**Reason for Applying:** ${reason}\n` +
+                        `**What Makes You Stand Out:** ${stand}`,
+                    allowedMentions: { parse: [] }
+                })
+                .then(() => {
+                    interaction.reply({ content: 'Your application has been submitted successfully!', flags: [MessageFlags.Ephemeral] });
+                })
+                .catch((err) => {
+                    client.logger.error(`Failed to send application message: ${err.stack}`);
+                    interaction.reply({
+                        content: 'There was an error submitting your application. Please try again later.',
+                        flags: [MessageFlags.Ephemeral]
+                    });
+                });
+            return;
+        }
+    }
 
     private async makeTicketThread(
         channel: TextChannel,
@@ -295,7 +408,7 @@ export default class Brads extends GargoyleCommand {
                     invitable: true,
                     autoArchiveDuration: 1440 // 1 day
                 })
-                .catch((err) => {
+                .catch((_err) => {
                     return null;
                 })) as PrivateThreadChannel | null;
 
@@ -375,35 +488,6 @@ export default class Brads extends GargoyleCommand {
         } catch (err) {
             client.logger.error(err as string);
             return 'An unknown error occured';
-        }
-    }
-
-    private async isTicketChannel(client: GargoyleClient, channelInput: TextChannel): Promise<boolean> {
-        if (!client.user) return false;
-        const channel = (await client.channels.fetch(channelInput.id)) as TextChannel;
-        if (
-            channel.permissionOverwrites.resolve(client.user) &&
-            channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendTTSMessages) &&
-            channel.permissionOverwrites.resolve(client.user)?.allow.has(PermissionFlagsBits.SendVoiceMessages)
-        ) {
-            return true;
-        }
-        return false;
-    }
-    private async makeTicketChannel(client: GargoyleClient, category: string, member: GuildMember): Promise<TextChannel | null> {
-        try {
-            const parent = await member.guild.channels.fetch(category);
-
-            if (!parent) return null;
-
-            return await member.guild.channels.create({
-                name: `${parent.name}-${member.displayName}`,
-                type: ChannelType.GuildText,
-                parent: parent.id,
-                permissionOverwrites: [{ id: member.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }]
-            });
-        } catch (err) {
-            return null;
         }
     }
 }
