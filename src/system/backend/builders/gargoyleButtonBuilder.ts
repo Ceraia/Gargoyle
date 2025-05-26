@@ -46,13 +46,13 @@ class GargoyleURLButtonBuilder extends ButtonBuilder {
      * @constructor
      * @param {string} argument - The argument to be used for the button label and custom ID.
      */
-    constructor(url:string) {
+    constructor(url: string) {
         super();
-        this.setURL(url)
+        this.setURL(url);
         this.setStyle(ButtonStyle.Link);
         this.setDisabled(false);
     }
 }
 
-export {GargoyleURLButtonBuilder}
+export { GargoyleURLButtonBuilder };
 export default GargoyleButtonBuilder;

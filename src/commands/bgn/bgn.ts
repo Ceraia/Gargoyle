@@ -315,7 +315,7 @@ export default class Brads extends GargoyleCommand {
                     ?.roles.cache.some((role) => role.name.toLowerCase().includes(`${args[0].toLowerCase()} blacklist`))
             ) {
                 await interaction.editReply({
-                    content: `You are blacklisted from using any ${args[0].toLowerCase()} commands.`,
+                    content: `You are blacklisted from using any ${args[0].toLowerCase()} commands.`
                 });
                 return;
             }
@@ -356,7 +356,7 @@ export default class Brads extends GargoyleCommand {
             const stand = interaction.fields.getTextInputValue('stand');
 
             if (!interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
-                interaction.editReply({ content: 'This can only be used in a guild channel.'});
+                interaction.editReply({ content: 'This can only be used in a guild channel.' });
                 return;
             }
 
@@ -367,8 +367,9 @@ export default class Brads extends GargoyleCommand {
                 const fetch = await interaction.channel.threads.fetchActive(true);
                 if (fetch.threads.find((thread) => thread.name === threadName && !thread.locked && !thread.archived)) {
                     await interaction.editReply({
-                        content: `You already have a thread, <#${hasThread.first()!.id}>`,
-                    }); return;
+                        content: `You already have a thread, <#${hasThread.first()!.id}>`
+                    });
+                    return;
                 }
             }
 
@@ -388,18 +389,18 @@ export default class Brads extends GargoyleCommand {
                 await interaction.editReply({ content: 'Failed to create a thread, likely no permissions.' });
                 return;
             }
-            
+
             thread
                 .send({
                     components: [
                         new ContainerBuilder().addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
-                                `### Staff Application from <@!${interaction.user.id}>\n`+
-                                `> **Steam Profile :** ${steam}\n> **Timezone:** ${timezone}\n`+
-                                `> **Other Experience :** ${other}\n`+
-                                `> **Reason for Applying :** ${reason}\n`+
-                                `> **What makes you stand out? :** ${stand}` +
-                                `-# Add the user to the application to ask questions by mentioning them in the thread.`
+                                `### Staff Application from <@!${interaction.user.id}>\n` +
+                                    `> **Steam Profile :** ${steam}\n> **Timezone:** ${timezone}\n` +
+                                    `> **Other Experience :** ${other}\n` +
+                                    `> **Reason for Applying :** ${reason}\n` +
+                                    `> **What makes you stand out? :** ${stand}` +
+                                    `-# Add the user to the application to ask questions by mentioning them in the thread.`
                             )
                         )
                     ],

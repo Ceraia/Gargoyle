@@ -136,11 +136,13 @@ export default class Server extends GargoyleCommand {
                 interaction.options.getAttachment('attachment8'),
                 interaction.options.getAttachment('attachment9')
             ];
-            return sendAsServer(client, {
-                files: [
-                    ...attachments.filter((attachment) => attachment !== null)
-                ]
-            }, interaction.channel as TextChannel);
+            return sendAsServer(
+                client,
+                {
+                    files: [...attachments.filter((attachment) => attachment !== null)]
+                },
+                interaction.channel as TextChannel
+            );
         } else if (interaction.options.getSubcommand() === 'prefix') {
             const prefix = interaction.options.getString('prefix');
             if (!prefix) return;
