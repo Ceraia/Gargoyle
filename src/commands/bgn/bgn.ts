@@ -333,50 +333,76 @@ export default class Brads extends GargoyleCommand {
             return;
         }
     }
-    
-    public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
+
+    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'apply') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
             const steam = interaction.fields.getTextInputValue('steam');
             const timezone = interaction.fields.getTextInputValue('timezone');
             const other = interaction.fields.getTextInputValue('other');
             const reason = interaction.fields.getTextInputValue('reason');
             const stand = interaction.fields.getTextInputValue('stand');
 
-            if (!interaction.guild) {
-                interaction.reply({ content: 'This can only be used in a guild channel.', flags: [MessageFlags.Ephemeral] });
+            if (!interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
+                interaction.editReply({ content: 'This can only be used in a guild channel.'});
                 return;
             }
 
-            const applicationChannel = client.guilds.cache
-                .get(interaction.guild.id)!
-                .channels.cache.find((channel) => channel.type === ChannelType.GuildText && channel.name === 'staff-applications');
-            if (!applicationChannel || applicationChannel.type !== ChannelType.GuildText) {
-                interaction.reply({
-                    content: 'The staff applications channel does not exist or is not a text channel.',
-                    flags: [MessageFlags.Ephemeral]
-                });
-                return;
+            const threadName = `staffapp-${interaction.user.username}`;
+            const hasThread = interaction.channel.threads.cache.filter((thread) => thread.name === threadName && !thread.locked && !thread.archived);
+
+            if (hasThread) {
+                const fetch = await interaction.channel.threads.fetchActive(true);
+                if (fetch.threads.find((thread) => thread.name === threadName && !thread.locked && !thread.archived)) {
+                    await interaction.editReply({
+                        content: `You already have a thread, <#${hasThread.first()!.id}>`,
+                    }); return;
+                }
             }
 
-            (applicationChannel as TextChannel)
+            const thread = (await interaction.channel.threads
+                .create({
+                    reason: `Staff application by ${interaction.user.username}`,
+                    name: threadName,
+                    type: ChannelType.PrivateThread,
+                    invitable: true,
+                    autoArchiveDuration: 1440 // 1 day
+                })
+                .catch((_err) => {
+                    return null;
+                })) as PrivateThreadChannel | null;
+
+            if (!thread) {
+                await interaction.editReply({ content: 'Failed to create a thread, likely no permissions.' });
+                return;
+            }
+            
+            thread
                 .send({
-                    content:
-                        `**New Staff Application from <@!${interaction.user.id}>**\n` +
-                        `**Steam Profile:** ${steam}\n` +
-                        `**Timezone:** ${timezone}\n` +
-                        `**Other Experience:** ${other}\n` +
-                        `**Reason for Applying:** ${reason}\n` +
-                        `**What Makes You Stand Out:** ${stand}`,
+                    components: [
+                        new ContainerBuilder().addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `### Staff Application from <@!${interaction.user.id}>\n`+
+                                `> **Steam Profile :** ${steam}\n> **Timezone:** ${timezone}\n`+
+                                `> **Other Experience :** ${other}\n`+
+                                `> **Reason for Applying :** ${reason}\n`+
+                                `> **What makes you stand out? :** ${stand}` +
+                                `-# Add the user to the application to ask questions by mentioning them in the thread.`
+                            )
+                        )
+                    ],
+                    flags: [MessageFlags.IsComponentsV2],
                     allowedMentions: { parse: [] }
                 })
                 .then(() => {
-                    interaction.reply({ content: 'Your application has been submitted successfully!', flags: [MessageFlags.Ephemeral] });
+                    thread.send({ content: '<@&1160189033113206844> <@&1160189040478388334>' });
+                    interaction.editReply({ content: 'Your application has been submitted successfully!' });
                 })
                 .catch((err) => {
                     client.logger.error(`Failed to send application message: ${err.stack}`);
-                    interaction.reply({
-                        content: 'There was an error submitting your application. Please try again later.',
-                        flags: [MessageFlags.Ephemeral]
+                    interaction.editReply({
+                        content: 'There was an error submitting your application. Please try again later.'
                     });
                 });
             return;
