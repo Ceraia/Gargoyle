@@ -44,7 +44,31 @@ export default class Server extends GargoyleCommand {
                         subcommand
                             .setName('attachment')
                             .setDescription('Send an attachment as the server')
-                            .addAttachmentOption((option) => option.setName('attachment').setDescription('Attachment to send').setRequired(true))
+                            .addAttachmentOption((option) => option.setName('attachment0').setDescription('Attachment to send').setRequired(true))
+                            .addAttachmentOption((option) =>
+                                option.setName('attachment1').setDescription('Another attachment to send').setRequired(false)
+                            )
+                            .addAttachmentOption((option) =>
+                                option.setName('attachment3').setDescription('Another attachment to send').setRequired(false)
+                            )
+                            .addAttachmentOption((option) =>
+                                option.setName('attachment4').setDescription('Another attachment to send').setRequired(false)
+                            )
+                            .addAttachmentOption((option) =>
+                                option.setName('attachment5').setDescription('Another attachment to send').setRequired(false)
+                            )
+                            .addAttachmentOption((option) =>
+                                option.setName('attachment6').setDescription('Another attachment to send').setRequired(false)
+                            )
+                            .addAttachmentOption((option) =>
+                                option.setName('attachment7').setDescription('Another attachment to send').setRequired(false)
+                            )
+                            .addAttachmentOption((option) =>
+                                option.setName('attachment8').setDescription('Another attachment to send').setRequired(false)
+                            )
+                            .addAttachmentOption((option) =>
+                                option.setName('attachment9').setDescription('Another attachment to send').setRequired(false)
+                            )
                     )
             )
             .addSubcommandGroup((subcommandGroup) =>
@@ -98,9 +122,25 @@ export default class Server extends GargoyleCommand {
                         )
                     )
             );
-        } else if (interaction.options.getSubcommand() === 'attachment') {
+        } else if (interaction.options.getSubcommand().startsWith('attachment')) {
             await interaction.reply({ content: 'Sending attachment, one moment...', flags: MessageFlags.Ephemeral });
-            return sendAsServer(client, { files: [interaction.options.getAttachment('attachment')!] }, interaction.channel as TextChannel);
+            const attachments = [
+                interaction.options.getAttachment('attachment0', true),
+                interaction.options.getAttachment('attachment1'),
+                interaction.options.getAttachment('attachment2'),
+                interaction.options.getAttachment('attachment3'),
+                interaction.options.getAttachment('attachment4'),
+                interaction.options.getAttachment('attachment5'),
+                interaction.options.getAttachment('attachment6'),
+                interaction.options.getAttachment('attachment7'),
+                interaction.options.getAttachment('attachment8'),
+                interaction.options.getAttachment('attachment9')
+            ];
+            return sendAsServer(client, {
+                files: [
+                    ...attachments.filter((attachment) => attachment !== null)
+                ]
+            }, interaction.channel as TextChannel);
         } else if (interaction.options.getSubcommand() === 'prefix') {
             const prefix = interaction.options.getString('prefix');
             if (!prefix) return;
