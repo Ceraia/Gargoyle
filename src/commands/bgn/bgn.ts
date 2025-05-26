@@ -314,9 +314,8 @@ export default class Brads extends GargoyleCommand {
                     .get(interaction.user.id)
                     ?.roles.cache.filter((role) => role.name.toLowerCase().includes(`${args[0].toLowerCase()} blacklist`))
             ) {
-                await interaction.reply({
+                await interaction.editReply({
                     content: `You are blacklisted from using any ${args[0].toLowerCase()} commands.`,
-                    flags: [MessageFlags.Ephemeral]
                 });
                 return;
             }
