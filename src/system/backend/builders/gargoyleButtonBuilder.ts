@@ -18,17 +18,41 @@ class GargoyleButtonBuilder extends ButtonBuilder {
      */
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(
-            `cmd-${
-                command.slashCommand?.name.toLowerCase() ??
-                command.textCommand?.name.toLowerCase() ??
-                command.slashCommands[0].name.toLowerCase() ??
-                command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
-        );
+        if (this.data.style !== ButtonStyle.Link)
+            this.setCustomId(
+                `cmd-${
+                    command.slashCommand?.name.toLowerCase() ??
+                    command.textCommand?.name.toLowerCase() ??
+                    command.slashCommands[0].name.toLowerCase() ??
+                    command.textCommands[0].name.toLowerCase()
+                }-${argument.join('-').toLowerCase()}`
+            );
         this.setStyle(ButtonStyle.Primary);
         this.setDisabled(false);
     }
 }
 
+/**
+ * A builder class for creating Gargoyle buttons with specific commands and arguments.
+ * Extends the `ButtonBuilder` class.
+ *
+ * @class
+ * @extends ButtonBuilder
+ */
+class GargoyleURLButtonBuilder extends ButtonBuilder {
+    /**
+     * Creates an instance of GargoyleButtonBuilder.
+     *
+     * @constructor
+     * @param {string} argument - The argument to be used for the button label and custom ID.
+     */
+    constructor(url:string) {
+        super();
+        this.setURL(url)
+        this.setStyle(ButtonStyle.Link);
+        this.setDisabled(false);
+    }
+}
+
+export {GargoyleURLButtonBuilder}
 export default GargoyleButtonBuilder;
