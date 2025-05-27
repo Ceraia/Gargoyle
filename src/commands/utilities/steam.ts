@@ -56,7 +56,7 @@ export default class Steam extends GargoyleCommand {
             }
         } else if (interaction.options.getSubcommand() === 'profile') {
             try {
-                const resolved = await steam.getUserSummary(interaction.options.getString('user', true));
+                const resolved = await steam.getUserSummary(await steam.resolve(interaction.options.getString('user', true)));
 
                 await interaction.editReply({
                     components: [
