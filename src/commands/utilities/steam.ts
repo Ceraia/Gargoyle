@@ -46,7 +46,7 @@ export default class Steam extends GargoyleCommand {
         const steam = new SteamAPI(process.env.STEAM_API);
         if (interaction.options.getSubcommand() === '64id') {
             try {
-                const resolved = await steam.resolve(interaction.options.getString('64id', true));
+                const resolved = await steam.resolve(interaction.options.getString('user', true));
                 await interaction.editReply({
                     content: `
                 [${resolved}](https://steamcommunity.com/profiles/${resolved})`
@@ -56,7 +56,7 @@ export default class Steam extends GargoyleCommand {
             }
         } else if (interaction.options.getSubcommand() === 'profile') {
             try {
-                const resolved = await steam.getUserSummary(interaction.options.getString('64id', true));
+                const resolved = await steam.getUserSummary(interaction.options.getString('user', true));
 
                 await interaction.editReply({
                     components: [
