@@ -349,17 +349,17 @@ export default class Brads extends GargoyleCommand {
                 args[0] === 'ban'
                     ? {
                           content:
-                              `Staff member who banned you :` +
-                              `In-game name : ` +
-                              `Steam profile link : ` +
+                              `Staff member who banned you : \n` +
+                              `In-game name : \n` +
+                              `Steam profile link : \n` +
                               `Apology / why you think you should be unbanned :`
                       }
                     : args[0] === 'staff'
                       ? {
                             content:
-                                `Staff member being reported :` +
-                                `Reason for report :` +
-                                `Any relevant Information regarding this report :` +
+                                `Staff member being reported : \n` +
+                                `Reason for report : \n` +
+                                `Any relevant Information regarding this report : \n` +
                                 `All relevant proof for this report :`
                         }
                       : undefined,
