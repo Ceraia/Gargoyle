@@ -330,10 +330,32 @@ export default class Brads extends GargoyleCommand {
 
             const member = await interaction.guild.members.fetch(interaction.user.id);
 
-            const ticket = await this.makeTicketThread(interaction.channel, args[0], {
-                members: [member],
-                roles: roleOverride ? [roleOverride] : role ? [role] : []
-            });
+            const ticket = await this.makeTicketThread(
+                interaction.channel,
+                args[0],
+                args[0] === 'ban'
+                    ? {
+                          content:
+                              `Staff member who banned you :` +
+                              `In-game name : ` +
+                              `Steam profile link : ` +
+                              `Apology / why you think you should be unbanned :`
+                      }
+                    : args[0] === 'report'
+                      ? {
+                            content:
+                                `Staff member being reported :` +
+                                `Reason for report :` +
+                                `Any relevant Information regarding this report :` +
+                                `All relevant proof for this report :`
+                        }
+                      : undefined,
+
+                {
+                    members: [member],
+                    roles: roleOverride ? [roleOverride] : role ? [role] : []
+                }
+            );
 
             if (typeof ticket === 'string') {
                 await interaction.editReply({ content: `Failed to create a ticket: ${ticket}` });
@@ -424,6 +446,7 @@ export default class Brads extends GargoyleCommand {
     private async makeTicketThread(
         channel: TextChannel,
         category: string,
+        extraMessage: MessageCreateOptions | undefined,
         access: { members: GuildMember[]; roles?: Role[] }
     ): Promise<PrivateThreadChannel | string> {
         if (access.members.length === 0) return 'No members were supplied when opening a ticket.';
@@ -516,6 +539,8 @@ export default class Brads extends GargoyleCommand {
             } as MessageCreateOptions;
 
             await sendAsServer(client, { ...message, allowedMentions: {} }, thread);
+
+            if(extraMessage)  await sendAsServer(client, { ...extraMessage, allowedMentions: {} }, thread);
 
             /*
              * This might look odd, but mentioning a user in a webhook does not add them to a thread.
