@@ -103,6 +103,19 @@ export default class Brads extends GargoyleCommand {
                                 .setEmoji('🛒')
                         )
                 )
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# If you are having the "missing asset" or "server is running a different version of:" error please try the following.\n` +
+                            `\n` +
+                            `> 1. Unsubscribe from all mods via Steam.\n` +
+                            `> 2. Delete 304390 folder (SteamLibrary -> steamapps -> workshop -> content).\n` +
+                            `> 3. Delete appworkshop_304930.acf (SteamLibrary -> steamapps -> workshop).\n` +
+                            `> 4. Delete Unturned_Data folder  (SteamLibrary -> steamapps -> common -> Unturned).\n` +
+                            `> 5. Verify integrity of Unturned.\n` +
+                            `> 6. Start game and try again.\n`
+                    )
+                )
                 .setAccentColor(0x0ed6ff)
         ],
         flags: [MessageFlags.IsComponentsV2]
@@ -540,7 +553,7 @@ export default class Brads extends GargoyleCommand {
 
             await sendAsServer(client, { ...message, allowedMentions: {} }, thread);
 
-            if(extraMessage)  await sendAsServer(client, { ...extraMessage, allowedMentions: {} }, thread);
+            if (extraMessage) await sendAsServer(client, { ...extraMessage, allowedMentions: {} }, thread);
 
             /*
              * This might look odd, but mentioning a user in a webhook does not add them to a thread.
