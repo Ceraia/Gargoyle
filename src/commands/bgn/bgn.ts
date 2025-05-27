@@ -354,7 +354,7 @@ export default class Brads extends GargoyleCommand {
                               `Steam profile link : ` +
                               `Apology / why you think you should be unbanned :`
                       }
-                    : args[0] === 'report'
+                    : args[0] === 'staff'
                       ? {
                             content:
                                 `Staff member being reported :` +
