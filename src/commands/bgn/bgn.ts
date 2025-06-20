@@ -185,7 +185,7 @@ export default class Brads extends GargoyleCommand {
                 components: [
                     new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent('### Recent Tickets')).addSectionComponents(
                         threads.threads.map((thread) => {
-                            const threadMembers = thread.members.cache.filter((m) => !m.user?.bot).map((m) => m);
+                            const threadMembers = thread.members.cache.filter((m) => !m.user!.bot).map((m) => m);
                             const member = threadMembers[0];
 
                             return new SectionBuilder()
@@ -203,6 +203,65 @@ export default class Brads extends GargoyleCommand {
                                 );
                         })
                     )
+                ],
+                flags: [MessageFlags.IsComponentsV2],
+                allowedMentions: { parse: [] }
+            });
+        } else if (interaction.options.getSubcommand() === 'user') {
+            await interaction.deferReply({});
+            if (!interaction.guild || !interaction.channel) {
+                await interaction.editReply({ content: 'This can only be used in a guild channel.' });
+                return;
+            }
+
+            const user = interaction.options.getUser('user', true);
+            const ticketChannel = interaction.guild.channels.cache.find(
+                (channel) => channel.name === 'support' && channel.type === ChannelType.GuildText
+            );
+
+            if (!ticketChannel) {
+                await interaction.editReply({ content: 'Could not find the "support" channel.' });
+                return;
+            }
+
+            const threads = await (ticketChannel as TextChannel).threads.fetchArchived({
+                type: 'private',
+                limit: 100
+            });
+
+            const userThreads = threads.threads.filter((thread) => thread.members.cache.has(user.id));
+
+            if (userThreads.size === 0) {
+                await interaction.editReply({ content: `No recent tickets found for ${user.username}.` });
+                return;
+            }
+
+            const limitedUserThreads = userThreads.first(10);
+
+            await interaction.editReply({
+                components: [
+                    new ContainerBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### Recent Tickets for ${user.username}`))
+                        .addSectionComponents(
+                            limitedUserThreads.map((thread) => {
+                                const threadMembers = thread.members.cache.filter((m) => !m.user!.bot).map((m) => m);
+                                const member = threadMembers[0];
+
+                                return new SectionBuilder()
+                                    .addTextDisplayComponents(
+                                        new TextDisplayBuilder().setContent(
+                                            `- ${member ? `<@!${member.id}>` : thread.name.split('-')[1]}${
+                                                thread.createdAt ? ` on <t:${Math.floor(thread.createdAt.getTime() / 1000)}:f>` : ``
+                                            }`
+                                        )
+                                    )
+                                    .setButtonAccessory(
+                                        new GargoyleURLButtonBuilder(`https://discord.com/channels/${interaction.guild!.id}/${thread.id}`).setLabel(
+                                            'Get Transcript'
+                                        )
+                                    );
+                            })
+                        )
                 ],
                 flags: [MessageFlags.IsComponentsV2],
                 allowedMentions: { parse: [] }
