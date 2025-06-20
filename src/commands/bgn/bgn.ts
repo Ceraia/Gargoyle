@@ -188,14 +188,13 @@ export default class Brads extends GargoyleCommand {
                             return new SectionBuilder()
                                 .addTextDisplayComponents(
                                     new TextDisplayBuilder().setContent(
-                                        `- <#${thread.id}>${thread.createdAt ? ` on ${thread.createdAt.toLocaleDateString()} at ${thread.createdAt.toLocaleTimeString()}` : ``}`
+                                        `- ${thread.name}${thread.createdAt ? ` on ${thread.createdAt.toLocaleDateString()} at ${thread.createdAt.toLocaleTimeString()}` : ``}`
                                     )
                                 )
                                 .setButtonAccessory(
-                                    new GargoyleButtonBuilder(this, 'transcript', thread.id)
-                                        .setLabel('Get Transcript')
-                                        .setStyle(ButtonStyle.Secondary)
-                                        .setEmoji('📜')
+                                    new GargoyleURLButtonBuilder(`https://discord.com/channels/${interaction.guild!.id}/${thread.id}`).setLabel(
+                                        'Get Transcript'
+                                    )
                                 );
                         })
                     )
