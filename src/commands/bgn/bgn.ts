@@ -9,11 +9,13 @@ import {
     ChatInputCommandInteraction,
     ContainerBuilder,
     GuildMember,
+    InteractionContextType,
     MessageCreateOptions,
     MessageEditOptions,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
+    PermissionFlagsBits,
     PrivateThreadChannel,
     Role,
     SectionBuilder,
@@ -39,7 +41,19 @@ export default class Brads extends GargoyleCommand {
             .setName('bgn')
             .setDescription("A command for Brad's RP")
             .addGuild('324195889977622530')
-            .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Send the BGN panel')) as GargoyleSlashCommandBuilder
+            .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Send the BGN panel')) as GargoyleSlashCommandBuilder,
+        new GargoyleSlashCommandBuilder()
+            .setName('transcripts')
+            .setDescription('Get transcripts of a ticket')
+            .setContexts(InteractionContextType.Guild)
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .addSubcommand((subcommand) => subcommand.setName('recent').setDescription('Get recent tickets'))
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('user')
+                    .setDescription('Get recent transcripts of a user')
+                    .addUserOption((option) => option.setName('user').setDescription('The user to get transcripts for').setRequired(true))
+            ) as GargoyleSlashCommandBuilder
     ];
     private panelMessage = {
         components: [
@@ -141,6 +155,53 @@ export default class Brads extends GargoyleCommand {
                 client.logger.error(err as string);
                 await interaction.reply({ content: 'Failed to send the panel.', flags: [MessageFlags.Ephemeral] });
             }
+        } else if (interaction.options.getSubcommand() === 'recent') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            if (!interaction.guild || !interaction.channel) {
+                await interaction.editReply({ content: 'This can only be used in a guild channel.' });
+                return;
+            }
+
+            const ticketChannel = interaction.guild.channels.cache.find(
+                (channel) => channel.name === 'support' && channel.type === ChannelType.GuildText
+            );
+
+            if (!ticketChannel) {
+                await interaction.editReply({ content: 'Could not find the "support" channel.' });
+                return;
+            }
+
+            const threads = await (ticketChannel as TextChannel).threads.fetchArchived({
+                type: 'private',
+                limit: 10
+            });
+
+            if (threads.threads.size === 0) {
+                await interaction.editReply({ content: 'No recent tickets found.' });
+                return;
+            }
+
+            await interaction.editReply({
+                components: [
+                    new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent('### Recent Tickets')).addSectionComponents(
+                        threads.threads.map((thread) => {
+                            return new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(
+                                        `- <#${thread.id}>${thread.createdAt ? ` on ${thread.createdAt.toLocaleDateString()} at ${thread.createdAt.toLocaleTimeString()}` : ``}`
+                                    )
+                                )
+                                .setButtonAccessory(
+                                    new GargoyleButtonBuilder(this, 'transcript', thread.id)
+                                        .setLabel('Get Transcript')
+                                        .setStyle(ButtonStyle.Secondary)
+                                        .setEmoji('📜')
+                                );
+                        })
+                    )
+                ],
+                flags: [MessageFlags.IsComponentsV2]
+            });
         }
     }
 
