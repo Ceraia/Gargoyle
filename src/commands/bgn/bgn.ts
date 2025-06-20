@@ -156,7 +156,7 @@ export default class Brads extends GargoyleCommand {
                 await interaction.reply({ content: 'Failed to send the panel.', flags: [MessageFlags.Ephemeral] });
             }
         } else if (interaction.options.getSubcommand() === 'recent') {
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            await interaction.deferReply({});
             if (!interaction.guild || !interaction.channel) {
                 await interaction.editReply({ content: 'This can only be used in a guild channel.' });
                 return;
