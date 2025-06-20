@@ -153,6 +153,7 @@ export default class Brads extends GargoyleCommand {
             interaction.editReply({ content: 'Removed all of the selected members.', components: [] });
         }
     }
+
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'apply') {
             if (args.length === 1) {
@@ -241,8 +242,6 @@ export default class Brads extends GargoyleCommand {
             return;
         }
         if (args[0] === 'archive') {
-            const member = await interaction.guild.members.fetch(interaction.user.id);
-
             if (!interaction.channel.isThread()) {
                 await interaction.editReply({ content: 'This is only available in threads.' });
                 return;
@@ -250,18 +249,8 @@ export default class Brads extends GargoyleCommand {
 
             await interaction.channel.send({ content: `<@!${interaction.user.id}> is closing the ticket.` }).catch((err) => client.logger.error(err));
 
-            if (member.roles.cache.has(args[1])) {
-                await (interaction.channel as PrivateThreadChannel).setArchived(true);
-                await interaction.editReply({ content: 'Ticket archived.' });
-            } else {
-                for (const member of await (interaction.channel as PrivateThreadChannel).members.fetch()) {
-                    client.guilds.cache.get(interaction.guild.id)?.members.cache.get(member[0])?.roles.cache.has(args[1])
-                        ? null
-                        : await member[1].remove().catch((err) => {
-                              client.logger.error(err);
-                          });
-                }
-            }
+            await (interaction.channel as PrivateThreadChannel).setArchived(true);
+            await interaction.editReply({ content: 'Ticket archived.' });
 
             return;
         } else if (args[0] === 'lock') {
