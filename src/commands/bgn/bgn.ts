@@ -186,12 +186,13 @@ export default class Brads extends GargoyleCommand {
                     new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent('### Recent Tickets')).addSectionComponents(
                         threads.threads.map((thread) => {
                             const memberName = thread.name.split('-')[1];
-                            const member = interaction.guild!.members.cache.find((m) => m.user.username === memberName);
+                            const member =
+                                interaction.guild!.members.cache.find((m) => m.user.username === memberName) || thread.members.cache.first();
 
                             return new SectionBuilder()
                                 .addTextDisplayComponents(
                                     new TextDisplayBuilder().setContent(
-                                        `- ${member ? `<@!${member.id}>` : thread.name.split('-')[1]}${thread.createdAt ? ` on ${thread.createdAt.toLocaleDateString()} at ${thread.createdAt.toLocaleTimeString()}` : ``}`
+                                        `- ${member ? `<@!${member.id}>` : thread.name.split('-')[1]}${thread.createdAt ? ` on <t:${thread.createdAt}:f>` : ``}`
                                     )
                                 )
                                 .setButtonAccessory(
