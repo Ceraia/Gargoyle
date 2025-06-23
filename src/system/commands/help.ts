@@ -32,7 +32,10 @@ import GargoyleButtonBuilder from '../backend/builders/gargoyleButtonBuilder.js'
 
 export default class Help extends GargoyleCommand {
     override category: string = 'base';
-    override slashCommands = [new GargoyleSlashCommandBuilder().setName('help').setDescription('Replies with bot information')];
+    override slashCommands = [
+        new GargoyleSlashCommandBuilder().setName('help').setDescription('Replies with bot information'),
+        new GargoyleSlashCommandBuilder().setName('suggest').setDescription('Suggest a feature for the bot')
+    ];
     override textCommands = [new GargoyleTextCommandBuilder().setName('help').setDescription('Replies with bot information').addAlias('h')];
     private readonly selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
         new GargoyleStringSelectMenuBuilder(this, 'commands').addOptions(
@@ -69,7 +72,7 @@ export default class Help extends GargoyleCommand {
     };
 
     private readonly suggestionModal = new GargoyleModalBuilder(this, 'suggest')
-        .setTitle('Suggest a feature')
+        .setTitle('Suggest a bot feature')
         .setComponents(
             new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
                 new TextInputBuilder()
@@ -84,7 +87,13 @@ export default class Help extends GargoyleCommand {
 
     override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-        interaction.editReply(this.helpMessage);
+        if (interaction.commandName === 'suggest') {
+            await interaction.showModal(this.suggestionModal);
+            return;
+        } else if (interaction.commandName === 'help') {
+            await interaction.editReply(this.helpMessage);
+            return;
+        }
     }
 
     override executeTextCommand(_client: GargoyleClient, message: Message) {
