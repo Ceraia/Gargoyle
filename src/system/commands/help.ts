@@ -5,6 +5,7 @@ import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
     ButtonInteraction,
+    ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
     Guild,
@@ -12,14 +13,22 @@ import {
     MessageEditOptions,
     MessageFlags,
     MessageReplyOptions,
+    ModalActionRowComponentBuilder,
+    ModalSubmitInteraction,
+    SectionBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
-    TextDisplayBuilder
+    TextDisplayBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ThumbnailBuilder
 } from 'discord.js';
 import { GargoyleStringSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashCommandBuilder.js';
+import GargoyleModalBuilder from '../backend/builders/gargoyleModalBuilder.js';
+import GargoyleButtonBuilder from '../backend/builders/gargoyleButtonBuilder.js';
 
 export default class Help extends GargoyleCommand {
     override category: string = 'base';
@@ -36,19 +45,42 @@ export default class Help extends GargoyleCommand {
         content: undefined,
         embeds: [],
         components: [
-            new ContainerBuilder().addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    'A bot made by [Axodouble](https://axodouble.com).\n' +
-                        'Distriobuted, hosted & developed by [Ceraia](https://ceraia.com).' +
-                        'This bot is built on Gargoyle, a custom bot framework.\n\n' +
-                        'This bot is still in very early development and major changes are expected,\n' +
-                        'If you have any suggestions or issues, please contact Axodouble.'
+            new ContainerBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        'A bot made by [Axodouble](https://axodouble.com).\n' +
+                            'Distriobuted, hosted & developed by [Ceraia](https://ceraia.com).' +
+                            'This bot is built on Gargoyle, a custom bot framework.\n\n' +
+                            'This bot is still in very early development and major changes are expected,\n' +
+                            'If you have any suggestions or issues, please contact Axodouble.'
+                    )
                 )
-            ),
+                .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent('Do you want to suggest a feature? You can do so by clicking the `suggest` button!')
+                        )
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'suggest').setLabel('Make a suggestion').setEmoji('✍️'))
+                ),
             this.selectMenu
         ],
         flags: [MessageFlags.IsComponentsV2]
     };
+
+    private readonly suggestionModal = new GargoyleModalBuilder(this, 'suggest')
+        .setTitle('Suggest a feature')
+        .setComponents(
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                new TextInputBuilder()
+                    .setCustomId('suggestion')
+                    .setLabel('Your suggestion')
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setRequired(true)
+                    .setPlaceholder('What would you like to suggest?')
+                    .setMaxLength(2000)
+            )
+        );
 
     override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -80,6 +112,51 @@ export default class Help extends GargoyleCommand {
         } else if (argument[0] === 'text') {
             const message = await this.generateTextHelpMessage(client, interaction.guild ? interaction.guild : undefined);
             await interaction.update(message);
+        } else if (argument[0] === 'suggest') {
+            await interaction.showModal(this.suggestionModal);
+        }
+    }
+
+    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'suggest') {
+            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            const suggestion = interaction.fields.getTextInputValue('suggestion');
+            if (suggestion.length < 10) {
+                await interaction.editReply({
+                    content: 'Your suggestion must be at least 10 characters long.'
+                });
+                return;
+            }
+
+            const suggestionChannel = client.channels.cache.get(process.env.SUGGESTION_CHANNEL_ID!);
+
+            if (!suggestionChannel || suggestionChannel.type !== ChannelType.GuildText) {
+                await interaction.editReply({
+                    content: 'There was an error sending your suggestion. Please try again later.'
+                });
+                client.logger.error('Suggestion channel not found or is not text-based.');
+                return;
+            }
+
+            await suggestionChannel.send({
+                components: [
+                    new ContainerBuilder()
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(`New suggestion from ${interaction.user.tag} (${interaction.user.id})`)
+                                )
+                                .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.user.displayAvatarURL({ size: 128 })))
+                        )
+                        .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(suggestion))
+                ],
+                flags: [MessageFlags.IsComponentsV2]
+            });
+
+            await interaction.editReply({
+                content: `Thank you for your suggestion!\nIf we have any questions or need more information, we will contact you.\n\nYour suggestion: ${suggestion}`
+            });
         }
     }
 
