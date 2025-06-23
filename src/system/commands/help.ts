@@ -167,7 +167,7 @@ export default class Help extends GargoyleCommand {
             });
         } else if (argument[0] === 'supportyes') {
             await interaction.deferUpdate();
-            const supportChannel = client.channels.cache.get(process.env.SUPPORT_CHANNEL_ID!);
+            const supportChannel = client.channels.cache.get(process.env.SUGGESTION_CHANNEL_ID!);
             if (!supportChannel || supportChannel.type !== ChannelType.GuildText) {
                 await interaction.editReply({
                     content: 'There was an error sending your support request. Please try again later.',
