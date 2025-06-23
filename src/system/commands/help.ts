@@ -15,11 +15,13 @@ import {
     MessageReplyOptions,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
+    PermissionFlagsBits,
     SectionBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
+    TextChannel,
     TextDisplayBuilder,
     TextInputBuilder,
     TextInputStyle,
@@ -62,9 +64,19 @@ export default class Help extends GargoyleCommand {
                 .addSectionComponents(
                     new SectionBuilder()
                         .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent('Do you want to suggest a feature? You can do so by clicking the `suggest` button!')
+                            new TextDisplayBuilder().setContent('Do you want to suggest a feature? You can do so by clicking the button!')
                         )
                         .setButtonAccessory(new GargoyleButtonBuilder(this, 'suggest').setLabel('Make a suggestion').setEmoji('✍️'))
+                )
+                .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                'Are you having issues with the bot? Is something not working as expected? Press the button for direct support!\n-# This will invite a support member to your server, you can also contact them directly on Discord. [@axodouble]'
+                            )
+                        )
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'support').setLabel('Get Support').setEmoji('🆘'))
                 ),
             this.selectMenu
         ],
@@ -123,6 +135,74 @@ export default class Help extends GargoyleCommand {
             await interaction.update(message);
         } else if (argument[0] === 'suggest') {
             await interaction.showModal(this.suggestionModal);
+        } else if (argument[0] === 'support') {
+            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            if (!interaction.guild) {
+                await interaction.editReply({
+                    content: 'This can only be used in a server.'
+                });
+                return;
+            }
+
+            const member = await interaction.guild.members.fetch(interaction.user.id);
+
+            if (
+                !member ||
+                (!member.permissions.has(PermissionFlagsBits.ManageChannels) && !member.permissions.has(PermissionFlagsBits.ManageGuild))
+            ) {
+                await interaction.editReply({
+                    content: 'You need to have the `Manage Channels` or `Manage Server` permissions to request support.'
+                });
+            }
+
+            await interaction.editReply({
+                content:
+                    'Do you understand that this will invite a support member to your server? This is so we can help you directly.\nDo note that it can take a while for a support member to respond.',
+                components: [
+                    new ActionRowBuilder<GargoyleButtonBuilder>().addComponents([
+                        new GargoyleButtonBuilder(this, 'supportyes').setLabel('Yes, I understand').setEmoji('✅'),
+                        new GargoyleButtonBuilder(this, 'supportno').setLabel('No').setEmoji('❌')
+                    ])
+                ]
+            });
+        } else if (argument[0] === 'supportyes') {
+            await interaction.deferUpdate();
+            const supportChannel = client.channels.cache.get(process.env.SUPPORT_CHANNEL_ID!);
+            if (!supportChannel || supportChannel.type !== ChannelType.GuildText) {
+                await interaction.editReply({
+                    content: 'There was an error sending your support request. Please try again later.',
+                    components: []
+                });
+                client.logger.error('Support channel not found or is not text-based.');
+                return;
+            }
+
+            const inviteLink = await (interaction.channel as TextChannel).createInvite({
+                maxAge: 604800,
+                maxUses: 0, // Unlimited uses
+                reason: `Support request from ${interaction.user.tag} (${interaction.user.id})`
+            });
+
+            await supportChannel.send({
+                components: [
+                    new ContainerBuilder()
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(`Support request from ${interaction.user.tag} (${interaction.user.id})`)
+                                )
+                                .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.user.displayAvatarURL({ size: 128 })))
+                        )
+                        .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`Invite link: ${inviteLink}`))
+                ],
+                flags: [MessageFlags.IsComponentsV2]
+            });
+
+            await interaction.editReply({
+                content: `Thank you for your support request! A support member will join your server as soon as possible.`,
+                components: []
+            });
         }
     }
 
