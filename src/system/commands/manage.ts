@@ -1,7 +1,16 @@
 import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
-import { ChatInputCommandInteraction, Message, MessageFlags, PermissionFlagsBits } from 'discord.js';
+import {
+    ChatInputCommandInteraction,
+    ContainerBuilder,
+    Message,
+    MessageFlags,
+    PermissionFlagsBits,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder
+} from 'discord.js';
 import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashCommandBuilder.js';
 
 export default class Manage extends GargoyleCommand {
@@ -17,7 +26,18 @@ export default class Manage extends GargoyleCommand {
                 group
                     .setName('support')
                     .setDescription('Support commands')
-                    .addSubcommand((subcommand) => subcommand.setName('guilds').setDescription('List all guilds the bot is in'))
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('guilds')
+                            .setDescription('List all guilds the bot is in')
+                            .addStringOption((option) => option.setName('filter').setDescription('Filter guilds by name'))
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('guild')
+                            .setDescription('Show information about a specific guild')
+                            .addStringOption((option) => option.setName('filter').setDescription('Filter guilds by name or ID').setRequired(true))
+                    )
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('whois')
@@ -45,11 +65,41 @@ export default class Manage extends GargoyleCommand {
             if (interaction.options.getSubcommandGroup() === 'support') {
                 if (interaction.options.getSubcommand() === 'guilds') {
                     const guilds = await client.guilds.fetch();
+                    const filter = interaction.options.getString('filter');
+
                     let guildList = '';
                     for (const guild of guilds) {
-                        guildList += client.guilds.cache.get(guild[0])?.name + '\n';
+                        if (filter && !guild[1].name.toLowerCase().includes(filter.toLowerCase())) continue;
+                        guildList += guild[1].name + ' (ID: ' + guild[1].id + ')\n';
                     }
+
                     await interaction.reply({ content: guildList || 'No guilds found.', flags: [MessageFlags.Ephemeral] });
+                } else if (interaction.options.getSubcommand() === 'guild') {
+                    const filter = interaction.options.getString('filter', true);
+                    const guilds = await client.guilds.fetch();
+                    const guild = Array.from(guilds.values()).find((g) => g.name.toLowerCase().includes(filter.toLowerCase()) || g.id === filter);
+
+                    if (!guild) {
+                        await interaction.reply({ content: 'No guild found with that name or ID.', flags: [MessageFlags.Ephemeral] });
+                        return;
+                    }
+
+                    await interaction.reply({
+                        components: [
+                            new ContainerBuilder().addSectionComponents(
+                                new SectionBuilder()
+                                    .setThumbnailAccessory(
+                                        new ThumbnailBuilder().setURL(guild.iconURL() || 'https://cdn.discordapp.com/embed/avatars/0.png')
+                                    )
+                                    .addTextDisplayComponents(
+                                        new TextDisplayBuilder().setContent(
+                                            `Guild Name: ${guild.name}\nGuild ID: ${guild.id}\nGuild Owner: ${guild.owner}\nGuild Features: ${guild.features}`
+                                        )
+                                    )
+                            )
+                        ],
+                        flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral]
+                    });
                 } else if (interaction.options.getSubcommand() === 'whois') {
                     const userId = interaction.options.getString('id', true);
                     const user = await client.users.fetch(userId).catch((err) => {
