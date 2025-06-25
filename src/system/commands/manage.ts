@@ -91,6 +91,13 @@ export default class Manage extends GargoyleCommand {
                         return;
                     }
 
+                    const cachedGuild = client.guilds.cache.get(guild.id);
+
+                    if (!cachedGuild) {
+                        await interaction.reply({ content: 'Guild not found in cache.', flags: [MessageFlags.Ephemeral] });
+                        return;
+                    }
+
                     await interaction.reply({
                         components: [
                             new ContainerBuilder().addSectionComponents(
@@ -100,7 +107,7 @@ export default class Manage extends GargoyleCommand {
                                     )
                                     .addTextDisplayComponents(
                                         new TextDisplayBuilder().setContent(
-                                            `Guild Name: ${guild.name}\nGuild ID: ${guild.id}\nGuild Owner: ${guild.owner}\nGuild Features: ${guild.features}`
+                                            `Guild Name: ${cachedGuild.name}\nGuild ID: ${cachedGuild.id}\nGuild Owner: ${cachedGuild.ownerId}\nMember Count: ${cachedGuild.memberCount}\nGuild Features: ${cachedGuild.features}\n${cachedGuild.invites.fetch().then((invites) => `Guild Invites: ${invites.map((invite) => invite.code).join(', ')}`)}`
                                         )
                                     )
                             )
