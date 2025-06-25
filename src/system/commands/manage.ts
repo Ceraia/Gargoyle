@@ -5,19 +5,33 @@ import { Message } from 'discord.js';
 
 export default class Manage extends GargoyleCommand {
     override category: string = 'base';
-    override textCommands = [new GargoyleTextCommandBuilder().setName('manage').setDescription('Management').addAlias('mgmt').setPrivate(true)];
+    override textCommands = [
+        new GargoyleTextCommandBuilder().setName('manage').setDescription('Management').addAlias('mgmt').setPrivate(true),
+        new GargoyleTextCommandBuilder().setName('whois').setDescription('Who is this?').setPrivate(true)
+    ];
 
     public override async executeTextCommand(client: GargoyleClient, message: Message, ...args: string[]): Promise<void> {
         if (message.author.id !== '244173330431737866') return;
-        if (args.length > 0) {
-            if (args[0] === 'guilds') {
-                const guilds = await client.guilds.fetch();
-                let guildList = '';
-                for (const guild of guilds) {
-                    guildList += client.guilds.cache.get(guild[0])?.name + '\n';
-                }
+        if (args[0] === 'whois') {
+            const user = message.mentions.users.first() || message.author;
+            const member = message.guild?.members.cache.get(args[1] || user.id);
+            if (member) {
+                const roles = member.roles.cache.map((role) => role.name).join(', ');
+                message.reply(`User: ${user.tag}\nID: ${user.id}\nRoles: ${roles}`);
+            } else {
+                message.reply(`User: ${user.tag}\nID: ${user.id}\nRoles: None (not in this guild)`);
+            }
+        } else if (args[0] === 'manage' || args[0] === 'mgmt') {
+            if (args.length > 1) {
+                if (args[1] === 'guilds') {
+                    const guilds = await client.guilds.fetch();
+                    let guildList = '';
+                    for (const guild of guilds) {
+                        guildList += client.guilds.cache.get(guild[0])?.name + '\n';
+                    }
 
-                message.member?.send(guildList);
+                    message.member?.send(guildList);
+                }
             }
         }
     }
