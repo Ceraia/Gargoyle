@@ -17,9 +17,9 @@ export default class Manage extends GargoyleCommand {
             const member = message.guild?.members.cache.get(args[1] || user.id);
             if (member) {
                 const roles = member.roles.cache.map((role) => role.name).join(', ');
-                message.reply(`User: ${user.tag}\nID: ${user.id}\nRoles: ${roles}`);
+                message.reply(`User: ${user.tag}\nID: ${user.id}\nRoles: ${roles}\nCommand: ${args.join(' ')}`);
             } else {
-                message.reply(`User: ${user.tag}\nID: ${user.id}\nRoles: None (not in this guild)`);
+                message.reply(`User: ${user.tag}\nID: ${user.id}\nRoles: None (not in this guild)\nCommand: ${args.join(' ')}`);
             }
         } else if (args[0] === 'manage' || args[0] === 'mgmt') {
             if (args.length > 1) {
