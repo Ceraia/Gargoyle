@@ -80,10 +80,14 @@ export default class Manage extends GargoyleCommand {
 
                     dm.send(
                         `Hello ${user.username}, ${interaction.user.tag} has contacted you for support:\n\n${interaction.options.getString('message', true)}`
-                    ).catch(async (err) => {
-                        await interaction.editReply({ content: `Error trying to send message to user: \`${err.message}\`` });
-                        return;
-                    });
+                    )
+                        .catch(async (err) => {
+                            await interaction.editReply({ content: `Error trying to send message to user: \`${err.message}\`` });
+                            return;
+                        })
+                        .then(async () => {
+                            await interaction.editReply({ content: `Message sent to ${user.tag}.` });
+                        });
                 }
             }
         } else {
