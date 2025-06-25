@@ -73,7 +73,14 @@ export default class Manage extends GargoyleCommand {
                         guildList += guild[1].name + ' (ID: ' + guild[1].id + ')\n';
                     }
 
-                    await interaction.reply({ content: guildList || 'No guilds found.', flags: [MessageFlags.Ephemeral] });
+                    if (guildList.length > 2000) {
+                        const buffer = Buffer.from(guildList, 'utf-8');
+                        await interaction.reply({
+                            content: 'Guild list is too long, sending as a file.',
+                            files: [{ attachment: buffer, name: 'guilds.txt' }],
+                            flags: [MessageFlags.Ephemeral]
+                        });
+                    } else await interaction.reply({ content: guildList || 'No guilds found.', flags: [MessageFlags.Ephemeral] });
                 } else if (interaction.options.getSubcommand() === 'guild') {
                     const filter = interaction.options.getString('filter', true);
                     const guilds = await client.guilds.fetch();
