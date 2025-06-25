@@ -98,6 +98,14 @@ export default class Manage extends GargoyleCommand {
                         return;
                     }
 
+                    const invites = (
+                        await cachedGuild.invites.fetch().catch(() => {
+                            return null;
+                        })
+                    )
+                        ?.map((invite) => invite.code)
+                        .join(', ');
+
                     await interaction.reply({
                         components: [
                             new ContainerBuilder().addSectionComponents(
@@ -107,7 +115,7 @@ export default class Manage extends GargoyleCommand {
                                     )
                                     .addTextDisplayComponents(
                                         new TextDisplayBuilder().setContent(
-                                            `Guild Name: ${cachedGuild.name}\nGuild ID: ${cachedGuild.id}\nGuild Owner: ${cachedGuild.ownerId}\nMember Count: ${cachedGuild.memberCount}\nGuild Features: ${cachedGuild.features}\n${cachedGuild.invites.fetch().then((invites) => `Guild Invites: ${invites.map((invite) => invite.code).join(', ')}`)}`
+                                            `Guild Name: ${cachedGuild.name}\nGuild ID: ${cachedGuild.id}\nGuild Owner: ${cachedGuild.ownerId}\nMember Count: ${cachedGuild.memberCount}\nGuild Features: ${cachedGuild.features}\n${invites ? `Invites: ${invites}` : ''}`
                                         )
                                     )
                             )
