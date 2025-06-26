@@ -12,7 +12,7 @@ export default class Mentioned extends GargoyleEvent {
      * @param oldState - The previous voice state of the member.
      * @param newState - The new voice state of the member.
      */
-    public execute(client: GargoyleClient, message: Message): void {
+    public async execute(client: GargoyleClient, message: Message): Promise<void> {
         if (message.author.bot) return;
 
         let prefix = client.prefix;
@@ -27,7 +27,14 @@ export default class Mentioned extends GargoyleEvent {
 
         const mentions = message.mentions.users;
         if (mentions.has(client.user!.id)) {
-            message.reply({ content: `Hello! Use \`${prefix}help\` to get a better overview of my commands and features.` });
+            const messaged = await message
+                .reply({ content: `Hello! Use \`${prefix}help\` to get a better overview of my commands and features.` })
+                .catch(() => {});
+            if (messaged) {
+                setTimeout(() => {
+                    messaged.delete().catch(() => {});
+                }, 10000);
+            }
         }
     }
 }
