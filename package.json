@@ -35,7 +35,7 @@
         "start": "bun run .",
         "dev": "bun run --watch .",
         "dev:on": "bun run aux:on && bun run app:on",
-        "dev:off": "bun run aux:off && bun run app:off",
+        "dev:off": "bun run app:off && bun run aux:off",
         "aux:on": "docker compose -f ./docker-compose-dev.yml --profile aux up -d --remove-orphans ",
         "aux:off": "docker compose -f ./docker-compose-dev.yml --profile aux down --remove-orphans",
         "app:on": "docker compose -f ./docker-compose-dev.yml --profile app up --remove-orphans ",
