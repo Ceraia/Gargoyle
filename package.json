@@ -39,7 +39,7 @@
         "dev:off": "bun run app:off",
         "aux:on": "docker compose -f ./docker-compose-dev.yml --profile aux up -d --build --remove-orphans ",
         "app:on": "docker compose -f ./docker-compose-dev.yml --profile app up --build --remove-orphans ",
-        "app:off": "docker compose -f ./docker-compose-dev.yml down --remove-orphans",
+        "app:off": "docker compose -f ./docker-compose-dev.yml --profile all down --remove-orphans",
         "build": "tsc",
         "format": "prettier --write \"src/**\"",
         "check": "bun run format && bun run build"

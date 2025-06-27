@@ -5,6 +5,7 @@ services:
       dockerfile: ./docker/dev/Dockerfile
     profiles:
       - app
+      - all
     volumes:
       - .:/workspace/gargoyle
     environment:
@@ -22,6 +23,7 @@ services:
     expose: [27017]
     profiles:
       - aux
+      - all
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DBUSERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${DBPASSWORD}
@@ -35,6 +37,7 @@ services:
     hostname: detoxify-api
     profiles:
       - aux
+      - all
     volumes:
       - ./container/.cache/application:/root/.cache
       - ./container/.cache/packages:/.cached_packages
@@ -47,6 +50,7 @@ services:
     hostname: ollama
     profiles:
       - aux
+      - all
     volumes:
       - ./container/ollama:/root/.ollama
     expose: [11434]
