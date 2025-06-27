@@ -43,6 +43,17 @@ services:
     networks:
       - gargoyle
 
+  ollama:
+    hostname: ollama
+    profiles:
+      - aux
+    volumes:
+      - ./container/ollama:/root/.ollama
+    expose: [11434]
+    image: ollama/ollama
+    networks:
+      - gargoyle
+
 networks:
   gargoyle:
     driver: bridge
