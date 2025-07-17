@@ -47,6 +47,12 @@ export default class Moderation extends GargoyleCommand {
 
             const channel = (await interaction.channel?.fetch()) as TextChannel;
 
+            if (interaction.memberPermissions?.missing(PermissionFlagsBits.ManageMessages).length) {
+                return interaction.editReply({
+                    content: 'You do not have permission to manage messages in this channel.'
+                });
+            }
+
             if (!channel || channel.type !== ChannelType.GuildText)
                 return interaction.editReply({
                     content: 'Channel not found ? Or is not a text channel? This is unexpected. Please try again later.'
@@ -71,6 +77,12 @@ export default class Moderation extends GargoyleCommand {
     public override async executeContextMenuCommand(_client: GargoyleClient, interaction: MessageContextMenuCommandInteraction) {
         if (!interaction.channel || interaction.channel.type !== ChannelType.GuildText) return;
         await interaction.deferReply({ ephemeral: true });
+
+        if (interaction.memberPermissions?.missing(PermissionFlagsBits.ManageMessages).length) {
+            return interaction.editReply({
+                content: 'You do not have permission to manage messages in this channel.'
+            });
+        }
 
         const channel = interaction.channel as TextChannel;
         const clickedMessage = await interaction.channel.messages.fetch(interaction.targetId);
