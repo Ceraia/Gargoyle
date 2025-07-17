@@ -531,6 +531,12 @@ export default class Brads extends GargoyleCommand {
             }
 
             return;
+        } else if ((args[0] === 'ban' || args[0] === 'staff') && args.length === 2) {
+            if (!interaction.guild || !interaction.channel) {
+                await interaction.editReply({ content: 'This can only be used in a guild channel.' });
+                return;
+            }
+            
         }
 
         if (interaction.channel.type !== ChannelType.GuildText) {
