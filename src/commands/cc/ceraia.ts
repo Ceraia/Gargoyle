@@ -162,24 +162,13 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
-    private async panelMessage(guild: Guild) {
-        const image = await sharp({
-            create: {
-                width: 1080,
-                height: 1,
-                channels: 4,
-                background: { r: 15, g: 173, b: 154, alpha: 1 }
-            }
-        })
-            .png()
-            .toBuffer();
-
-        const canvas = createCanvas(1080, 200);
+    private async createUnderlineBanner(text: string): Promise<AttachmentBuilder> {
+        const canvas = createCanvas(1080, 56);
         const ctx = canvas.getContext('2d');
 
         // Set background color
         ctx.fillStyle = '#0fad9a';
-        ctx.fillRect(0, 0, 1080, 200);
+        ctx.fillRect(0, 53, 1080, 56);
 
         // Set text properties
         ctx.fillStyle = '#ffffff';
@@ -188,36 +177,32 @@ export default class Ceraia extends GargoyleCommand {
         ctx.textBaseline = 'middle';
 
         // Add text
-        ctx.fillText('Commissions', 540, 100);
-
-        ctx.drawImage(await loadImage(image), 0, 150, 1080, 50);
+        ctx.fillText(text, 540, 28);
 
         // Create an attachment from the canvas
-        const attachmentBanner = new AttachmentBuilder(canvas.toBuffer(), { name: 'ceraia-panel.png' });
+        return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
+    }
 
-        const attachment = new AttachmentBuilder(image).setName('image.png');
-
+    private async panelMessage(guild: Guild) {
         return {
             components: [
                 new ContainerBuilder()
                     .setAccentColor(0x1fad9a)
                     .addMediaGalleryComponents(
-                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://ceraia-panel.png'))
+                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://commissions.png'))
                     )
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
-                            '# Commissions' +
-                                '\n-# Make commissions easy, safe and reliable.' +
+                            '-# Make commissions easy, safe and reliable.' +
                                 '\nBe sure to read our Terms of Service to grasp a better understanding of our commission process.'
                         )
                     )
-                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://image.png')))
+                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://support.png')))
                     .addSectionComponents(
                         new SectionBuilder()
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
-                                    '## Support ' +
-                                        '\nDo you have any questions? Is something not working as expected? Is there anything else we can help you with?' +
+                                    '\nDo you have any questions? Is something not working as expected? Is there anything else we can help you with?' +
                                         '\nFeel free to open a support ticket, and we will help you as soon as possible.'
                                 )
                             )
@@ -225,7 +210,9 @@ export default class Ceraia extends GargoyleCommand {
                                 new GargoyleButtonBuilder(this, 'support').setLabel('Support').setEmoji('🆘').setStyle(ButtonStyle.Secondary)
                             )
                     )
-                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://image.png')))
+                    .addMediaGalleryComponents(
+                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://join_the_team.png'))
+                    )
                     .addSectionComponents(
                         new SectionBuilder()
                             .addTextDisplayComponents(
@@ -239,7 +226,6 @@ export default class Ceraia extends GargoyleCommand {
                                 new GargoyleButtonBuilder(this, 'freelancer').setLabel('Apply').setEmoji('📋').setStyle(ButtonStyle.Secondary)
                             )
                     )
-                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://image.png')))
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent('## Commissions ' + '\nFeel free to choose a category for your commission.')
                     )
@@ -263,7 +249,11 @@ export default class Ceraia extends GargoyleCommand {
                     )
             ],
             flags: [MessageFlags.IsComponentsV2],
-            files: [attachment, attachmentBanner]
+            files: [
+                await this.createUnderlineBanner('Commissions'),
+                await this.createUnderlineBanner('Support'),
+                await this.createUnderlineBanner('Join the Team')
+            ]
         };
     }
 }
