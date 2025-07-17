@@ -1,20 +1,26 @@
-import { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
+import GargoyleButtonBuilder, { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
+import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import client from '@src/system/botClient.js';
 import {
     ActionRowBuilder,
+    ButtonStyle,
     ChatInputCommandInteraction,
     ContainerBuilder,
+    Guild,
     InteractionContextType,
+    MessageActionRowComponentBuilder,
     MessageCreateOptions,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
     SectionBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
     TextChannel,
     TextDisplayBuilder,
     TextInputBuilder,
@@ -68,8 +74,12 @@ export default class Ceraia extends GargoyleCommand {
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommandGroup() === 'panel') {
             if (interaction.options.getSubcommand() === 'send') {
+                if (!interaction.guild) {
+                    return interaction.reply({ content: 'This command can only be used in a guild.', flags: MessageFlags.Ephemeral });
+                }
                 await interaction.reply({ content: 'Sending the Ceraia panel...', flags: MessageFlags.Ephemeral });
-                (interaction.channel as TextChannel).send(this.panel).catch((error) => {
+
+                (interaction.channel as TextChannel).send(this.panelMessage(interaction.guild) as MessageCreateOptions).catch((error) => {
                     client.logger.error(`Failed to send the Ceraia panel: ${error.stack}`);
                 });
             }
@@ -131,33 +141,88 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
-    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
-        if (interaction.customId === 'biography') {
+    public override async executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'biography') {
             const biography = interaction.fields.getTextInputValue('biography');
             const user = await getCommissionaryUser(interaction.user.id);
 
             if (!user) {
-                await interaction.reply({ content: "We couldn't fetch your profile", ephemeral: true });
+                await interaction.reply({ content: "We couldn't fetch your profile", flags: MessageFlags.Ephemeral });
                 return;
             }
             user.biography = biography;
             await user.save();
-            await interaction.reply({ content: 'Your biography has been updated successfully!', ephemeral: true });
+            await interaction.reply({ content: 'Your biography has been updated successfully!', flags: MessageFlags.Ephemeral });
             return;
         }
     }
 
-    private panel: MessageCreateOptions = {
-        components: [
-            new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent('# Commissions'))
-            // .addActionRowComponents(
-            //     new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-            //         new GargoyleButtonBuilder(this, 'commission').setStyle(ButtonStyle.Primary).setLabel('Commission')
-            //     )
-            // )
-        ],
-        flags: [MessageFlags.IsComponentsV2]
-    };
+    private panelMessage(guild: Guild) {
+        return {
+            components: [
+                new ContainerBuilder()
+                    .setAccentColor(0x1fad9a)
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            '# Commissions' +
+                                '\n-# Make commissions easy, safe and reliable.' +
+                                '\nBe sure to read our Terms of Service to grasp a better understanding of our commission process.'
+                        )
+                    )
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                    .addSectionComponents(
+                        new SectionBuilder()
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    '## Support ' +
+                                        '\nDo you have any questions? Is something not working as expected? Is there anything else we can help you with?' +
+                                        '\nFeel free to open a support ticket, and we will help you as soon as possible.'
+                                )
+                            )
+                            .setButtonAccessory(
+                                new GargoyleButtonBuilder(this, 'support').setLabel('Support').setEmoji('🆘').setStyle(ButtonStyle.Secondary)
+                            )
+                    )
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                    .addSectionComponents(
+                        new SectionBuilder()
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    '## Become a freelancer ' +
+                                        '\nWant to become a freelancer?' +
+                                        '\nFeel free to apply for a position in our freelancer team!'
+                                )
+                            )
+                            .setButtonAccessory(
+                                new GargoyleButtonBuilder(this, 'freelancer').setLabel('Apply').setEmoji('📋').setStyle(ButtonStyle.Secondary)
+                            )
+                    )
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent('## Commissions ' + '\nFeel free to choose a category for your commission.')
+                    )
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(SeparatorSpacingSize.Small))
+                    .addActionRowComponents(
+                        new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                            new GargoyleStringSelectMenuBuilder(this, 'commission-category')
+                                .setMinValues(1)
+                                .setMaxValues(1)
+                                .setPlaceholder('Select a category')
+                                .setOptions(
+                                    guild.roles.cache
+                                        .filter((role) => role.name.startsWith('Category - '))
+                                        .sort((a, b) => b.position - a.position)
+                                        .map((role) => ({
+                                            label: role.name.replace('Category - ', ''),
+                                            value: role.id
+                                        }))
+                                )
+                        )
+                    )
+            ],
+            flags: [MessageFlags.IsComponentsV2]
+        };
+    }
 }
 
 const commissionaryUserSchema = new Schema({
