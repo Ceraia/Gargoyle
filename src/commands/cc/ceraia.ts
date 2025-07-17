@@ -5,6 +5,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import client from '@src/system/botClient.js';
+import { createCanvas, loadImage } from 'canvas';
 import {
     ActionRowBuilder,
     AttachmentBuilder,
@@ -172,12 +173,37 @@ export default class Ceraia extends GargoyleCommand {
         })
             .png()
             .toBuffer();
+
+        const canvas = createCanvas(1080, 200);
+        const ctx = canvas.getContext('2d');
+
+        // Set background color
+        ctx.fillStyle = '#0fad9a';
+        ctx.fillRect(0, 0, 1080, 200);
+
+        // Set text properties
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Add text
+        ctx.fillText('Commissions', 540, 100);
+
+        ctx.drawImage(await loadImage(image), 0, 150, 1080, 50);
+
+        // Create an attachment from the canvas
+        const attachmentBanner = new AttachmentBuilder(canvas.toBuffer(), { name: 'ceraia-panel.png' });
+
         const attachment = new AttachmentBuilder(image).setName('image.png');
 
         return {
             components: [
                 new ContainerBuilder()
                     .setAccentColor(0x1fad9a)
+                    .addMediaGalleryComponents(
+                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://ceraia-panel.png'))
+                    )
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
                             '# Commissions' +
@@ -237,7 +263,7 @@ export default class Ceraia extends GargoyleCommand {
                     )
             ],
             flags: [MessageFlags.IsComponentsV2],
-            files: [attachment]
+            files: [attachment, attachmentBanner]
         };
     }
 }

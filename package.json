@@ -4,6 +4,7 @@
     "type": "module",
     "dependencies": {
         "@discordjs/voice": "^0.18.0",
+        "canvas": "^3.1.2",
         "colorette": "^2.0.20",
         "discord.js": "^14.21.0",
         "figlet": "^1.8.2",
