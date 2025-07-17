@@ -1,17 +1,24 @@
+import { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
+import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import client from '@src/system/botClient.js';
 import {
+    ActionRowBuilder,
     ChatInputCommandInteraction,
     ContainerBuilder,
     InteractionContextType,
     MessageCreateOptions,
     MessageFlags,
+    ModalActionRowComponentBuilder,
+    ModalSubmitInteraction,
     PermissionFlagsBits,
     SectionBuilder,
     TextChannel,
     TextDisplayBuilder,
+    TextInputBuilder,
+    TextInputStyle,
     ThumbnailBuilder
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
@@ -75,29 +82,68 @@ export default class Ceraia extends GargoyleCommand {
                     return;
                 }
 
-                await interaction.reply({
-                    components: [
-                        new ContainerBuilder().addSectionComponents(
-                            new SectionBuilder()
-                                .addTextDisplayComponents(
-                                    new TextDisplayBuilder().setContent(
-                                        `# ${user.displayName}\n\n` +
-                                            `\n**Developer:** ${commissionaryUser.developer ? 'Yes.' : 'No.'}` +
-                                            `\n**Showcase:** ${commissionaryUser.showcase || 'No showcase set.'}` +
-                                            `\n**Biography:** ${commissionaryUser.biography}` +
-                                            `\n**Commissions:** ${commissionaryUser.commissions.length > 0 ? commissionaryUser.commissions.join(', ') : 'No commissions yet.'}` +
-                                            `\n**Ratings:** ${commissionaryUser.ratings.length} (${getAverageRating(commissionaryUser.ratings).toFixed(2)}/5)`
-                                    )
-                                )
-                                .setThumbnailAccessory(new ThumbnailBuilder().setURL(user.displayAvatarURL()))
+                const section = new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `# ${user.displayName}\n\n` +
+                                `\n**Developer:** ${commissionaryUser.developer ? 'Yes.' : 'No.'}` +
+                                `\n**Showcase:** ${commissionaryUser.showcase || 'No showcase set.'}` +
+                                `\n**Biography:** ${commissionaryUser.biography}` +
+                                `\n**Commissions:** ${commissionaryUser.commissions.length > 0 ? commissionaryUser.commissions.join(', ') : 'No commissions yet.'}` +
+                                `\n**Ratings:** ${commissionaryUser.ratings.length} (${getAverageRating(commissionaryUser.ratings).toFixed(2)}/5)`
                         )
-                    ],
+                    )
+                    .setThumbnailAccessory(new ThumbnailBuilder().setURL(user.displayAvatarURL()));
+
+                if (commissionaryUser.developer && commissionaryUser.showcase) {
+                    section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
+                }
+
+                await interaction.reply({
+                    components: [new ContainerBuilder().addSectionComponents(section)],
                     flags: MessageFlags.IsComponentsV2
                 });
             } else if (interaction.options.getSubcommand() === 'biography') {
-                // Handle biography setting/viewing logic here
-                await interaction.reply({ content: 'Biography command is not implemented yet.', flags: MessageFlags.Ephemeral });
+                const commissionaryUser = await getCommissionaryUser(interaction.user.id);
+                if (!commissionaryUser) {
+                    await interaction.reply({ content: "We couldn't fetch the user profile" });
+                    return;
+                }
+
+                await interaction.showModal(
+                    new GargoyleModalBuilder(this, 'biography')
+                        .setTitle('Set your biography')
+                        .setComponents(
+                            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                                new TextInputBuilder()
+                                    .setStyle(TextInputStyle.Paragraph)
+                                    .setCustomId('biography')
+                                    .setLabel('Biography')
+                                    .setRequired(true)
+                                    .setMaxLength(500)
+                                    .setPlaceholder('Tell us about yourself...')
+                                    .setMinLength(8)
+                                    .setValue(commissionaryUser.biography)
+                            )
+                        )
+                );
             }
+        }
+    }
+
+    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
+        if (interaction.customId === 'biography') {
+            const biography = interaction.fields.getTextInputValue('biography');
+            const user = await getCommissionaryUser(interaction.user.id);
+
+            if (!user) {
+                await interaction.reply({ content: "We couldn't fetch your profile", ephemeral: true });
+                return;
+            }
+            user.biography = biography;
+            await user.save();
+            await interaction.reply({ content: 'Your biography has been updated successfully!', ephemeral: true });
+            return;
         }
     }
 
