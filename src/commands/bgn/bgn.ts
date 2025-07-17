@@ -366,6 +366,7 @@ export default class Brads extends GargoyleCommand {
             interaction.editReply({ content: 'This can only be used in a guild channel.' });
             return;
         }
+
         if (args[0] === 'archive') {
             if (!interaction.channel.isThread()) {
                 await interaction.editReply({ content: 'This is only available in threads.' });
@@ -428,6 +429,12 @@ export default class Brads extends GargoyleCommand {
             }
 
             return;
+        } else if ((args[0] === 'ban' || args[0] === 'staff') && args.length === 2) {
+            if (!interaction.guild || !interaction.channel) {
+                await interaction.editReply({ content: 'This can only be used in a guild channel.' });
+                return;
+            }
+            
         }
 
         if (interaction.channel.type !== ChannelType.GuildText) {

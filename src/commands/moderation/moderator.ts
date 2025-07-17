@@ -190,7 +190,7 @@ class ModeratedMessage extends GargoyleEvent {
         if (!client.db || (client.db.readyState !== 1 && client.db.readyState !== 0)) return;
         if (!process.env.DETOXIFY_API) return;
         if (this.hasErrored) return;
-        const moderatedGuild = await aiModeratedGuild.findOne({ guildId: message.guildId }).catch((err) => {
+        const moderatedGuild = await aiModeratedGuild.findOne({ guildId: message.guildId }).catch(() => {
             this.hasErrored = true;
             client.logger.error('Failed Database connection for AI Moderated Guilds');
         });
