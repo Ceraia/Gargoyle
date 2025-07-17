@@ -7,11 +7,14 @@ import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import client from '@src/system/botClient.js';
 import {
     ActionRowBuilder,
+    AttachmentBuilder,
     ButtonStyle,
     ChatInputCommandInteraction,
     ContainerBuilder,
     Guild,
     InteractionContextType,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
     MessageActionRowComponentBuilder,
     MessageCreateOptions,
     MessageFlags,
@@ -28,6 +31,7 @@ import {
     ThumbnailBuilder
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
+import sharp from 'sharp';
 
 export default class Ceraia extends GargoyleCommand {
     public override category: string = 'ceraia';
@@ -79,7 +83,7 @@ export default class Ceraia extends GargoyleCommand {
                 }
                 await interaction.reply({ content: 'Sending the Ceraia panel...', flags: MessageFlags.Ephemeral });
 
-                (interaction.channel as TextChannel).send(this.panelMessage(interaction.guild) as MessageCreateOptions).catch((error) => {
+                (interaction.channel as TextChannel).send((await this.panelMessage(interaction.guild)) as MessageCreateOptions).catch((error) => {
                     client.logger.error(`Failed to send the Ceraia panel: ${error.stack}`);
                 });
             }
@@ -157,7 +161,19 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
-    private panelMessage(guild: Guild) {
+    private async panelMessage(guild: Guild) {
+        const image = await sharp({
+            create: {
+                width: 1080,
+                height: 1,
+                channels: 4,
+                background: { r: 15, g: 173, b: 154, alpha: 1 }
+            }
+        })
+            .png()
+            .toBuffer();
+        const attachment = new AttachmentBuilder(image).setName('image.png');
+
         return {
             components: [
                 new ContainerBuilder()
@@ -169,7 +185,7 @@ export default class Ceraia extends GargoyleCommand {
                                 '\nBe sure to read our Terms of Service to grasp a better understanding of our commission process.'
                         )
                     )
-                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://image.png')))
                     .addSectionComponents(
                         new SectionBuilder()
                             .addTextDisplayComponents(
@@ -183,7 +199,7 @@ export default class Ceraia extends GargoyleCommand {
                                 new GargoyleButtonBuilder(this, 'support').setLabel('Support').setEmoji('🆘').setStyle(ButtonStyle.Secondary)
                             )
                     )
-                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://image.png')))
                     .addSectionComponents(
                         new SectionBuilder()
                             .addTextDisplayComponents(
@@ -197,7 +213,7 @@ export default class Ceraia extends GargoyleCommand {
                                 new GargoyleButtonBuilder(this, 'freelancer').setLabel('Apply').setEmoji('📋').setStyle(ButtonStyle.Secondary)
                             )
                     )
-                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://image.png')))
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent('## Commissions ' + '\nFeel free to choose a category for your commission.')
                     )
@@ -220,7 +236,8 @@ export default class Ceraia extends GargoyleCommand {
                         )
                     )
             ],
-            flags: [MessageFlags.IsComponentsV2]
+            flags: [MessageFlags.IsComponentsV2],
+            files: [attachment]
         };
     }
 }
