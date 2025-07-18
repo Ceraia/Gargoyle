@@ -5,7 +5,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import client from '@src/system/botClient.js';
-import { createCanvas, loadImage } from 'canvas';
+import { CanvasGradient, CanvasPattern, createCanvas, loadImage } from 'canvas';
 import {
     ActionRowBuilder,
     AttachmentBuilder,
@@ -162,12 +162,12 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
-    private async createUnderlineBanner(text: string): Promise<AttachmentBuilder> {
+    private async createUnderlineBanner(text: string, fillStyle: string | CanvasGradient | CanvasPattern): Promise<AttachmentBuilder> {
         const canvas = createCanvas(1080, 56);
         const ctx = canvas.getContext('2d');
 
         // Set background color
-        ctx.fillStyle = '#0fad9a';
+        ctx.fillStyle = fillStyle;
         ctx.fillRect(0, 53, 1080, 56);
 
         // Set text properties
@@ -178,6 +178,31 @@ export default class Ceraia extends GargoyleCommand {
 
         // Add text
         ctx.fillText(text, 540, 28);
+
+        // Create an attachment from the canvas
+        return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
+    }
+
+    private async createFilledBanner(
+        text: string,
+        fillStyle: string | CanvasGradient | CanvasPattern,
+        height: number = 56
+    ): Promise<AttachmentBuilder> {
+        const canvas = createCanvas(1080, height);
+        const ctx = canvas.getContext('2d');
+
+        // Set background color
+        ctx.fillStyle = fillStyle;
+        ctx.fillRect(0, 0, 1080, height);
+
+        // Set text properties
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Add text
+        ctx.fillText(text, 540, height / 2);
 
         // Create an attachment from the canvas
         return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
@@ -229,7 +254,9 @@ export default class Ceraia extends GargoyleCommand {
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent('## Commissions ' + '\nFeel free to choose a category for your commission.')
                     )
-                    .addSeparatorComponents(new SeparatorBuilder().setDivider(false).setSpacing(SeparatorSpacingSize.Small))
+                    .addMediaGalleryComponents(
+                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://commission_a_freelancer.png'))
+                    )
                     .addActionRowComponents(
                         new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
                             new GargoyleStringSelectMenuBuilder(this, 'commission-category')
@@ -250,9 +277,10 @@ export default class Ceraia extends GargoyleCommand {
             ],
             flags: [MessageFlags.IsComponentsV2],
             files: [
-                await this.createUnderlineBanner('Commissions'),
-                await this.createUnderlineBanner('Support'),
-                await this.createUnderlineBanner('Join the Team')
+                await this.createFilledBanner('Commissions', '#0fad9a', 112),
+                await this.createUnderlineBanner('Support', '#0fad9a'),
+                await this.createUnderlineBanner('Join the Team', '#0fad9a'),
+                await this.createUnderlineBanner('Commission a Freelancer', '#0fad9a')
             ]
         };
     }
