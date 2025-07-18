@@ -6,7 +6,7 @@ import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import client from '@src/system/botClient.js';
-import { CanvasGradient, CanvasPattern, createCanvas } from 'canvas';
+import { CanvasGradient, CanvasPattern, createCanvas, Image } from 'canvas';
 import {
     ActionRowBuilder,
     AttachmentBuilder,
@@ -31,7 +31,8 @@ import {
     TextInputBuilder,
     TextInputStyle,
     ThreadChannel,
-    ThumbnailBuilder
+    ThumbnailBuilder,
+    User
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
 
@@ -178,6 +179,7 @@ export default class Ceraia extends GargoyleCommand {
                     return;
                 } else if (interaction.options.getSubcommandGroup() === 'profile') {
                     if (interaction.options.getSubcommand() === 'view') {
+                        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
                         const user = interaction.options.getUser('user') || interaction.user;
                         const commissionaryUser = await getCommissionaryUser(user.id);
                         if (!commissionaryUser) {
@@ -187,27 +189,31 @@ export default class Ceraia extends GargoyleCommand {
 
                         const container = new ContainerBuilder().setAccentColor(0x1fad9a);
 
+                        container.addMediaGalleryComponents(
+                            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://profile_banner.png'))
+                        );
+
                         const section = new SectionBuilder()
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
-                                    `# ${user.displayName}\n\n` +
                                     `\n**Freelancer:** ${commissionaryUser.freelancer ? 'Yes.' : 'No.'}` +
-                                    `\n**Biography:** ${commissionaryUser.biography}` +
+                                    `\n**Biography:** \n> ${commissionaryUser.biography.split('\n').join('\n> ')}` +
                                     `\n**Commissions:** ${commissionaryUser.commissions.length > 0 ? commissionaryUser.commissions.join(', ') : 'No commissions yet.'}` +
                                     `\n**Ratings:** ${commissionaryUser.ratings.length} (${getAverageRating(commissionaryUser.ratings).toFixed(2)}/5)`
                                 )
                             )
                             .setThumbnailAccessory(new ThumbnailBuilder().setURL(user.displayAvatarURL()));
 
-                        const actionRow = new ActionRowBuilder<MessageActionRowComponentBuilder>()
+                        const profileBanner = await createProfileBanner(user, 1080, 128);
 
                         if (commissionaryUser.freelancer && commissionaryUser.showcase) {
-                            actionRow.addComponents(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
-                        } else actionRow.addComponents(new GargoyleButtonBuilder(this).setLabel('No Showcase').setEmoji('📸').setDisabled(true));
+                            section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
+                        } else section.setButtonAccessory(new GargoyleButtonBuilder(this).setLabel('No Showcase').setEmoji('📸').setDisabled(true));
 
-                        await interaction.reply({
-                            components: [container.addSectionComponents(section).addActionRowComponents(actionRow)],
-                            flags: MessageFlags.IsComponentsV2
+                        await interaction.editReply({
+                            components: [container.addSectionComponents(section)],
+                            flags: MessageFlags.IsComponentsV2,
+                            files: [profileBanner]
                         });
                         return;
                     } else if (interaction.options.getSubcommand() === 'biography') {
@@ -448,6 +454,57 @@ async function createSlashBanner(
 
     // Create an attachment from the canvas
     return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
+}
+
+async function createProfileBanner(
+    user: User,
+    width = 1080,
+    height = 128
+) {
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Make slash shape on the left
+    ctx.fillStyle = 'rgba(15, 173, 154, 1)';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(width / 10, 0);
+    ctx.lineTo(width / 10 + height / Math.tan(Math.PI / 2.5), height);
+    ctx.lineTo(0, height);
+    ctx.closePath();
+    ctx.fill();
+
+    // Set text properties
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 64px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    // Add user name
+    ctx.fillText(user.displayName, 25, 64);
+
+    // Add user avatar
+    const avatar = user.displayAvatarURL({ size: 256, extension: 'png' });
+    const img = new Image();
+
+    // Wait for image to load before drawing
+    await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = reject;
+        img.src = avatar;
+    });
+
+    // Draw the avatar on the right side of the banner with rounded corners
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(width - 64, height - 64, 64, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(img, width - 128, height - 128, 128, 128);
+    ctx.restore();
+
+    // Create an attachment from the canvas
+    return new AttachmentBuilder(canvas.toBuffer(), { name: `profile_banner.png` });
 }
 
 class FreelancerShowcase extends GargoyleEvent {
