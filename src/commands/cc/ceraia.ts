@@ -396,9 +396,9 @@ export default class Ceraia extends GargoyleCommand {
             flags: [MessageFlags.IsComponentsV2],
             files: [
                 await this.createSlashBanner('Commissions', '#0fad9a', 112, 1080, 64),
-                await this.createSlashBanner('Support', '#0fad9a'),
-                await this.createSlashBanner('Join the Team', '#0fad9a'),
-                await this.createSlashBanner('Commission a Freelancer', '#0fad9a')
+                await this.createUnderlineBanner('Support', '#0fad9a'),
+                await this.createUnderlineBanner('Join the Team', '#0fad9a'),
+                await this.createUnderlineBanner('Commission a Freelancer', '#0fad9a')
             ]
         };
     }
