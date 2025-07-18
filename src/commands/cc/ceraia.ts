@@ -4,14 +4,17 @@ import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/ga
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import client from '@src/system/botClient.js';
 import { CanvasGradient, CanvasPattern, createCanvas } from 'canvas';
 import {
     ActionRowBuilder,
     AttachmentBuilder,
     ButtonStyle,
+    ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
+    Events,
     Guild,
     InteractionContextType,
     MediaGalleryBuilder,
@@ -27,18 +30,32 @@ import {
     TextDisplayBuilder,
     TextInputBuilder,
     TextInputStyle,
+    ThreadChannel,
     ThumbnailBuilder
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
+
+const ceraiaGuild = '1394893354763817040'; // Ceraia guild ID
 
 export default class Ceraia extends GargoyleCommand {
     public override category: string = 'ceraia';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
+            .setName('management')
+            .setDescription('Ceraia management commands')
+            .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+            .addGuild(ceraiaGuild)
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('freelancer')
+                    .setDescription('Change freelancer status of a user')
+                    .addUserOption((option) => option.setName('user').setDescription('The user to change freelancer status of'))
+            ) as GargoyleSlashCommandBuilder,
+        new GargoyleSlashCommandBuilder()
             .setName('ceraia')
             .setDescription('Ceraia commands')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-            .addGuild('1394893354763817040') // Ceraia guild ID
+            .addGuild(ceraiaGuild)
             .addSubcommandGroup((subcommandGroup) =>
                 subcommandGroup
                     .setName('stripe')
@@ -124,99 +141,126 @@ export default class Ceraia extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (interaction.options.getSubcommandGroup() === 'panel') {
-            if (interaction.options.getSubcommand() === 'send') {
-                if (!interaction.guild) {
-                    return interaction.reply({ content: 'This command can only be used in a guild.', flags: MessageFlags.Ephemeral });
+        if (interaction.commandName === 'management') {
+            if (interaction.options.getSubcommand() === 'freelancer') {
+                const user = interaction.options.getUser('user');
+                if (!user) {
+                    return interaction.reply({ content: 'You must specify a user to change freelancer status.', flags: MessageFlags.Ephemeral });
                 }
-                await interaction.reply({ content: 'Sending the Ceraia panel...', flags: MessageFlags.Ephemeral });
 
-                (interaction.channel as TextChannel).send((await this.panelMessage(interaction.guild)) as MessageCreateOptions).catch((error) => {
-                    client.logger.error(`Failed to send the Ceraia panel: ${error.stack}`);
-                });
-            }
-            return;
-        } else if (interaction.options.getSubcommandGroup() === 'profile') {
-            if (interaction.options.getSubcommand() === 'view') {
-                const user = interaction.options.getUser('user') || interaction.user;
                 const commissionaryUser = await getCommissionaryUser(user.id);
                 if (!commissionaryUser) {
-                    await interaction.reply({ content: "We couldn't fetch the user profile" });
-                    return;
+                    return interaction.reply({ content: "We couldn't fetch the user profile", flags: MessageFlags.Ephemeral });
                 }
 
-                const section = new SectionBuilder()
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            `# ${user.displayName}\n\n` +
-                                `\n**Developer:** ${commissionaryUser.developer ? 'Yes.' : 'No.'}` +
-                                `\n**Showcase:** ${commissionaryUser.showcase || 'No showcase set.'}` +
-                                `\n**Biography:** ${commissionaryUser.biography}` +
-                                `\n**Commissions:** ${commissionaryUser.commissions.length > 0 ? commissionaryUser.commissions.join(', ') : 'No commissions yet.'}` +
-                                `\n**Ratings:** ${commissionaryUser.ratings.length} (${getAverageRating(commissionaryUser.ratings).toFixed(2)}/5)`
-                        )
-                    )
-                    .setThumbnailAccessory(new ThumbnailBuilder().setURL(user.displayAvatarURL()));
-
-                if (commissionaryUser.developer && commissionaryUser.showcase) {
-                    section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
-                }
+                commissionaryUser.freelancer = !commissionaryUser.freelancer;
+                await commissionaryUser.save();
 
                 await interaction.reply({
-                    components: [new ContainerBuilder().addSectionComponents(section)],
-                    flags: MessageFlags.IsComponentsV2
+                    content: `Freelancer status for ${user.tag} has been set to ${commissionaryUser.freelancer ? 'enabled' : 'disabled'}.`,
+                    flags: MessageFlags.Ephemeral
                 });
-                return;
-            } else if (interaction.options.getSubcommand() === 'biography') {
-                const commissionaryUser = await getCommissionaryUser(interaction.user.id);
-                if (!commissionaryUser) {
-                    await interaction.reply({ content: "We couldn't fetch the user profile" });
+            }
+            return;
+        } else
+            if (interaction.commandName === 'ceraia') {
+                if (interaction.options.getSubcommandGroup() === 'panel') {
+                    if (interaction.options.getSubcommand() === 'send') {
+                        if (!interaction.guild) {
+                            return interaction.reply({ content: 'This command can only be used in a guild.', flags: MessageFlags.Ephemeral });
+                        }
+                        await interaction.reply({ content: 'Sending the Ceraia panel...', flags: MessageFlags.Ephemeral });
+
+                        (interaction.channel as TextChannel).send((await this.panelMessage(interaction.guild)) as MessageCreateOptions).catch((error) => {
+                            client.logger.error(`Failed to send the Ceraia panel: ${error.stack}`);
+                        });
+                    }
+                    return;
+                } else if (interaction.options.getSubcommandGroup() === 'profile') {
+                    if (interaction.options.getSubcommand() === 'view') {
+                        const user = interaction.options.getUser('user') || interaction.user;
+                        const commissionaryUser = await getCommissionaryUser(user.id);
+                        if (!commissionaryUser) {
+                            await interaction.reply({ content: "We couldn't fetch the user profile" });
+                            return;
+                        }
+
+                        const container = new ContainerBuilder().setAccentColor(0x1fad9a);
+
+                        const section = new SectionBuilder()
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    `# ${user.displayName}\n\n` +
+                                    `\n**Freelancer:** ${commissionaryUser.freelancer ? 'Yes.' : 'No.'}` +
+                                    `\n**Biography:** ${commissionaryUser.biography}` +
+                                    `\n**Commissions:** ${commissionaryUser.commissions.length > 0 ? commissionaryUser.commissions.join(', ') : 'No commissions yet.'}` +
+                                    `\n**Ratings:** ${commissionaryUser.ratings.length} (${getAverageRating(commissionaryUser.ratings).toFixed(2)}/5)`
+                                )
+                            )
+                            .setThumbnailAccessory(new ThumbnailBuilder().setURL(user.displayAvatarURL()));
+
+                        const actionRow = new ActionRowBuilder<MessageActionRowComponentBuilder>()
+
+                        if (commissionaryUser.freelancer && commissionaryUser.showcase) {
+                            actionRow.addComponents(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
+                        } else actionRow.addComponents(new GargoyleButtonBuilder(this).setLabel('No Showcase').setEmoji('📸').setDisabled(true));
+
+                        await interaction.reply({
+                            components: [container.addSectionComponents(section).addActionRowComponents(actionRow)],
+                            flags: MessageFlags.IsComponentsV2
+                        });
+                        return;
+                    } else if (interaction.options.getSubcommand() === 'biography') {
+                        const commissionaryUser = await getCommissionaryUser(interaction.user.id);
+                        if (!commissionaryUser) {
+                            await interaction.reply({ content: "We couldn't fetch the user profile" });
+                            return;
+                        }
+
+                        await interaction.showModal(
+                            new GargoyleModalBuilder(this, 'biography')
+                                .setTitle('Set your biography')
+                                .setComponents(
+                                    new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                                        new TextInputBuilder()
+                                            .setStyle(TextInputStyle.Paragraph)
+                                            .setCustomId('biography')
+                                            .setLabel('Biography')
+                                            .setRequired(true)
+                                            .setMaxLength(500)
+                                            .setPlaceholder('Tell us about yourself...')
+                                            .setMinLength(8)
+                                            .setValue(commissionaryUser.biography)
+                                    )
+                                )
+                        );
+                    }
+                } else if (interaction.options.getSubcommandGroup() === 'banner') {
+                    const text = interaction.options.getString('text', true);
+                    const height = interaction.options.getInteger('height') || 56;
+                    const width = interaction.options.getInteger('width') || 1080;
+                    const fontSize = interaction.options.getInteger('font_size') || 48;
+
+                    let attachment: AttachmentBuilder;
+
+                    if (interaction.options.getSubcommand() === 'underline') {
+                        attachment = await createUnderlineBanner(text, '#0fad9a', height, width, fontSize);
+                    } else if (interaction.options.getSubcommand() === 'slash') {
+                        attachment = await createSlashBanner(text, '#0fad9a', height, width, fontSize);
+                    } else if (interaction.options.getSubcommand() === 'filled') {
+                        attachment = await createFilledBanner(text, '#0fad9a', height, width, fontSize);
+                    } else {
+                        return;
+                    }
+
+                    await interaction.reply({ files: [attachment] });
+                    return;
+                } else {
+                    interaction.reply({ content: 'Invalid subcommand or subcommand group.', flags: MessageFlags.Ephemeral });
                     return;
                 }
-
-                await interaction.showModal(
-                    new GargoyleModalBuilder(this, 'biography')
-                        .setTitle('Set your biography')
-                        .setComponents(
-                            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
-                                new TextInputBuilder()
-                                    .setStyle(TextInputStyle.Paragraph)
-                                    .setCustomId('biography')
-                                    .setLabel('Biography')
-                                    .setRequired(true)
-                                    .setMaxLength(500)
-                                    .setPlaceholder('Tell us about yourself...')
-                                    .setMinLength(8)
-                                    .setValue(commissionaryUser.biography)
-                            )
-                        )
-                );
-            }
-        } else if (interaction.options.getSubcommandGroup() === 'banner') {
-            const text = interaction.options.getString('text', true);
-            const height = interaction.options.getInteger('height') || 56;
-            const width = interaction.options.getInteger('width') || 1080;
-            const fontSize = interaction.options.getInteger('font_size') || 48;
-
-            let attachment: AttachmentBuilder;
-
-            if (interaction.options.getSubcommand() === 'underline') {
-                attachment = await this.createUnderlineBanner(text, '#0fad9a', height, width, fontSize);
-            } else if (interaction.options.getSubcommand() === 'slash') {
-                attachment = await this.createSlashBanner(text, '#0fad9a', height, width, fontSize);
-            } else if (interaction.options.getSubcommand() === 'filled') {
-                attachment = await this.createFilledBanner(text, '#0fad9a', height, width, fontSize);
-            } else {
                 return;
             }
-
-            await interaction.reply({ files: [attachment] });
-            return;
-        } else {
-            interaction.reply({ content: 'Invalid subcommand or subcommand group.', flags: MessageFlags.Ephemeral });
-            return;
-        }
-        return;
     }
 
     public override async executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
@@ -235,97 +279,6 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
-    private async createUnderlineBanner(
-        text: string,
-        fillStyle: string | CanvasGradient | CanvasPattern,
-        height: number = 56,
-        width: number = 1080,
-        fontSize: number = 48
-    ): Promise<AttachmentBuilder> {
-        const canvas = createCanvas(width, height);
-        const ctx = canvas.getContext('2d');
-
-        // Make underline
-        ctx.fillStyle = fillStyle;
-        ctx.fillRect(0, height - 3, width, height);
-
-        // Set text properties
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Add text
-        ctx.fillText(text, width / 2, height / 2);
-
-        // Create an attachment from the canvas
-        return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
-    }
-
-    private async createFilledBanner(
-        text: string,
-        fillStyle: string | CanvasGradient | CanvasPattern,
-        height: number = 56,
-        width: number = 1080,
-        fontSize: number = 48
-    ): Promise<AttachmentBuilder> {
-        const canvas = createCanvas(width, height);
-        const ctx = canvas.getContext('2d');
-
-        // Set background color
-        ctx.fillStyle = fillStyle;
-        ctx.fillRect(0, 0, width, height);
-
-        // Set text properties
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Add text
-        ctx.fillText(text, width / 2, height / 2);
-
-        // Create an attachment from the canvas
-        return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
-    }
-
-    private async createSlashBanner(
-        text: string,
-        fillStyle: string | CanvasGradient | CanvasPattern,
-        height: number = 56,
-        width: number = 1080,
-        fontSize: number = 48
-    ): Promise<AttachmentBuilder> {
-        const canvas = createCanvas(1080, height);
-        const ctx = canvas.getContext('2d');
-
-        // Make slash shape on the left
-        ctx.fillStyle = fillStyle;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(width / 20, 0);
-        ctx.lineTo(width / 20 + height / Math.tan(Math.PI / 2.5), height);
-        ctx.lineTo(0, height);
-        ctx.closePath();
-        ctx.fill();
-
-        // Make underline
-        ctx.fillStyle = fillStyle;
-        ctx.fillRect(0, height - 4, width, height);
-
-        // Set text properties
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Add text
-        ctx.fillText(text, width / 2, height / 2);
-
-        // Create an attachment from the canvas
-        return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
-    }
-
     private async panelMessage(guild: Guild) {
         return {
             components: [
@@ -337,7 +290,7 @@ export default class Ceraia extends GargoyleCommand {
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
                             '-# Make commissions easy, safe and reliable.' +
-                                '\nBe sure to read our Terms of Service to grasp a better understanding of our commission process.'
+                            '\nBe sure to read our Terms of Service to grasp a better understanding of our commission process.'
                         )
                     )
                     .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://support.png')))
@@ -346,7 +299,7 @@ export default class Ceraia extends GargoyleCommand {
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
                                     '\nDo you have any questions? Is something not working as expected? Is there anything else we can help you with?' +
-                                        '\nFeel free to open a support ticket, and we will help you as soon as possible.'
+                                    '\nFeel free to open a support ticket, and we will help you as soon as possible.'
                                 )
                             )
                             .setButtonAccessory(
@@ -361,8 +314,8 @@ export default class Ceraia extends GargoyleCommand {
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
                                     '## Become a freelancer ' +
-                                        '\nWant to become a freelancer?' +
-                                        '\nFeel free to apply for a position in our freelancer team!'
+                                    '\nWant to become a freelancer?' +
+                                    '\nFeel free to apply for a position in our freelancer team!'
                                 )
                             )
                             .setButtonAccessory(
@@ -395,12 +348,137 @@ export default class Ceraia extends GargoyleCommand {
             ],
             flags: [MessageFlags.IsComponentsV2],
             files: [
-                await this.createSlashBanner('Commissions', '#0fad9a', 112, 1080, 64),
-                await this.createUnderlineBanner('Support', '#0fad9a'),
-                await this.createUnderlineBanner('Join the Team', '#0fad9a'),
-                await this.createUnderlineBanner('Commission a Freelancer', '#0fad9a')
+                await createSlashBanner('Commissions', '#0fad9a', 112, 1080, 64),
+                await createUnderlineBanner('Support', '#0fad9a'),
+                await createUnderlineBanner('Join the Team', '#0fad9a'),
+                await createUnderlineBanner('Commission a Freelancer', '#0fad9a')
             ]
         };
+    }
+
+    public override events: GargoyleEvent[] = [new FreelancerShowcase()];
+}
+
+async function createUnderlineBanner(
+    text: string,
+    fillStyle: string | CanvasGradient | CanvasPattern,
+    height: number = 56,
+    width: number = 1080,
+    fontSize: number = 48
+): Promise<AttachmentBuilder> {
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Make underline
+    ctx.fillStyle = fillStyle;
+    ctx.fillRect(0, height - 3, width, height);
+
+    // Set text properties
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Add text
+    ctx.fillText(text, width / 2, height / 2);
+
+    // Create an attachment from the canvas
+    return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
+}
+
+async function createFilledBanner(
+    text: string,
+    fillStyle: string | CanvasGradient | CanvasPattern,
+    height: number = 56,
+    width: number = 1080,
+    fontSize: number = 48
+): Promise<AttachmentBuilder> {
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Set background color
+    ctx.fillStyle = fillStyle;
+    ctx.fillRect(0, 0, width, height);
+
+    // Set text properties
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Add text
+    ctx.fillText(text, width / 2, height / 2);
+
+    // Create an attachment from the canvas
+    return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
+}
+
+async function createSlashBanner(
+    text: string,
+    fillStyle: string | CanvasGradient | CanvasPattern,
+    height: number = 56,
+    width: number = 1080,
+    fontSize: number = 48
+): Promise<AttachmentBuilder> {
+    const canvas = createCanvas(1080, height);
+    const ctx = canvas.getContext('2d');
+
+    // Make slash shape on the left
+    ctx.fillStyle = fillStyle;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(width / 20, 0);
+    ctx.lineTo(width / 20 + height / Math.tan(Math.PI / 2.5), height);
+    ctx.lineTo(0, height);
+    ctx.closePath();
+    ctx.fill();
+
+    // Make underline
+    ctx.fillStyle = fillStyle;
+    ctx.fillRect(0, height - 4, width, height);
+
+    // Set text properties
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Add text
+    ctx.fillText(text, width / 2, height / 2);
+
+    // Create an attachment from the canvas
+    return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
+}
+
+class FreelancerShowcase extends GargoyleEvent {
+    public event = Events.ThreadCreate as const;
+
+    public async execute(_client: GargoyleClient, thread: ThreadChannel): Promise<void> {
+        if (thread.parent?.type !== ChannelType.GuildForum) return;
+        if (thread.guildId !== ceraiaGuild) return;
+
+        const owner = await thread.fetchOwner();
+
+        const parent = await thread.parent?.fetch();
+        if (!parent || parent.type !== ChannelType.GuildForum) return;
+
+        const parentThreads = await parent.threads.fetch();
+
+        if (!owner) return;
+        const commissionaryOwner = await getCommissionaryUser(owner.id);
+
+        if (!commissionaryOwner) return;
+
+        if (commissionaryOwner.freelancer) {
+            parentThreads.threads.forEach((t) => {
+                if (t.id !== thread.id && t.ownerId === owner.id) {
+                    t.setArchived(true, `Thread closed due to new thread created by the same user <#${thread.id}>`);
+                }
+            });
+
+            commissionaryOwner.showcase = `https://discord.com/channels/${thread.guildId}/${thread.id}`;
+            await commissionaryOwner.save();
+        }
     }
 }
 
@@ -410,9 +488,10 @@ const commissionaryUserSchema = new Schema({
         required: true,
         unique: true
     },
-    developer: {
+    freelancer: {
         type: Boolean,
-        default: false
+        default: false,
+        required: true
     },
     showcase: {
         type: String,
