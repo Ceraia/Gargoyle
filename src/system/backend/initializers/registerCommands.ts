@@ -48,8 +48,8 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
 
                 guild.commands
                     .create(slashCommand)
-                    .catch(() => {
-                        client.logger.error(`Failed to register slash command ${slashCommand?.name} in ${guildId}`);
+                    .catch((err) => {
+                        client.logger.error(`Failed to register slash command ${slashCommand?.name} in ${guildId}: ${err.stack}`);
                     })
                     .then(() => {
                         client.logger.debug(`Registered slashcommand ${slashCommand?.name} in guild ${guild.name}`);
