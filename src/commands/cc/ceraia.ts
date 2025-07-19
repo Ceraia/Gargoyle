@@ -200,16 +200,22 @@ export default class Ceraia extends GargoyleCommand {
                                 new TextDisplayBuilder().setContent(
                                     `\n**Freelancer:** ${commissionaryUser.freelancer ? 'Yes.' : 'No.'}` +
                                     `\n**Biography:** \n> ${commissionaryUser.biography.split('\n').join('\n> ')}` +
-                                    `\n**Commissions:** ${commissionaryUser.commissions.length}`
+                                    `\n**Commissions:** ${commissionaryUser.commissions.length == 0 ? 'No commissions yet.' : commissionaryUser.commissions.length}` +
+                                    (commissionaryUser.freelancer ? `\n**Price Range:** ${commissionaryUser.freelancerPrice}` : '')
                                 )
                             )
                             .setThumbnailAccessory(new ThumbnailBuilder().setURL(user.displayAvatarURL()));
 
-                        const profileBanner = await createProfileBanner(user, commissionaryUser.freelancerPrice, `${userRating.toFixed(1)} (${commissionaryUser.ratings.length})`, 1080, 256);
+                        const profileBanner = await createProfileBanner(
+                            user,
+                            commissionaryUser.freelancer ? commissionaryUser.freelancerPrice : '',
+                            `${userRating.toFixed(1)} (${commissionaryUser.ratings.length})`,
+                            1080,
+                            256);
 
                         if (commissionaryUser.freelancer && commissionaryUser.showcase) {
                             section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
-                        } else section.setButtonAccessory(new GargoyleButtonBuilder(this).setLabel('No Showcase').setEmoji('📸').setDisabled(true));
+                        } else section.setButtonAccessory(new GargoyleButtonBuilder(this).setStyle(ButtonStyle.Danger).setLabel('No Showcase').setEmoji('📸').setDisabled(true));
 
                         await interaction.editReply({
                             components: [container.addSectionComponents(section)],
