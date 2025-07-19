@@ -179,7 +179,7 @@ export default class Ceraia extends GargoyleCommand {
                     return;
                 } else if (interaction.options.getSubcommandGroup() === 'profile') {
                     if (interaction.options.getSubcommand() === 'view') {
-                        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                        await interaction.deferReply({});
                         const user = interaction.options.getUser('user') || interaction.user;
                         const commissionaryUser = await getCommissionaryUser(user.id);
                         if (!commissionaryUser) {
@@ -193,18 +193,19 @@ export default class Ceraia extends GargoyleCommand {
                             new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://profile_banner.png'))
                         );
 
+                        const userRating = getAverageRating(commissionaryUser.ratings);
+
                         const section = new SectionBuilder()
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
                                     `\n**Freelancer:** ${commissionaryUser.freelancer ? 'Yes.' : 'No.'}` +
                                     `\n**Biography:** \n> ${commissionaryUser.biography.split('\n').join('\n> ')}` +
-                                    `\n**Commissions:** ${commissionaryUser.commissions.length > 0 ? commissionaryUser.commissions.join(', ') : 'No commissions yet.'}` +
-                                    `\n**Ratings:** ${commissionaryUser.ratings.length} (${getAverageRating(commissionaryUser.ratings).toFixed(2)}/5)`
+                                    `\n**Commissions:** ${commissionaryUser.commissions.length}`
                                 )
                             )
                             .setThumbnailAccessory(new ThumbnailBuilder().setURL(user.displayAvatarURL()));
 
-                        const profileBanner = await createProfileBanner(user, 1080, 128);
+                        const profileBanner = await createProfileBanner(user, commissionaryUser.freelancerPrice, `${userRating.toFixed(1)} (${commissionaryUser.ratings.length})`, 1080, 256);
 
                         if (commissionaryUser.freelancer && commissionaryUser.showcase) {
                             section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
@@ -458,8 +459,10 @@ async function createSlashBanner(
 
 async function createProfileBanner(
     user: User,
+    price: string,
+    rating: string = 'No Rating',
     width = 1080,
-    height = 128
+    height = 256
 ) {
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
@@ -482,6 +485,16 @@ async function createProfileBanner(
 
     // Add user name
     ctx.fillText(user.displayName, 25, 64);
+
+    // Add user price range
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillText(price, width - 25, 64);
+
+    // Add user rating
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(rating, 25, height - 32);
 
     // Add user avatar
     const avatar = user.displayAvatarURL({ size: 256, extension: 'png' });
@@ -548,6 +561,11 @@ const commissionaryUserSchema = new Schema({
     freelancer: {
         type: Boolean,
         default: false,
+        required: true
+    },
+    freelancerPrice: {
+        type: String,
+        default: '$$',
         required: true
     },
     showcase: {
