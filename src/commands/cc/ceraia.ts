@@ -16,6 +16,7 @@ import {
     ContainerBuilder,
     Events,
     Guild,
+    GuildMember,
     InteractionContextType,
     MediaGalleryBuilder,
     MediaGalleryItemBuilder,
@@ -51,7 +52,8 @@ export default class Ceraia extends GargoyleCommand {
                     .setName('freelancer')
                     .setDescription('Change freelancer status of a user')
                     .addUserOption((option) => option.setName('user').setDescription('The user to change freelancer status of'))
-            ) as GargoyleSlashCommandBuilder,
+            ).addSubcommand(subcommand => subcommand.setName('welcome').setDescription('Send an example welcome message')) as GargoyleSlashCommandBuilder,
+
         new GargoyleSlashCommandBuilder()
             .setName('ceraia')
             .setDescription('Ceraia commands')
@@ -161,6 +163,8 @@ export default class Ceraia extends GargoyleCommand {
                     content: `Freelancer status for ${user.tag} has been set to ${commissionaryUser.freelancer ? 'enabled' : 'disabled'}.`,
                     flags: MessageFlags.Ephemeral
                 });
+            } else if (interaction.options.getSubcommand() === 'welcome') {
+                await (interaction.channel as TextChannel).send(await generateWelcomeMessage(interaction.member as GuildMember));
             }
             return;
         } else
@@ -369,7 +373,7 @@ export default class Ceraia extends GargoyleCommand {
         };
     }
 
-    public override events: GargoyleEvent[] = [new FreelancerShowcase()];
+    public override events: GargoyleEvent[] = [new FreelancerShowcase(), new SpecializedWelcome()];
 }
 
 async function createUnderlineBanner(
@@ -555,6 +559,87 @@ class FreelancerShowcase extends GargoyleEvent {
             commissionaryOwner.showcase = `https://discord.com/channels/${thread.guildId}/${thread.id}`;
             await commissionaryOwner.save();
         }
+    }
+}
+
+async function generateWelcomeMessage(member: GuildMember): Promise<MessageCreateOptions> {
+    const width = 1080;
+    const height = 256;
+
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Make slash shape on the left
+    ctx.fillStyle = 'rgba(15, 173, 154, 1)';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(width / 10, 0);
+    ctx.lineTo(width / 10 + height / Math.tan(Math.PI / 2.5), height);
+    ctx.lineTo(0, height);
+    ctx.closePath();
+    ctx.fill();
+
+    // Add welcome text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`Welcome to ${member.guild.name},\n${member.displayName}!`, 20, 20);
+
+    // Add user avatar
+    const avatar = member.user.displayAvatarURL({ size: 256, extension: 'png' });
+    const img = new Image();
+
+    // Wait for image to load before drawing
+    await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = reject;
+        img.src = avatar;
+    });
+
+    // Add circular avatar on the bottom right corner
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(width - 64, height - 64, 64, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(img, width - 128, height - 128, 128, 128);
+    ctx.restore();
+
+    // Create an attachment from the canvas
+    const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'welcome_banner.png' });
+
+    return {
+        components: [
+            new ContainerBuilder()
+                .setAccentColor(0x1fad9a)
+                .addMediaGalleryComponents(
+                    new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://welcome_banner.png'))
+                )
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(`Welcome to **${member.guild.name}**, <@!${member.id}>!` +
+                        '\nWe are glad to have you here! Please make sure to read the rules and enjoy your stay!')
+                )
+        ],
+        files: [attachment],
+        flags: [MessageFlags.IsComponentsV2]
+    };
+
+}
+
+class SpecializedWelcome extends GargoyleEvent {
+    public event = Events.GuildMemberAdd as const;
+
+    public async execute(client: GargoyleClient, member: GuildMember): Promise<void> {
+        member = await member.fetch();
+
+        if (member.guild.id !== ceraiaGuild) return;
+        client.logger.trace('Member is from Ceraia');
+
+        const channel = member.guild.channels.cache.find((c) => c.name.includes('welcome') && c.type === ChannelType.GuildText) as TextChannel | undefined;
+        if (!channel) return;
+
+        await channel.send(await generateWelcomeMessage(member));
     }
 }
 
