@@ -323,15 +323,15 @@ export default class Ceraia extends GargoyleCommand {
             });
 
             const commissionId = `${Date.now()}`;
-            // await createCommissionaryCommission({
-            //     ownerId: interaction.user.id,
-            //     threadId: thread.id,
-            //     commissionId: commissionId,
-            //     commissionCategory: categoryRole.name.replace('Category - ', ''),
-            //     commissionTitle: title,
-            //     commissionDescription: description,
-            //     commissionPrice: price
-            // });
+            await createCommissionaryCommission({
+                ownerId: interaction.user.id,
+                threadId: thread.id,
+                commissionId: commissionId,
+                commissionCategory: categoryRole.name.replace('Category - ', ''),
+                commissionTitle: title,
+                commissionDescription: description,
+                commissionPrice: price
+            });
 
             commissionaryUser.commissions.push(commissionId);
             await commissionaryUser.save();
@@ -355,11 +355,11 @@ export default class Ceraia extends GargoyleCommand {
                         )
                         .addActionRowComponents(
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                                new GargoyleButtonBuilder(this, 'offer', thread.id)
+                                new GargoyleButtonBuilder(this, 'offer', commissionId)
                                     .setLabel('Offer to do Commission')
                                     .setEmoji('💰')
                                     .setStyle(ButtonStyle.Success),
-                                new GargoyleButtonBuilder(this, 'negotiate', thread.id)
+                                new GargoyleButtonBuilder(this, 'negotiate', commissionId)
                                     .setLabel('Negotiate Commission')
                                     .setEmoji('🤝')
                                     .setStyle(ButtonStyle.Secondary),
@@ -392,6 +392,91 @@ export default class Ceraia extends GargoyleCommand {
 
             await interaction.editReply((await this.generateProfileMessage(member)) as MessageEditOptions);
             return;
+        } else if (args[0] === 'offer') {
+            await interaction.reply({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0x1fad9a)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('Are you sure you want to offer to do this commission?'))
+                        .addActionRowComponents(
+                            new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                new GargoyleButtonBuilder(this, 'offerconfirm', args[1])
+                                    .setLabel('Confirm Offer')
+                                    .setEmoji('✅')
+                                    .setStyle(ButtonStyle.Success)
+                            )
+                        )
+                ],
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
+        } else if (args[0] === 'offerconfirm') {
+            await interaction.deferUpdate({});
+
+            const commissionId = args[1];
+            const commission = await getCommissionaryCommission(commissionId);
+            if (!commission) {
+                await interaction.editReply({ content: 'This commission no longer exists.' });
+                return;
+            }
+
+            const guild = await interaction.guild?.fetch();
+
+            if (!guild) {
+                await interaction.editReply({ content: 'This command can only be used in a guild.' });
+                return;
+            }
+
+            const thread = guild.channels.cache.get(commission.threadId) as ThreadChannel | undefined;
+            if (!thread) {
+                await interaction.editReply({ content: 'This commission thread no longer exists.' });
+                return;
+            }
+
+            await thread.send({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0x1fad9a)
+                        .addMediaGalleryComponents(
+                            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://freelanceraccept.png'))
+                        )
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `Your commission has been accepted by <@!${interaction.user.id}>` +
+                                    `\nThis means that they are willing to do the commission for the price you set.` +
+                                    `\nYou can accept the offer by clicking the "Accept Offer" button below.`
+                            )
+                        )
+                        .addActionRowComponents(
+                            new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                new GargoyleButtonBuilder(this, 'acceptoffer', commissionId)
+                                    .setLabel('Accept Offer')
+                                    .setEmoji('✅')
+                                    .setStyle(ButtonStyle.Success)
+                                    .setDisabled(true),
+                                new GargoyleButtonBuilder(this, 'profile', interaction.user.id)
+                                    .setLabel('View Profile')
+                                    .setStyle(ButtonStyle.Secondary)
+                                    .setEmoji('👤'),
+                                new GargoyleButtonBuilder(this, 'decline', commissionId)
+                                    .setLabel('Decline Offer')
+                                    .setEmoji('❌')
+                                    .setStyle(ButtonStyle.Danger)
+                            )
+                        )
+                ],
+                flags: MessageFlags.IsComponentsV2,
+                files: [
+                    await createSlashBanner(`Commission offer accepted by ${interaction.user.username}`, '#0fad9a', 112, 1080, 40, 'freelanceraccept')
+                ]
+            });
+
+            await interaction.editReply({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0x1fad9a)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('Your offer has been sent!'))
+                ]
+            });
         }
     }
 
@@ -918,6 +1003,16 @@ const commissionaryCommissionSchema = new Schema({
         required: true,
         unique: true
     },
+    threadId: {
+        type: String,
+        required: true
+    },
+    negotiationThreadIds: [
+        {
+            type: String,
+            default: []
+        }
+    ],
     commissionThreadId: String,
     commissionCategory: String,
     commissionSubcategory: String,
