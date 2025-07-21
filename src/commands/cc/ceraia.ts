@@ -163,8 +163,10 @@ export default class Ceraia extends GargoyleCommand {
                     content: `Freelancer status for ${user.tag} has been set to ${commissionaryUser.freelancer ? 'enabled' : 'disabled'}.`,
                     flags: MessageFlags.Ephemeral
                 });
+                return;
             } else if (interaction.options.getSubcommand() === 'welcome') {
                 await (interaction.channel as TextChannel).send(await generateWelcomeMessage(interaction.member as GuildMember));
+                return;
             }
             return;
         } else
@@ -277,7 +279,7 @@ export default class Ceraia extends GargoyleCommand {
                     return;
                 }
                 return;
-            }
+            } return;
     }
 
     public override async executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
@@ -608,6 +610,9 @@ async function generateWelcomeMessage(member: GuildMember): Promise<MessageCreat
 
     // Create an attachment from the canvas
     const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'welcome_banner.png' });
+
+    // Get the commissionary user (used to make sure the user is registered in the database too)
+    await getCommissionaryUser(member.id);
 
     return {
         components: [
