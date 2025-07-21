@@ -304,20 +304,28 @@ export default class Ceraia extends GargoyleCommand {
             await interaction.reply({ content: 'Your biography has been updated successfully!', flags: MessageFlags.Ephemeral });
             return;
         } else if (args[0] === 'commission') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const guild = await interaction.guild!.fetch();
+            const member = await (interaction.member as GuildMember).fetch();
+
+            if (!guild || !member) {
+                await interaction.editReply({
+                    content: 'This command can only be used in a guild.'
+                });
+                return;
+            }
 
             const categoryRole = guild.roles.cache.get(args[1]);
             if (!categoryRole) {
-                await interaction.reply({
-                    content: 'Sorry, this category either no longer exists or cannot be selected',
-                    flags: MessageFlags.Ephemeral
+                await interaction.editReply({
+                    content: 'Sorry, this category either no longer exists or cannot be selected'
                 });
                 return;
             }
 
             const commissionaryUser = await getCommissionaryUser(interaction.user.id);
             if (!commissionaryUser) {
-                await interaction.reply({ content: "We couldn't fetch your profile", flags: MessageFlags.Ephemeral });
+                await interaction.editReply({ content: "We couldn't fetch your profile" });
                 return;
             }
 
@@ -326,9 +334,8 @@ export default class Ceraia extends GargoyleCommand {
                 | undefined;
 
             if (!commissionsChannel) {
-                await interaction.reply({
-                    content: 'Commissions channel not found. Please contact an administrator.',
-                    flags: MessageFlags.Ephemeral
+                await interaction.editReply({
+                    content: 'Commissions channel not found. Please contact an administrator.'
                 });
                 return;
             }
@@ -337,9 +344,9 @@ export default class Ceraia extends GargoyleCommand {
             const description = interaction.fields.getTextInputValue('description');
             const date = interaction.fields.getTextInputValue('date');
             const price = interaction.fields.getTextInputValue('price');
-            const extra = interaction.fields.getTextInputValue('extra');
+            const extra: string | undefined = interaction.fields.getTextInputValue('extra');
 
-            const thread = await commissionsChannel.threads.create({
+            const thread = await (interaction.channel as TextChannel).threads.create({
                 name: title,
                 autoArchiveDuration: 60,
                 reason: 'New commission thread',
@@ -347,25 +354,62 @@ export default class Ceraia extends GargoyleCommand {
                 invitable: true
             });
 
-            const commissionId = `${Date.now()}`;
-            await createCommissionaryCommission({
-                ownerId: interaction.user.id,
-                threadId: thread.id,
-                commissionId: commissionId,
-                commissionCategory: categoryRole.name.replace('Category - ', ''),
-                commissionTitle: title,
-                commissionDescription: description,
-                commissionPrice: price
+            thread.members.add(interaction.user.id).catch((error) => {
+                client.logger.error(`Failed to add user to thread: ${error.stack}`);
             });
+
+            const commissionId = `${Date.now()}`;
+            // await createCommissionaryCommission({
+            //     ownerId: interaction.user.id,
+            //     threadId: thread.id,
+            //     commissionId: commissionId,
+            //     commissionCategory: categoryRole.name.replace('Category - ', ''),
+            //     commissionTitle: title,
+            //     commissionDescription: description,
+            //     commissionPrice: price
+            // });
 
             commissionaryUser.commissions.push(commissionId);
             await commissionaryUser.save();
 
-            await commissionsChannel.send({});
+            await commissionsChannel.send({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0x1fad9a)
+                        .addMediaGalleryComponents(
+                            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://commissions.png'))
+                        )
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `## New Commission by ${member.displayName}` +
+                                    `\n-# This is a commission created by <@!${interaction.user.id}>, for <@&${categoryRole.id}>` +
+                                    `\n**Price:** ${price}` +
+                                    `\n**Deadline:** ${date}` +
+                                    `\n## ${title}, ` +
+                                    `\n > ${description.replaceAll('\n', '\n> ')}` +
+                                    (extra ? `\n-# Extra Info: ${extra}` : '')
+                            )
+                        )
+                        .addActionRowComponents(
+                            new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                new GargoyleButtonBuilder(this, 'offer')
+                                    .setLabel('Offer to do Commission')
+                                    .setEmoji('💰')
+                                    .setStyle(ButtonStyle.Success),
+                                new GargoyleButtonBuilder(this, 'negotiate')
+                                    .setLabel('Negotiate Commission')
+                                    .setEmoji('🤝')
+                                    .setStyle(ButtonStyle.Secondary),
+                                new GargoyleButtonBuilder(this, 'viewprofile').setLabel('View Profile').setEmoji('👤').setStyle(ButtonStyle.Secondary)
+                            )
+                        )
+                ],
+                flags: [MessageFlags.IsComponentsV2],
+                files: [await createSlashBanner(`New Commission by ${member.displayName}`, '#0fad9a', 112, 1080, 40, 'commissions')]
+            });
 
-            await interaction.reply({
-                content: `Your commission has been created successfully! Commission ID: ${commissionId}`,
-                flags: MessageFlags.Ephemeral
+            await interaction.editReply({
+                content: `Your commission has been created successfully! Commission ID: ${commissionId}`
             });
         }
     }
@@ -392,7 +436,7 @@ export default class Ceraia extends GargoyleCommand {
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
                             new TextInputBuilder()
                                 .setCustomId('title')
-                                .setLabel('What do you want to commission?')
+                                .setLabel('What should be the title?')
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(true)
                                 .setPlaceholder('Describe the commission you want to make')
@@ -416,7 +460,7 @@ export default class Ceraia extends GargoyleCommand {
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
                             new TextInputBuilder()
                                 .setCustomId('price')
-                                .setLabel('Commission Price')
+                                .setLabel('How much are you willing to pay?')
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(true)
                                 .setPlaceholder('How much are you willing to pay for this commission? (in USD)')
@@ -426,7 +470,7 @@ export default class Ceraia extends GargoyleCommand {
                                 .setCustomId('extra')
                                 .setLabel("Is there anything else you'd like to add?")
                                 .setStyle(TextInputStyle.Short)
-                                .setRequired(true)
+                                .setRequired(false)
                                 .setPlaceholder('Only available to respond on weekdays, lactose tolerant, etc.')
                         )
                     )
@@ -574,7 +618,8 @@ async function createSlashBanner(
     fillStyle: string | CanvasGradient | CanvasPattern,
     height: number = 56,
     width: number = 1080,
-    fontSize: number = 48
+    fontSize: number = 48,
+    name?: string
 ): Promise<AttachmentBuilder> {
     const canvas = createCanvas(1080, height);
     const ctx = canvas.getContext('2d');
@@ -603,7 +648,7 @@ async function createSlashBanner(
     ctx.fillText(text, width / 2, height / 2);
 
     // Create an attachment from the canvas
-    return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
+    return new AttachmentBuilder(canvas.toBuffer(), { name: name ? `${name}.png` : `${text.toLowerCase().split(' ').join('_')}.png` });
 }
 
 async function createProfileBanner(user: User, price: string, rating: string = 'No Rating', width = 1080, height = 256) {
