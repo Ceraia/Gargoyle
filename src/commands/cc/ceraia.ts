@@ -11,6 +11,7 @@ import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
     AttachmentBuilder,
+    ButtonInteraction,
     ButtonStyle,
     ChannelType,
     ChatInputCommandInteraction,
@@ -23,6 +24,7 @@ import {
     MediaGalleryItemBuilder,
     MessageActionRowComponentBuilder,
     MessageCreateOptions,
+    MessageEditOptions,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
@@ -190,51 +192,13 @@ export default class Ceraia extends GargoyleCommand {
                 if (interaction.options.getSubcommand() === 'view') {
                     await interaction.deferReply({});
                     const user = interaction.options.getUser('user') || interaction.user;
-                    const commissionaryUser = await getCommissionaryUser(user.id);
-                    if (!commissionaryUser) {
-                        await interaction.reply({ content: "We couldn't fetch the user profile" });
+                    const member = await interaction.guild?.members.fetch(user.id);
+                    if (!member) {
+                        await interaction.editReply({ content: "We couldn't fetch the user profile" });
                         return;
                     }
 
-                    const container = new ContainerBuilder().setAccentColor(0x1fad9a);
-
-                    container.addMediaGalleryComponents(
-                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://profile_banner.png'))
-                    );
-
-                    const userRating = getAverageRating(commissionaryUser.ratings);
-
-                    const section = new SectionBuilder()
-                        .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(
-                                `\n**Freelancer:** ${commissionaryUser.freelancer ? 'Yes.' : 'No.'}` +
-                                    `\n**Biography:** \n> ${commissionaryUser.biography.split('\n').join('\n> ')}` +
-                                    `\n**Commissions:** ${commissionaryUser.commissions.length == 0 ? 'No commissions yet.' : commissionaryUser.commissions.length}` +
-                                    (commissionaryUser.freelancer ? `\n**Price Range:** ${commissionaryUser.freelancerPrice}` : '')
-                            )
-                        )
-                        .setThumbnailAccessory(new ThumbnailBuilder().setURL(user.displayAvatarURL()));
-
-                    const profileBanner = await createProfileBanner(
-                        user,
-                        commissionaryUser.freelancer ? commissionaryUser.freelancerPrice : '',
-                        `${userRating.toFixed(1)} (${commissionaryUser.ratings.length})`,
-                        1080,
-                        256
-                    );
-
-                    if (commissionaryUser.freelancer && commissionaryUser.showcase) {
-                        section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
-                    } else
-                        section.setButtonAccessory(
-                            new GargoyleButtonBuilder(this).setStyle(ButtonStyle.Danger).setLabel('No Showcase').setEmoji('📸').setDisabled(true)
-                        );
-
-                    await interaction.editReply({
-                        components: [container.addSectionComponents(section)],
-                        flags: MessageFlags.IsComponentsV2,
-                        files: [profileBanner]
-                    });
+                    await interaction.editReply((await this.generateProfileMessage(member)) as MessageEditOptions);
                     return;
                 } else if (interaction.options.getSubcommand() === 'biography') {
                     const commissionaryUser = await getCommissionaryUser(interaction.user.id);
@@ -381,8 +345,7 @@ export default class Ceraia extends GargoyleCommand {
                         )
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
-                                `## New Commission by ${member.displayName}` +
-                                    `\n-# This is a commission created by <@!${interaction.user.id}>, for <@&${categoryRole.id}>` +
+                                `\n-# This is a commission created by <@!${interaction.user.id}>, for <@&${categoryRole.id}>` +
                                     `\n**Price:** ${price}` +
                                     `\n**Deadline:** ${date}` +
                                     `\n## ${title}, ` +
@@ -392,15 +355,18 @@ export default class Ceraia extends GargoyleCommand {
                         )
                         .addActionRowComponents(
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                                new GargoyleButtonBuilder(this, 'offer')
+                                new GargoyleButtonBuilder(this, 'offer', thread.id)
                                     .setLabel('Offer to do Commission')
                                     .setEmoji('💰')
                                     .setStyle(ButtonStyle.Success),
-                                new GargoyleButtonBuilder(this, 'negotiate')
+                                new GargoyleButtonBuilder(this, 'negotiate', thread.id)
                                     .setLabel('Negotiate Commission')
                                     .setEmoji('🤝')
                                     .setStyle(ButtonStyle.Secondary),
-                                new GargoyleButtonBuilder(this, 'viewprofile').setLabel('View Profile').setEmoji('👤').setStyle(ButtonStyle.Secondary)
+                                new GargoyleButtonBuilder(this, 'viewprofile', interaction.user.id)
+                                    .setLabel('View Profile')
+                                    .setEmoji('👤')
+                                    .setStyle(ButtonStyle.Secondary)
                             )
                         )
                 ],
@@ -411,6 +377,21 @@ export default class Ceraia extends GargoyleCommand {
             await interaction.editReply({
                 content: `Your commission has been created successfully! Commission ID: ${commissionId}`
             });
+        }
+    }
+
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'viewprofile') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+            const member = await interaction.guild?.members.fetch(args[1]);
+            if (!member) {
+                await interaction.editReply({ content: "We couldn't fetch the user profile" });
+                return;
+            }
+
+            await interaction.editReply((await this.generateProfileMessage(member)) as MessageEditOptions);
+            return;
         }
     }
 
@@ -553,6 +534,53 @@ export default class Ceraia extends GargoyleCommand {
                 await createUnderlineBanner('Join the Team', '#0fad9a'),
                 await createUnderlineBanner('Commission a Freelancer', '#0fad9a')
             ]
+        };
+    }
+
+    private async generateProfileMessage(member: GuildMember): Promise<MessageCreateOptions> {
+        const commissionaryUser = await getCommissionaryUser(member.id);
+        if (!commissionaryUser) {
+            return { content: "We couldn't fetch the user profile" };
+        }
+
+        const container = new ContainerBuilder().setAccentColor(0x1fad9a);
+
+        container.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://profile_banner.png'))
+        );
+
+        const userRating = getAverageRating(commissionaryUser.ratings);
+
+        const section = new SectionBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `\n**Freelancer:** ${commissionaryUser.freelancer ? 'Yes.' : 'No.'}` +
+                        `\n**Biography:** \n> ${commissionaryUser.biography.split('\n').join('\n> ')}` +
+                        `\n**Commissions:** ${commissionaryUser.commissions.length == 0 ? 'No commissions yet.' : commissionaryUser.commissions.length}` +
+                        (commissionaryUser.freelancer ? `\n**Price Range:** ${commissionaryUser.freelancerPrice}` : '')
+                )
+            )
+            .setThumbnailAccessory(new ThumbnailBuilder().setURL(member.displayAvatarURL()));
+
+        const profileBanner = await createProfileBanner(
+            member.user,
+            commissionaryUser.freelancer ? commissionaryUser.freelancerPrice : '',
+            `${userRating.toFixed(1)} (${commissionaryUser.ratings.length})`,
+            1080,
+            256
+        );
+
+        if (commissionaryUser.freelancer && commissionaryUser.showcase) {
+            section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
+        } else
+            section.setButtonAccessory(
+                new GargoyleButtonBuilder(this).setStyle(ButtonStyle.Danger).setLabel('No Showcase').setEmoji('📸').setDisabled(true)
+            );
+
+        return {
+            components: [container.addSectionComponents(section)],
+            flags: MessageFlags.IsComponentsV2,
+            files: [profileBanner]
         };
     }
 
