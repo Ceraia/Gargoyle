@@ -303,6 +303,70 @@ export default class Ceraia extends GargoyleCommand {
             await user.save();
             await interaction.reply({ content: 'Your biography has been updated successfully!', flags: MessageFlags.Ephemeral });
             return;
+        } else if (args[0] === 'commission') {
+            const guild = await interaction.guild!.fetch();
+
+            const categoryRole = guild.roles.cache.get(args[1]);
+            if (!categoryRole) {
+                await interaction.reply({
+                    content: 'Sorry, this category either no longer exists or cannot be selected',
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            const commissionaryUser = await getCommissionaryUser(interaction.user.id);
+            if (!commissionaryUser) {
+                await interaction.reply({ content: "We couldn't fetch your profile", flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const commissionsChannel = guild.channels.cache.find((c) => c.name.includes('commissions') && c.type === ChannelType.GuildText) as
+                | TextChannel
+                | undefined;
+
+            if (!commissionsChannel) {
+                await interaction.reply({
+                    content: 'Commissions channel not found. Please contact an administrator.',
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            const title = interaction.fields.getTextInputValue('title');
+            const description = interaction.fields.getTextInputValue('description');
+            const date = interaction.fields.getTextInputValue('date');
+            const price = interaction.fields.getTextInputValue('price');
+            const extra = interaction.fields.getTextInputValue('extra');
+
+            const thread = await commissionsChannel.threads.create({
+                name: title,
+                autoArchiveDuration: 60,
+                reason: 'New commission thread',
+                type: ChannelType.PrivateThread,
+                invitable: true
+            });
+
+            const commissionId = `${Date.now()}`;
+            await createCommissionaryCommission({
+                ownerId: interaction.user.id,
+                threadId: thread.id,
+                commissionId: commissionId,
+                commissionCategory: categoryRole.name.replace('Category - ', ''),
+                commissionTitle: title,
+                commissionDescription: description,
+                commissionPrice: price
+            });
+
+            commissionaryUser.commissions.push(commissionId);
+            await commissionaryUser.save();
+
+            await commissionsChannel.send({});
+
+            await interaction.reply({
+                content: `Your commission has been created successfully! Commission ID: ${commissionId}`,
+                flags: MessageFlags.Ephemeral
+            });
         }
     }
 
@@ -355,7 +419,7 @@ export default class Ceraia extends GargoyleCommand {
                                 .setLabel('Commission Price')
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(true)
-                                .setPlaceholder('How much are you willing to pay for this commission? (in USD, numbers only)')
+                                .setPlaceholder('How much are you willing to pay for this commission? (in USD)')
                         ),
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
                             new TextInputBuilder()
@@ -781,11 +845,12 @@ const commissionaryCommissionSchema = new Schema({
         required: true,
         unique: true
     },
+    commissionThreadId: String,
     commissionCategory: String,
     commissionSubcategory: String,
     commissionTitle: String,
     commissionDescription: String,
-    commissionPrice: Number
+    commissionPrice: String
 });
 
 const databaseCommissionaryUser = model('CommissionaryUsers', commissionaryUserSchema);
@@ -820,11 +885,12 @@ async function createCommissionaryUser(userId: string) {
 
 async function createCommissionaryCommission(commissionData: {
     ownerId: string;
+    commissionId: string;
+    threadId: string;
     commissionCategory: string;
-    commissionSubcategory: string;
     commissionTitle: string;
     commissionDescription: string;
-    commissionPrice: number;
+    commissionPrice: string;
 }) {
     const commission = new databaseCommissionaryCommission(commissionData);
     return await commission.save();
