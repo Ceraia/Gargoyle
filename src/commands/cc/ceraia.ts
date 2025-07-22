@@ -46,6 +46,10 @@ export default class Ceraia extends GargoyleCommand {
     public override category: string = 'ceraia';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
+            .setName('example')
+            .setDescription('Example command for Ceraia')
+            .addGuild(ceraiaGuild) as GargoyleSlashCommandBuilder,
+        new GargoyleSlashCommandBuilder()
             .setName('management')
             .setDescription('Ceraia management commands')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -156,6 +160,22 @@ export default class Ceraia extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
+        if (interaction.commandName === 'example') {
+            interaction.reply({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0x1fad9a)
+                        .addMediaGalleryComponents(
+                            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://example_command.png'))
+                        )
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('This is an example command for Ceraia.'))
+                ],
+                files: [await createSlashBanner('Example Command', '#0fad9a', 112, 1080, 64)],
+                flags: [MessageFlags.IsComponentsV2]
+            });
+            return;
+        }
+
         if (interaction.commandName === 'management') {
             if (interaction.options.getSubcommandGroup() === 'commissions') {
                 if (interaction.options.getSubcommand() === 'active') {
