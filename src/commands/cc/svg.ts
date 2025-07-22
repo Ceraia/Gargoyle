@@ -1,8 +1,23 @@
+import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import { createCanvas, Image } from 'canvas';
-import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
+import {
+    ActionRowBuilder,
+    ButtonInteraction,
+    ButtonStyle,
+    ChatInputCommandInteraction,
+    ContainerBuilder,
+    ContainerComponent,
+    MediaGalleryBuilder,
+    MediaGalleryComponent,
+    MediaGalleryItem,
+    MediaGalleryItemBuilder,
+    MessageActionRowComponentBuilder,
+    MessageFlags,
+    PermissionFlagsBits
+} from 'discord.js';
 
 export default class Ceraia extends GargoyleCommand {
     public override category: string = 'ceraia';
@@ -19,6 +34,7 @@ export default class Ceraia extends GargoyleCommand {
                     .addBooleanOption((option) =>
                         option.setName('forcefill').setDescription('Force fill the SVG with the specified color').setRequired(false)
                     )
+                    .addBooleanOption((option) => option.setName('upload').setDescription('Upload the generated emoji').setRequired(false))
             ) as GargoyleSlashCommandBuilder
     ];
 
@@ -40,6 +56,7 @@ export default class Ceraia extends GargoyleCommand {
                 }
 
                 try {
+                    client.logger.trace(`Generating emoji from SVG: ${svgFile.name}`);
                     // Create a canvas to draw the SVG
                     const canvas = createCanvas(256, 256);
                     const ctx = canvas.getContext('2d');
@@ -52,6 +69,8 @@ export default class Ceraia extends GargoyleCommand {
                         await interaction.editReply({ content: 'Failed to fetch the SVG file.' });
                         return;
                     }
+
+                    client.logger.trace(`SVG file fetched successfully: ${svgFile.name}`);
 
                     let svgText = await fetchedSvg.text();
 
@@ -67,7 +86,7 @@ export default class Ceraia extends GargoyleCommand {
 
                     if (color) {
                         // Replace fill attributes with the new color
-                        modifiedSvgText = svgText.replace(/fill="[^"]*"/g, `fill="${color}"`);
+                        modifiedSvgText = modifiedSvgText.replace(/fill="[^"]*"/g, `fill="${color}"`);
                         // Add fill attribute to svg element if it doesn't exist
                         if (!modifiedSvgText.includes('fill=') && interaction.options.getBoolean('forcefill')) {
                             modifiedSvgText = modifiedSvgText.replace(/<svg([^>]*)>/, `<svg$1 fill="${color}">`);
@@ -75,22 +94,51 @@ export default class Ceraia extends GargoyleCommand {
                     }
 
                     const img = new Image();
-                    img.onload = () => {
+                    img.onload = async () => {
+                        client.logger.trace(`SVG image loaded successfully: ${svgFile.name}`);
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
                         // Convert the canvas to a PNG buffer
                         const buffer = canvas.toBuffer('image/png');
+                        client.logger.trace(`SVG image converted to PNG buffer: ${svgFile.name}`);
 
-                        // Send the emoji as a file attachment
-                        interaction.editReply({
-                            files: [
-                                {
-                                    attachment: buffer,
-                                    name: `emoji.png`
-                                }
-                            ]
-                        });
+                        if (
+                            interaction.options.getBoolean('upload') &&
+                            interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuildExpressions)
+                        ) {
+                            const emoji = await interaction.guild?.emojis.create({
+                                name: svgFile.name.split('.')[0].padEnd(2, '_'),
+                                attachment: buffer
+                            });
+
+                            if (emoji) {
+                                interaction.followUp({ content: `Emoji created: ${emoji.toString()}` });
+                            } else {
+                                interaction.followUp({ content: 'Failed to create emoji.' });
+                            }
+                            return;
+                        } else {
+                            // Send the emoji as a file attachment
+                            interaction.editReply({
+                                components: [
+                                    new ContainerBuilder()
+                                        .setAccentColor(0x1fad9a)
+                                        .addMediaGalleryComponents(
+                                            new MediaGalleryBuilder().addItems(
+                                                new MediaGalleryItemBuilder().setURL(`attachment://${svgFile.name.split('.')[0]}.png`)
+                                            )
+                                        )
+                                ],
+                                files: [
+                                    {
+                                        attachment: buffer,
+                                        name: `${svgFile.name.split('.')[0]}.png`
+                                    }
+                                ],
+                                flags: MessageFlags.IsComponentsV2
+                            });
+                        }
                     };
                     img.src = `data:image/svg+xml;base64,${Buffer.from(modifiedSvgText).toString('base64')}`;
                 } catch (error) {
