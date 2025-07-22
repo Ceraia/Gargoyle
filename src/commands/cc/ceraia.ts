@@ -453,7 +453,7 @@ export default class Ceraia extends GargoyleCommand {
                                     .setEmoji('✅')
                                     .setStyle(ButtonStyle.Success)
                                     .setDisabled(true),
-                                new GargoyleButtonBuilder(this, 'profile', interaction.user.id)
+                                new GargoyleButtonBuilder(this, 'viewprofile', interaction.user.id)
                                     .setLabel('View Profile')
                                     .setStyle(ButtonStyle.Secondary)
                                     .setEmoji('👤'),
