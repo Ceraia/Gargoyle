@@ -50,6 +50,12 @@ export default class Ceraia extends GargoyleCommand {
             .setDescription('Ceraia management commands')
             .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
             .addGuild(ceraiaGuild)
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('commissions')
+                    .setDescription('Commission related commands')
+                    .addSubcommand((subcommand) => subcommand.setName('active').setDescription('View all active commissions'))
+            )
             .addSubcommand((subcommand) =>
                 subcommand
                     .setName('freelancer')
@@ -151,7 +157,43 @@ export default class Ceraia extends GargoyleCommand {
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.commandName === 'management') {
-            if (interaction.options.getSubcommand() === 'freelancer') {
+            if (interaction.options.getSubcommandGroup() === 'commissions') {
+                if (interaction.options.getSubcommand() === 'active') {
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+                    const commissions = await model('CommissionaryCommissions').find({
+                        //active: true
+                    });
+
+                    const commissionsSorted = commissions
+                        .sort((a, b) => {
+                            return new Date(a.date).getTime() - new Date(b.date).getTime();
+                        })
+                        .slice(0, 19);
+
+                    client.logger.debug(`Found ${commissions.length} active commissions.`);
+
+                    interaction.editReply({
+                        components: [
+                            new ContainerBuilder()
+                                .setAccentColor(0x1fad9a)
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent('Select a commission to view')),
+                            new ContainerBuilder().setAccentColor(0x1fad9a).addActionRowComponents(
+                                new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                    new GargoyleStringSelectMenuBuilder(this, 'commissionselect').addOptions(
+                                        commissionsSorted.map((commission) => ({
+                                            label: commission.commissionTitle.substring(0, 20),
+                                            value: commission.commissionId,
+                                            description: `Owner: <@!${commission.ownerId}>`
+                                        }))
+                                    )
+                                )
+                            )
+                        ],
+                        flags: [MessageFlags.IsComponentsV2]
+                    });
+                }
+            } else if (interaction.options.getSubcommand() === 'freelancer') {
                 const user = interaction.options.getUser('user');
                 if (!user) {
                     return interaction.reply({ content: 'You must specify a user to change freelancer status.', flags: MessageFlags.Ephemeral });
@@ -348,7 +390,7 @@ export default class Ceraia extends GargoyleCommand {
                                 `\n-# This is a commission created by <@!${interaction.user.id}>, for <@&${categoryRole.id}>` +
                                     `\n**Price:** ${price}` +
                                     `\n**Deadline:** ${date}` +
-                                    `\n## ${title}, ` +
+                                    `\n## ${title}` +
                                     `\n > ${description.replaceAll('\n', '\n> ')}` +
                                     (extra ? `\n-# Extra Info: ${extra}` : '')
                             )
@@ -994,6 +1036,14 @@ const commissionaryUserSchema = new Schema({
 
 const commissionaryCommissionSchema = new Schema({
     ownerId: String,
+    active: {
+        type: Boolean,
+        default: true
+    },
+    date: {
+        type: Date,
+        default: Date.now()
+    },
     members: {
         type: [String],
         default: []
