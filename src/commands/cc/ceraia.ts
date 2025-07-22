@@ -399,15 +399,15 @@ export default class Ceraia extends GargoyleCommand {
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
                                 new GargoyleButtonBuilder(this, 'offer', commissionId)
                                     .setLabel('Offer to do Commission')
-                                    .setEmoji('💰')
-                                    .setStyle(ButtonStyle.Success),
+                                    .setEmoji(Emoji.Kaching)
+                                    .setStyle(ButtonStyle.Secondary),
                                 new GargoyleButtonBuilder(this, 'negotiate', commissionId)
                                     .setLabel('Negotiate Commission')
-                                    .setEmoji('🤝')
+                                    .setEmoji(Emoji.Handshake)
                                     .setStyle(ButtonStyle.Secondary),
                                 new GargoyleButtonBuilder(this, 'viewprofile', interaction.user.id)
                                     .setLabel('View Profile')
-                                    .setEmoji('👤')
+                                    .setEmoji(Emoji.User)
                                     .setStyle(ButtonStyle.Secondary)
                             )
                         )
@@ -444,8 +444,8 @@ export default class Ceraia extends GargoyleCommand {
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
                                 new GargoyleButtonBuilder(this, 'offerconfirm', args[1])
                                     .setLabel('Confirm Offer')
-                                    .setEmoji('✅')
-                                    .setStyle(ButtonStyle.Success)
+                                    .setEmoji(Emoji.Check)
+                                    .setStyle(ButtonStyle.Secondary)
                             )
                         )
                 ],
@@ -492,17 +492,17 @@ export default class Ceraia extends GargoyleCommand {
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
                                 new GargoyleButtonBuilder(this, 'acceptoffer', commissionId)
                                     .setLabel('Accept Offer')
-                                    .setEmoji('✅')
-                                    .setStyle(ButtonStyle.Success)
+                                    .setStyle(ButtonStyle.Secondary)
+                                    .setEmoji(Emoji.Check)
                                     .setDisabled(true),
                                 new GargoyleButtonBuilder(this, 'viewprofile', interaction.user.id)
                                     .setLabel('View Profile')
                                     .setStyle(ButtonStyle.Secondary)
-                                    .setEmoji('👤'),
+                                    .setEmoji(Emoji.User),
                                 new GargoyleButtonBuilder(this, 'decline', commissionId)
                                     .setLabel('Decline Offer')
-                                    .setEmoji('❌')
-                                    .setStyle(ButtonStyle.Danger)
+                                    .setStyle(ButtonStyle.Secondary)
+                                    .setEmoji(Emoji.X)
                             )
                         )
                 ],
@@ -611,7 +611,10 @@ export default class Ceraia extends GargoyleCommand {
                                 )
                             )
                             .setButtonAccessory(
-                                new GargoyleButtonBuilder(this, 'support').setLabel('Support').setEmoji('🆘').setStyle(ButtonStyle.Secondary)
+                                new GargoyleButtonBuilder(this, 'support')
+                                    .setLabel('Support')
+                                    .setEmoji(Emoji.LifeBuoy)
+                                    .setStyle(ButtonStyle.Secondary)
                             )
                     )
                     .addMediaGalleryComponents(
@@ -627,7 +630,10 @@ export default class Ceraia extends GargoyleCommand {
                                 )
                             )
                             .setButtonAccessory(
-                                new GargoyleButtonBuilder(this, 'freelancer').setLabel('Apply').setEmoji('📋').setStyle(ButtonStyle.Secondary)
+                                new GargoyleButtonBuilder(this, 'freelancer')
+                                    .setLabel('Apply')
+                                    .setEmoji(Emoji.NotePencil)
+                                    .setStyle(ButtonStyle.Secondary)
                             )
                     )
                     .addMediaGalleryComponents(
@@ -698,10 +704,14 @@ export default class Ceraia extends GargoyleCommand {
         );
 
         if (commissionaryUser.freelancer && commissionaryUser.showcase) {
-            section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji('📸'));
+            section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji(Emoji.Showcase));
         } else
             section.setButtonAccessory(
-                new GargoyleButtonBuilder(this).setStyle(ButtonStyle.Danger).setLabel('No Showcase').setEmoji('📸').setDisabled(true)
+                new GargoyleButtonBuilder(this)
+                    .setStyle(ButtonStyle.Secondary)
+                    .setLabel('No Showcase')
+                    .setEmoji(Emoji.ShowcaseSlash)
+                    .setDisabled(true)
             );
 
         return {
@@ -712,6 +722,19 @@ export default class Ceraia extends GargoyleCommand {
     }
 
     public override events: GargoyleEvent[] = [new FreelancerShowcase(), new SpecializedWelcome()];
+}
+
+enum Emoji {
+    User = '<:user:1397125429613166614>',
+    Check = '<:check:1397125016314839060>',
+    Checks = '<:checks:1397124261310894145>',
+    X = '<:x_:1397124929274777610>',
+    Kaching = '<:kaching:1397127772727414884>',
+    Handshake = '<:handshake:1397126775699668992>',
+    Showcase = '<:showcase:1397128660984795218>',
+    ShowcaseSlash = '<:showcaseslash:1397128895085416458>',
+    NotePencil = '<:notepencil:1397129365539786753>',
+    LifeBuoy = '<:lifebuoy:1397129939022516346>'
 }
 
 async function createUnderlineBanner(
