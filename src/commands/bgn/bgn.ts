@@ -10,6 +10,7 @@ import {
     ContainerBuilder,
     GuildMember,
     InteractionContextType,
+    MessageActionRowComponentBuilder,
     MessageCreateOptions,
     MessageEditOptions,
     MessageFlags,
@@ -25,7 +26,8 @@ import {
     TextChannel,
     TextDisplayBuilder,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    ThreadChannel
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
@@ -33,6 +35,7 @@ import GargoyleButtonBuilder, { GargoyleURLButtonBuilder } from '@src/system/bac
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
+import { int } from 'zod/v4';
 
 export default class Brads extends GargoyleCommand {
     public override category: string = 'bgn';
@@ -281,6 +284,17 @@ export default class Brads extends GargoyleCommand {
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'apply') {
+            const member = await interaction.guild!.members.fetch(interaction.user.id).catch(() => null);
+            if (!member) {
+                await interaction.reply({ content: 'You must be a member of the server to apply for staff.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            if (member.roles.cache.some((role) => role.name.toLowerCase().includes('staff blacklist'))) {
+                await interaction.reply({ content: 'You are blacklisted from applying for staff.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
             if (args.length === 1) {
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });
                 await interaction.editReply({
@@ -359,13 +373,102 @@ export default class Brads extends GargoyleCommand {
                     });
             }
             return;
+        } else if (args[0] === 'discuss') {
+            // Args[1] is the user ID of the person who applied, so we can use it to send a message to them later
+            // Args[2] is the channel ID of the panel where the thread can be made
+            await interaction.deferUpdate();
+
+            if (!interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
+                await interaction.followUp({ content: 'This can only be used in a guild channel.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const member = await interaction.guild.members.fetch(args[1]);
+            if (!member) {
+                await interaction.followUp({ content: 'Could not find the member to discuss their application.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+            const channel = interaction.guild.channels.cache.get(args[2]) as TextChannel | undefined;
+            if (!channel || channel.type !== ChannelType.GuildText) {
+                await interaction.followUp({ content: 'Could not find the channel to discuss the application.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const staffRoles = interaction.guild.roles.cache.filter(
+                (role) => role.name.toLowerCase().includes('staff supervisor') || role.name.toLowerCase().includes('head of staff')
+            );
+
+            let thread: ThreadChannel | undefined = undefined;
+            try {
+                thread = await channel.threads.create({
+                    name: `staff-discussion-${member.user.username}`,
+                    type: ChannelType.PrivateThread,
+                    invitable: true,
+                    autoArchiveDuration: 1440 // 1 day
+                });
+            } catch (error) {
+                await interaction.followUp({ content: `Failed to create a discussion thread: ${error}`, flags: MessageFlags.Ephemeral });
+            }
+
+            if (thread) {
+                await thread.members.add(member.id).catch(() => {});
+                await thread.members.add(interaction.user.id).catch(() => {});
+                await thread.send({
+                    components: [
+                        new ContainerBuilder().addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `### Discussion Thread for ${member.user.username}'s Staff Application\n-# ${staffRoles.map((role) => `<@&${role.id}>`).join(' ')}`
+                            )
+                        )
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+                await interaction.followUp({ content: `Discussion thread created: <#${thread.id}>`, flags: MessageFlags.Ephemeral });
+            }
+            return;
         }
+
+        if (args[0] === 'accept') {
+            await interaction.showModal(
+                // Args[1] is the user ID of the person who applied, so we can use it to send a message to them later
+                new GargoyleModalBuilder(this, 'accept', args[1], interaction.message.id)
+                    .setTitle('Reason for Accepting')
+                    .setComponents(
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                            new TextInputBuilder()
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setCustomId('reason')
+                                .setLabel('Reason for Accepting')
+                                .setPlaceholder('Please explain why you are accepting this application.')
+                        )
+                    )
+            );
+            return;
+        } else if (args[0] === 'deny') {
+            await interaction.showModal(
+                // Args[1] is the user ID of the person who applied, so we can use it to send a message to them later
+                new GargoyleModalBuilder(this, 'deny', args[1], interaction.message.id)
+                    .setTitle('Reason for Denying')
+                    .setComponents(
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().setComponents(
+                            new TextInputBuilder()
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setCustomId('reason')
+                                .setLabel('Reason for Denying')
+                                .setPlaceholder('Please explain why you are denying this application.')
+                        )
+                    )
+            );
+            return;
+        }
+
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         if (!interaction.guild || !interaction.channel) {
             interaction.editReply({ content: 'This can only be used in a guild channel.' });
             return;
         }
+
         if (args[0] === 'archive') {
             if (!interaction.channel.isThread()) {
                 await interaction.editReply({ content: 'This is only available in threads.' });
@@ -496,7 +599,7 @@ export default class Brads extends GargoyleCommand {
 
     public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'apply') {
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            await interaction.deferUpdate({});
 
             const steam = interaction.fields.getTextInputValue('steam');
             const timezone = interaction.fields.getTextInputValue('timezone');
@@ -509,56 +612,50 @@ export default class Brads extends GargoyleCommand {
                 return;
             }
 
-            const threadName = `staffapp-${interaction.user.username}`;
-            const hasThread = interaction.channel.threads.cache.filter((thread) => thread.name === threadName && !thread.locked && !thread.archived);
+            const guild = await interaction.guild.fetch();
+            const applicationsChannel = guild.channels.cache.find(
+                (c) => c.type === ChannelType.GuildText && c.name.includes('staff-applications')
+            ) as TextChannel | undefined;
 
-            if (hasThread) {
-                const fetch = await interaction.channel.threads.fetchActive(true);
-                if (fetch.threads.find((thread) => thread.name === threadName && !thread.locked && !thread.archived)) {
-                    await interaction.editReply({
-                        content: `You already have a thread, <#${hasThread.first()!.id}>`
-                    });
-                    return;
-                }
-            }
-
-            const thread = (await interaction.channel.threads
-                .create({
-                    reason: `Staff application by ${interaction.user.username}`,
-                    name: threadName,
-                    type: ChannelType.PrivateThread,
-                    invitable: true,
-                    autoArchiveDuration: 1440 // 1 day
-                })
-                .catch((_err) => {
-                    return null;
-                })) as PrivateThreadChannel | null;
-
-            if (!thread) {
-                await interaction.editReply({ content: 'Failed to create a thread, likely no permissions.' });
+            if (!applicationsChannel) {
+                await interaction.editReply({ content: 'Could not find the staff applications channel.' });
                 return;
             }
 
-            thread
+            const staffRoles = guild.roles.cache.filter(
+                (role) => role.name.toLowerCase().includes('staff supervisor') || role.name.toLowerCase().includes('head of staff')
+            );
+
+            applicationsChannel
                 .send({
                     components: [
                         new ContainerBuilder().addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
-                                `### Staff Application from <@!${interaction.user.id}>\n` +
-                                    `> **Steam Profile :** ${steam}\n> **Timezone:** ${timezone}\n` +
-                                    `> **Other Experience :** ${other}\n` +
-                                    `> **Reason for Applying :** ${reason}\n` +
-                                    `> **What makes you stand out? :** ${stand}` +
-                                    `-# Add the user to the application to ask questions by mentioning them in the thread.`
+                                `### Staff Application from <@!${interaction.user.id}>` +
+                                    `\n-# ${staffRoles.map((role) => `<@&${role.id}>`).join(' ')}` +
+                                    `\n**Steam Profile :**` +
+                                    `\n> ${steam}` +
+                                    `\n**Timezone :** ` +
+                                    `\n> ${timezone}` +
+                                    `\n**Other Experience :**` +
+                                    `\n> ${other.replaceAll('\n', '\n> ')}` +
+                                    `\n**Reason for Applying :**` +
+                                    `\n> ${reason.replaceAll('\n', '\n> ')}` +
+                                    `\n**What makes you stand out? :**` +
+                                    `\n> ${stand.replaceAll('\n', '\n> ')}`
+                            )
+                        ),
+                        new ContainerBuilder().addActionRowComponents(
+                            new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                new GargoyleButtonBuilder(this, 'accept', interaction.user.id).setLabel('Accept').setStyle(ButtonStyle.Success),
+                                new GargoyleButtonBuilder(this, 'discuss', interaction.user.id, interaction.channelId!)
+                                    .setLabel('Discuss')
+                                    .setStyle(ButtonStyle.Secondary),
+                                new GargoyleButtonBuilder(this, 'deny', interaction.user.id).setLabel('Deny').setStyle(ButtonStyle.Danger)
                             )
                         )
                     ],
-                    flags: [MessageFlags.IsComponentsV2],
-                    allowedMentions: { parse: [] }
-                })
-                .then(() => {
-                    thread.send({ content: '<@&1160189033113206844> <@&1160189040478388334>' });
-                    interaction.editReply({ content: 'Your application has been submitted successfully!' });
+                    flags: [MessageFlags.IsComponentsV2]
                 })
                 .catch((err) => {
                     client.logger.error(`Failed to send application message: ${err.stack}`);
@@ -566,7 +663,98 @@ export default class Brads extends GargoyleCommand {
                         content: 'There was an error submitting your application. Please try again later.'
                     });
                 });
+
+            await interaction.editReply({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0x00ff00)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('### Application Submitted!'))
+                ]
+            });
             return;
+        } else if (args[0] === 'accept' || args[0] === 'deny') {
+            // Args[1] is the user ID of the person who applied, so we can use it to send a message to them later
+            // Args[2] is the message ID of the application message, so we can edit it later
+            await interaction.deferUpdate({});
+
+            const reason = interaction.fields.getTextInputValue('reason');
+
+            const member = await interaction.guild!.members.fetch(args[1]).catch(async () => {
+                client.logger.trace(`Failed to fetch member with ID ${args[1]} for application update.`);
+                return null;
+            });
+
+            if (!member && args[0] === 'accept') {
+                await interaction.followUp({
+                    content: 'Could not find the member to update their application status.',
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            if (!interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
+                await interaction.followUp({ content: 'This can only be used in a guild channel.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const ticketChannel = interaction.guild.channels.cache.find(
+                (channel) => channel.name === 'staff-applications' && channel.type === ChannelType.GuildText
+            ) as TextChannel | undefined;
+
+            if (!ticketChannel) {
+                await interaction.followUp({ content: 'Could not find the staff applications channel.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const staffRole = interaction.guild.roles.cache.find(
+                (role) => role.name.toLowerCase().includes('staff interviewee') || role.name.toLowerCase().includes('staff applicant')
+            );
+
+            if (!staffRole) {
+                await interaction.followUp({ content: 'Could not find the staff role to update the member.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const applicationMessage = await ticketChannel.messages.fetch(interaction.message!.id);
+
+            await applicationMessage.edit({
+                components: [
+                    applicationMessage.components[0],
+                    new ContainerBuilder()
+                        .setAccentColor(args[0] === 'accept' ? 0x00ff00 : 0xff0000)
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `### ${args[0] === 'accept' ? 'Accepted' : 'Denied'} by <@!${interaction.user.id}>` + `\n> ${reason}`
+                            )
+                        )
+                ],
+                flags: [MessageFlags.IsComponentsV2]
+            });
+
+            if (member) {
+                if (args[0] === 'accept') {
+                    await member.roles.add(staffRole).catch((err) => {
+                        interaction.followUp({
+                            content: `Failed to add the staff role to the user: ${err}\nYou will have to add the <@&${staffRole.id}> role manually.`,
+                            flags: MessageFlags.Ephemeral,
+                            allowedMentions: { roles: [] }
+                        });
+                    });
+                }
+                member
+                    .send({
+                        content:
+                            `Your staff application has been ${args[0] === 'accept' ? 'accepted' : 'denied'} by <@!${interaction.user.id}>.` +
+                            `\n> Reason: ${reason}` +
+                            (args[0] === 'accept' ? `\n\n> A staff member will contact you soon to discuss the next steps.` : '')
+                    })
+                    .catch(async () => {
+                        await interaction.followUp({
+                            content: `Failed to send a message to the user, they may have DMs disabled.`,
+                            flags: MessageFlags.Ephemeral
+                        });
+                    });
+            }
         }
     }
 
