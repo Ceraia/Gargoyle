@@ -94,12 +94,25 @@ async function getChannels(guild: Guild) {
             children: channel.children.cache.map((child) => ({
                 id: child.id
             })),
+            permissionOverwrites: channel.permissionOverwrites.cache.map((overwrite) => ({
+                id: overwrite.id,
+                type: overwrite.type,
+                allow: overwrite.allow.bitfield.toString(),
+                deny: overwrite.deny.bitfield.toString()
+            })),
             position: channel.position
         })),
         channels: sortedOtherChannels.map((channel) => ({
             id: channel.id,
             name: channel.name,
+            description: 'description' in channel ? channel.description || '' : '',
             type: channel.type,
+            permissionOverwrites: channel.permissionOverwrites.cache.map((overwrite) => ({
+                id: overwrite.id,
+                type: overwrite.type,
+                allow: overwrite.allow.bitfield.toString(),
+                deny: overwrite.deny.bitfield.toString()
+            })),
             position: channel.position,
             parentId: channel.parentId
         }))
@@ -107,8 +120,19 @@ async function getChannels(guild: Guild) {
 }
 
 const guildBackupSchema = new Schema({
-    ownerId: String,
-    guildId: String,
+    ownerId: {
+        type: String,
+        required: true
+    },
+    guildId: {
+        type: String,
+        required: true
+    },
+    backupId: {
+        type: String,
+        unique: true,
+        required: true
+    },
     roles: [
         {
             roleId: String,
@@ -118,7 +142,43 @@ const guildBackupSchema = new Schema({
             color: String,
             mentionable: Boolean
         }
-    ]
+    ],
+    channels: {
+        categories: [
+            {
+                id: String,
+                name: String,
+                permissionOverwrites: [
+                    {
+                        id: String,
+                        type: String,
+                        allow: String,
+                        deny: String
+                    }
+                ],
+                children: [{ id: String }],
+                position: Number
+            }
+        ],
+        channels: [
+            {
+                id: String,
+                name: String,
+                description: String,
+                permissionOverwrites: [
+                    {
+                        id: String,
+                        type: String,
+                        allow: String,
+                        deny: String
+                    }
+                ],
+                type: String,
+                position: Number,
+                parentId: String
+            }
+        ]
+    }
 });
 
 const guildBackups = model('GuildBackups', guildBackupSchema);
