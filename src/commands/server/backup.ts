@@ -28,15 +28,28 @@ export default class Ceraia extends GargoyleCommand {
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'backup') {
             if (interaction.options.getSubcommand() === 'create') {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
                 if (!interaction.guild) {
-                    interaction.reply({ content: 'This command can only be used in a server.', flags: MessageFlags.Ephemeral });
+                    interaction.editReply({ content: 'This command can only be used in a server.' });
                     return;
                 }
 
                 if (await createBackup(interaction.guild)) {
-                    interaction.reply({ content: 'Backup created successfully!', flags: MessageFlags.Ephemeral });
+                    interaction.editReply({
+                        files: [
+                            {
+                                name: `backup-${interaction.guild.id}.json`,
+                                attachment: Buffer.from(
+                                    JSON.stringify({
+                                        roles: await getRoles(interaction.guild),
+                                        channels: await getChannels(interaction.guild)
+                                    })
+                                )
+                            }
+                        ]
+                    });
                 } else {
-                    interaction.reply({ content: 'Failed to create backup.', flags: MessageFlags.Ephemeral });
+                    interaction.editReply({ content: 'Failed to create backup.' });
                 }
             }
         }
@@ -53,7 +66,7 @@ async function getRoles(guild: Guild) {
     return roles.map((role) => ({
         roleId: role.id,
         name: role.name,
-        permissions: role.permissions.bitfield,
+        permissions: `${role.permissions.bitfield}`,
         position: role.position,
         color: role.color.toString(),
         mentionable: role.mentionable
