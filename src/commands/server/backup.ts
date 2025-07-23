@@ -7,9 +7,11 @@ import {
     ChatInputCommandInteraction,
     Collection,
     Guild,
+    GuildMember,
     InteractionContextType,
     MessageFlags,
-    NonThreadGuildBasedChannel
+    NonThreadGuildBasedChannel,
+    PermissionFlagsBits
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
 
@@ -20,8 +22,9 @@ export default class Ceraia extends GargoyleCommand {
             .setName('backup')
             .setDescription('Backup and restore server data')
             .setContexts(InteractionContextType.Guild)
+            .addSubcommand((subcommand) => subcommand.setName('create').setDescription('Create a backup of the server'))
             .addSubcommand((subcommand) =>
-                subcommand.setName('create').setDescription('Create a backup of the server')
+                subcommand.setName('list').setDescription('List all backups for the server')
             ) as GargoyleSlashCommandBuilder
     ];
 
@@ -34,30 +37,69 @@ export default class Ceraia extends GargoyleCommand {
                     return;
                 }
 
-                if (await createBackup(interaction.guild)) {
-                    interaction.editReply({
-                        files: [
-                            {
-                                name: `backup-${interaction.guild.id}.json`,
-                                attachment: Buffer.from(
-                                    JSON.stringify({
-                                        roles: await getRoles(interaction.guild),
-                                        channels: await getChannels(interaction.guild)
-                                    })
-                                )
-                            }
-                        ]
-                    });
-                } else {
-                    interaction.editReply({ content: 'Failed to create backup.' });
+                if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+                    interaction.editReply({ content: 'You do not have permission to manage the server.' });
+                    return;
                 }
+
+                if (!client.db) {
+                    interaction.editReply({ content: 'Database connection is not available.' });
+                    return;
+                }
+
+                await interaction.editReply({ content: await createBackup(client, interaction.guild, interaction.member as GuildMember) });
+            } else if (interaction.options.getSubcommand() === 'list') {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                if (!interaction.guild) {
+                    interaction.editReply({ content: 'This command can only be used in a server.' });
+                    return;
+                }
+
+                if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+                    interaction.editReply({ content: 'You do not have permission to manage the server.' });
+                    return;
+                }
+
+                if (!client.db) {
+                    interaction.editReply({ content: 'Database connection is not available.' });
+                    return;
+                }
+
+                const backups = await guildBackups.find({ guildId: interaction.guild.id });
+
+                if (backups.length === 0) {
+                    interaction.editReply({ content: 'No backups found for this server.' });
+                    return;
+                }
+
+                const backupList = backups.map((backup) => `Backup ID: ${backup.backupId}, Created on: ${backup.dateCreated}`).join('\n');
+                interaction.editReply({ content: `Backups for this server:\n${backupList}` });
             }
         }
     }
 }
 
-async function createBackup(guild: Guild): Promise<boolean> {
-    return true;
+async function createBackup(client: GargoyleClient, guild: Guild, member: GuildMember): Promise<string> {
+    if (!client.db) return 'Database connection is not available.';
+    const roles = await getRoles(guild);
+    const channels = await getChannels(guild);
+    const backupId = `backup-${guild.id}-${Date.now()}`;
+    const backupData = {
+        ownerId: guild.ownerId,
+        guildId: member.user.id,
+        backupId: backupId,
+        dateCreated: new Date(),
+        roles: roles,
+        channels: channels
+    };
+
+    try {
+        await guildBackups.create(backupData);
+        return `Backup created successfully with ID: ${backupId}`;
+    } catch (error) {
+        client.logger.error(`Error when creating backup for guild ${guild.id}:`, `${error}`);
+        return `Failed to create backup: ${error}`;
+    }
 }
 
 async function getRoles(guild: Guild) {
@@ -131,6 +173,11 @@ const guildBackupSchema = new Schema({
     backupId: {
         type: String,
         unique: true,
+        required: true
+    },
+    dateCreated: {
+        type: Date,
+        default: Date.now,
         required: true
     },
     roles: [
