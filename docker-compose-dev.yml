@@ -19,7 +19,7 @@ services:
   mongo:
     hostname: mongo
     image: mongo:latest
-    expose: [27017]
+    ports: ['27017:27017']
     profiles:
       - aux
     environment:
