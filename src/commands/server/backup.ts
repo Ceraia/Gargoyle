@@ -7,7 +7,6 @@ import {
     ChatInputCommandInteraction,
     Collection,
     Guild,
-    GuildMember,
     InteractionContextType,
     MessageFlags,
     NonThreadGuildBasedChannel,
@@ -47,7 +46,7 @@ export default class Ceraia extends GargoyleCommand {
                     return;
                 }
 
-                await interaction.editReply({ content: await createBackup(client, interaction.guild, interaction.member as GuildMember) });
+                await interaction.editReply({ content: await createBackup(client, interaction.guild) });
             } else if (interaction.options.getSubcommand() === 'list') {
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });
                 if (!interaction.guild) {
@@ -79,18 +78,23 @@ export default class Ceraia extends GargoyleCommand {
     }
 }
 
-async function createBackup(client: GargoyleClient, guild: Guild, member: GuildMember): Promise<string> {
+async function createBackup(client: GargoyleClient, guild: Guild): Promise<string> {
     if (!client.db) return 'Database connection is not available.';
     const roles = await getRoles(guild);
     const channels = await getChannels(guild);
     const backupId = `backup-${guild.id}-${Date.now()}`;
+
+    // Create a clean backup data object
     const backupData = {
         ownerId: guild.ownerId,
-        guildId: member.user.id,
+        guildId: guild.id,
         backupId: backupId,
         dateCreated: new Date(),
         roles: roles,
-        channels: channels
+        channels: {
+            categories: channels.categories,
+            channels: channels.channels
+        }
     };
 
     try {
@@ -161,6 +165,59 @@ async function getChannels(guild: Guild) {
     };
 }
 
+const permissionOverwriteSchema = new Schema(
+    {
+        id: { type: String, required: true },
+        type: { type: Number, required: true },
+        allow: { type: String, required: true },
+        deny: { type: String, required: true }
+    },
+    { _id: false }
+);
+
+const childChannelSchema = new Schema(
+    {
+        id: { type: String, required: true }
+    },
+    { _id: false }
+);
+
+const categorySchema = new Schema(
+    {
+        id: { type: String, required: true },
+        name: { type: String, required: true },
+        permissionOverwrites: [permissionOverwriteSchema],
+        children: [childChannelSchema],
+        position: { type: Number, required: true }
+    },
+    { _id: false }
+);
+
+const channelSchema = new Schema(
+    {
+        id: { type: String, required: true },
+        name: { type: String, required: true },
+        description: { type: String, default: '' },
+        permissionOverwrites: [permissionOverwriteSchema],
+        type: { type: Number, required: true },
+        position: { type: Number, required: true },
+        parentId: { type: String, default: null }
+    },
+    { _id: false }
+);
+
+const roleSchema = new Schema(
+    {
+        roleId: { type: String, required: true },
+        name: { type: String, required: true },
+        permissions: { type: String, required: true },
+        position: { type: Number, required: true },
+        color: { type: String, required: true },
+        mentionable: { type: Boolean, required: true }
+    },
+    { _id: false }
+);
+
 const guildBackupSchema = new Schema({
     ownerId: {
         type: String,
@@ -180,52 +237,9 @@ const guildBackupSchema = new Schema({
         default: Date.now,
         required: true
     },
-    roles: [
-        {
-            roleId: String,
-            name: String,
-            permissions: Number,
-            position: Number,
-            color: String,
-            mentionable: Boolean
-        }
-    ],
-    channels: {
-        categories: [
-            {
-                id: String,
-                name: String,
-                permissionOverwrites: [
-                    {
-                        id: String,
-                        type: String,
-                        allow: String,
-                        deny: String
-                    }
-                ],
-                children: [{ id: String }],
-                position: Number
-            }
-        ],
-        channels: [
-            {
-                id: String,
-                name: String,
-                description: String,
-                permissionOverwrites: [
-                    {
-                        id: String,
-                        type: String,
-                        allow: String,
-                        deny: String
-                    }
-                ],
-                type: String,
-                position: Number,
-                parentId: String
-            }
-        ]
-    }
+    roles: [roleSchema],
+    categories: [categorySchema],
+    channels: [channelSchema]
 });
 
 const guildBackups = model('GuildBackups', guildBackupSchema);
