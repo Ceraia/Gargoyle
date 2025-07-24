@@ -84,17 +84,14 @@ async function createBackup(client: GargoyleClient, guild: Guild): Promise<strin
     const channels = await getChannels(guild);
     const backupId = `backup-${guild.id}-${Date.now()}`;
 
-    // Create a clean backup data object
     const backupData = {
         ownerId: guild.ownerId,
         guildId: guild.id,
         backupId: backupId,
         dateCreated: new Date(),
         roles: roles,
-        channels: {
-            categories: channels.categories,
-            channels: channels.channels
-        }
+        categories: channels.categories,
+        channels: channels.channels
     };
 
     try {
