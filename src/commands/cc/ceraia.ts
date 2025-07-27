@@ -6,7 +6,7 @@ import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import client from '@src/system/botClient.js';
-import { CanvasGradient, CanvasPattern, createCanvas, Image } from 'canvas';
+import { CanvasGradient, CanvasPattern, CanvasTextAlign, CanvasTextBaseline, createCanvas, Image, registerFont } from 'canvas';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
@@ -39,6 +39,8 @@ import {
     User
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
+import { readdirSync } from 'node:fs';
+import path from 'node:path';
 
 const ceraiaGuild = '1394893354763817040'; // Ceraia guild ID
 
@@ -682,7 +684,17 @@ export default class Ceraia extends GargoyleCommand {
             ],
             flags: [MessageFlags.IsComponentsV2],
             files: [
-                await createSlashBanner('Commissions', '#0fad9a', 112, 1080, 64),
+                //await createSlashBanner('Commissions', '#0fad9a', 112, 1080, 64),
+                await createBanner('Commissions', {
+                    bannerStyle: 'slash',
+                    fillStyle: '#0fad9a',
+                    textStyle: '#ffffff',
+                    height: 112,
+                    width: 1080,
+                    fontSize: 64,
+                    fontWeight: FontWeight.Bold,
+                    fileName: 'commissions'
+                }),
                 await createUnderlineBanner('Support', '#0fad9a'),
                 await createUnderlineBanner('Join the Team', '#0fad9a'),
                 await createUnderlineBanner('Commission a Freelancer', '#0fad9a')
@@ -744,19 +756,6 @@ export default class Ceraia extends GargoyleCommand {
     public override events: GargoyleEvent[] = [new FreelancerShowcase(), new SpecializedWelcome()];
 }
 
-enum Emoji {
-    User = '<:user:1397125429613166614>',
-    Check = '<:check:1397125016314839060>',
-    Checks = '<:checks:1397124261310894145>',
-    X = '<:x_:1397124929274777610>',
-    Kaching = '<:kaching:1397127772727414884>',
-    Handshake = '<:handshake:1397126775699668992>',
-    Showcase = '<:showcase:1397128660984795218>',
-    ShowcaseSlash = '<:showcaseslash:1397128895085416458>',
-    NotePencil = '<:notepencil:1397129365539786753>',
-    LifeBuoy = '<:lifebuoy:1397129939022516346>'
-}
-
 async function createUnderlineBanner(
     text: string,
     fillStyle: string | CanvasGradient | CanvasPattern,
@@ -773,7 +772,7 @@ async function createUnderlineBanner(
 
     // Set text properties
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.font = `bold ${fontSize}px Montserrat`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -800,7 +799,7 @@ async function createFilledBanner(
 
     // Set text properties
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.font = `bold ${fontSize}px Montserrat`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -809,6 +808,72 @@ async function createFilledBanner(
 
     // Create an attachment from the canvas
     return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
+}
+
+async function createBanner(
+    text: string,
+    options?: {
+        fillStyle?: string | CanvasGradient | CanvasPattern;
+        textStyle?: string | CanvasGradient | CanvasPattern;
+        width?: number;
+        height?: number;
+        fontSize?: number;
+        fontWeight?: FontWeight;
+        textAlign?: CanvasTextAlign;
+        textBaseline?: CanvasTextBaseline;
+        fileName?: string;
+        bannerStyle?: 'underline' | 'slash' | 'filled';
+    }
+): Promise<AttachmentBuilder> {
+    const {
+        fillStyle = '#0fad9a',
+        textStyle = '#ffffff',
+        height = 56,
+        width = 1080,
+        fontSize = 48,
+        fontWeight = FontWeight.Medium,
+        textAlign = 'center',
+        textBaseline = 'middle',
+        fileName,
+        bannerStyle = 'slash'
+    } = options ?? {};
+
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    if (bannerStyle === 'slash') {
+        // Make slash shape on the left
+        ctx.fillStyle = fillStyle;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(width / 20, 0);
+        ctx.lineTo(width / 20 + height / Math.tan(Math.PI / 2.5), height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+        ctx.fill();
+
+        // Make underline
+        ctx.fillStyle = fillStyle;
+        ctx.fillRect(0, height - 4, width, height);
+    } else if (bannerStyle === 'filled') {
+        ctx.fillStyle = fillStyle;
+        ctx.fillRect(0, 0, width, height);
+    } else if (bannerStyle === 'underline') {
+        ctx.fillStyle = fillStyle;
+        ctx.fillRect(0, height - 4, width, height);
+    }
+
+    // Set text properties and add text
+    ctx.fillStyle = textStyle;
+    ctx.font = `${fontWeight} ${fontSize}px Montserrat`;
+    ctx.textAlign = textAlign;
+    ctx.textBaseline = textBaseline;
+    ctx.fillText(text, width / 2, height / 2);
+
+    // Create an attachment from the canvas
+    return new AttachmentBuilder(canvas.toBuffer(), {
+        name: fileName ? `${fileName}.png` : `${text.toLowerCase().replaceAll(' ', '_')}.png`
+    });
 }
 
 async function createSlashBanner(
@@ -838,7 +903,7 @@ async function createSlashBanner(
 
     // Set text properties
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${fontSize}px Arial`;
+    ctx.font = `500 ${fontSize}px Montserrat`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -865,7 +930,7 @@ async function createProfileBanner(user: User, price: string, rating: string = '
 
     // Set text properties
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 64px Arial';
+    ctx.font = 'bold 64px Montserrat';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
@@ -873,12 +938,12 @@ async function createProfileBanner(user: User, price: string, rating: string = '
     ctx.fillText(user.displayName, 25, 64);
 
     // Add user price range
-    ctx.font = 'bold 48px Arial';
+    ctx.font = 'bold 48px Montserrat';
     ctx.textAlign = 'right';
     ctx.fillText(price, width - 25, 64);
 
     // Add user rating
-    ctx.font = 'bold 48px Arial';
+    ctx.font = 'bold 48px Montserrat';
     ctx.textAlign = 'left';
     ctx.fillText(rating, 25, height - 32);
 
@@ -957,7 +1022,7 @@ async function generateWelcomeMessage(member: GuildMember): Promise<MessageCreat
 
     // Add welcome text
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 40px Arial';
+    ctx.font = 'Medium 40px Montserrat';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(`Welcome to ${member.guild.name},\n${member.displayName}!`, 20, 20);
@@ -1156,3 +1221,77 @@ async function createCommissionaryCommission(commissionData: {
     const commission = new databaseCommissionaryCommission(commissionData);
     return await commission.save();
 }
+
+enum FontWeight {
+    Thin = '100',
+    ExtraLight = '200',
+    Light = '300',
+    Medium = '500',
+    SemiBold = '600',
+    Bold = '700',
+    ExtraBold = '800',
+    Black = '900',
+    Regular = '400',
+    Normal = '400'
+}
+
+enum Emoji {
+    User = '<:user:1397125429613166614>',
+    Check = '<:check:1397125016314839060>',
+    Checks = '<:checks:1397124261310894145>',
+    X = '<:x_:1397124929274777610>',
+    Kaching = '<:kaching:1397127772727414884>',
+    Handshake = '<:handshake:1397126775699668992>',
+    Showcase = '<:showcase:1397128660984795218>',
+    ShowcaseSlash = '<:showcaseslash:1397128895085416458>',
+    NotePencil = '<:notepencil:1397129365539786753>',
+    LifeBuoy = '<:lifebuoy:1397129939022516346>'
+}
+
+function registerLocalFonts(family: string) {
+    for (const file of readdirSync(path.join(process.cwd(), 'media', 'fonts'))) {
+        // Get the weight if it exists like so
+        // Font-Weight.ttf
+        const match = file.match(/^(.+?)-(.+?)\.ttf$/);
+        if (match) {
+            const [, fontFamily, descriptor] = match;
+
+            // Parse weight and style from descriptor (e.g., "BoldItalic", "Medium", "LightItalic")
+            let weight = 'normal';
+            let style = 'normal';
+
+            const descriptorLower = descriptor.toLowerCase();
+
+            // Check for italic first
+            if (descriptorLower.includes('italic')) {
+                style = 'italic';
+            }
+
+            // Check for weight
+            if (descriptorLower.includes('thin')) weight = '100';
+            else if (descriptorLower.includes('extralight') || descriptorLower.includes('ultralight')) weight = '200';
+            else if (descriptorLower.includes('light')) weight = '300';
+            else if (descriptorLower.includes('medium')) weight = '500';
+            else if (descriptorLower.includes('semibold') || descriptorLower.includes('demibold')) weight = '600';
+            else if (descriptorLower.includes('bold')) weight = '700';
+            else if (descriptorLower.includes('extrabold') || descriptorLower.includes('ultrabold')) weight = '800';
+            else if (descriptorLower.includes('black') || descriptorLower.includes('heavy')) weight = '900';
+            else if (descriptorLower.includes('regular') || descriptorLower.includes('normal')) weight = '400';
+
+            client.logger.trace(`Registering font ${file} with family: ${fontFamily}, weight: ${weight}, style: ${style}`);
+            registerFont(path.join(process.cwd(), 'media', 'fonts', file), {
+                family: fontFamily,
+                weight: weight,
+                style: style
+            });
+        } else {
+            client.logger.trace(`Registering font ${file} without specific weight/style`);
+            registerFont(path.join(process.cwd(), 'media', 'fonts', file), {
+                family: family
+            });
+        }
+    }
+    return true;
+}
+
+registerLocalFonts('Montserrat');
