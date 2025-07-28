@@ -233,13 +233,13 @@ export default class Ceraia extends GargoyleCommand {
     private bgnMcInfo = new TextDisplayBuilder().setContent(
         `Currently, the server is in a testing phase, so please be patient with us as we work out any issues.` +
             `\nHowever, we have already decided the following:` +
-            `\n${BGNCubeEmojis.Cube_Blue} All Staff commands will be logged, open & available to the public.` +
+            `\n${BGNCubeEmojis.Cube_Blue} **All Staff commands will be logged, open & available to the public.**` +
             `\n> This is to ensure not only that there is no abuse of power, but also to grant transparency to the community.` +
-            `\n${BGNCubeEmojis.Cube_Blue} Our staff will remain a barebones team, with purely the powers they require to do their job.` +
+            `\n${BGNCubeEmojis.Cube_Blue} **Our staff will remain a barebones team, with purely the powers they require to do their job.**` +
             `\n> This is to ensure that we do not have any staff members who are overpowered or have too many commands.` +
-            `\n${BGNCubeEmojis.Cube_Blue} Any major changes to the server will be decided upon by the community.` +
+            `\n${BGNCubeEmojis.Cube_Blue} **Any major changes to the server will be decided upon by the community.**` +
             `\n> This is to ensure that the community has a say in what happens on the server, and that we do not make any changes that the community does not want.` +
-            `\n${BGNCubeEmojis.Cube_Blue} ***NO PAY TO WIN***` +
+            `\n${BGNCubeEmojis.Cube_Blue} ***NO PAY TO WIN.***` +
             `\n> Donations may be accepted at some point in the future, however they will not and should not grant anyone an edge over others.`
     );
 
