@@ -5,6 +5,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
+import { createBanner, FontWeight } from '@src/system/backend/tools/banners.js';
 import client from '@src/system/botClient.js';
 import { CanvasGradient, CanvasPattern, CanvasTextAlign, CanvasTextBaseline, createCanvas, Image, registerFont } from 'canvas';
 import {
@@ -47,10 +48,6 @@ const ceraiaGuild = '1394893354763817040'; // Ceraia guild ID
 export default class Ceraia extends GargoyleCommand {
     public override category: string = 'ceraia';
     public override slashCommands = [
-        new GargoyleSlashCommandBuilder()
-            .setName('example')
-            .setDescription('Example command for Ceraia')
-            .addGuild(ceraiaGuild) as GargoyleSlashCommandBuilder,
         new GargoyleSlashCommandBuilder()
             .setName('management')
             .setDescription('Ceraia management commands')
@@ -162,22 +159,6 @@ export default class Ceraia extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (interaction.commandName === 'example') {
-            interaction.reply({
-                components: [
-                    new ContainerBuilder()
-                        .setAccentColor(0x1fad9a)
-                        .addMediaGalleryComponents(
-                            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://example_command.png'))
-                        )
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('This is an example command for Ceraia.'))
-                ],
-                files: [await createSlashBanner('Example Command', '#0fad9a', 112, 1080, 64)],
-                flags: [MessageFlags.IsComponentsV2]
-            });
-            return;
-        }
-
         if (interaction.commandName === 'management') {
             if (interaction.options.getSubcommandGroup() === 'commissions') {
                 if (interaction.options.getSubcommand() === 'active') {
@@ -298,11 +279,32 @@ export default class Ceraia extends GargoyleCommand {
                 let attachment: AttachmentBuilder;
 
                 if (interaction.options.getSubcommand() === 'underline') {
-                    attachment = await createUnderlineBanner(text, '#0fad9a', height, width, fontSize);
+                    attachment = await createBanner(text, {
+                        bannerStyle: 'underline',
+                        fillStyle: '#0fad9a',
+                        textStyle: '#ffffff',
+                        height,
+                        width,
+                        fontSize
+                    });
                 } else if (interaction.options.getSubcommand() === 'slash') {
-                    attachment = await createSlashBanner(text, '#0fad9a', height, width, fontSize);
+                    attachment = await createBanner(text, {
+                        bannerStyle: 'slash',
+                        fillStyle: '#0fad9a',
+                        textStyle: '#ffffff',
+                        height,
+                        width,
+                        fontSize
+                    });
                 } else if (interaction.options.getSubcommand() === 'filled') {
-                    attachment = await createFilledBanner(text, '#0fad9a', height, width, fontSize);
+                    attachment = await createBanner(text, {
+                        bannerStyle: 'filled',
+                        fillStyle: '#0fad9a',
+                        textStyle: '#ffffff',
+                        height,
+                        width,
+                        fontSize
+                    });
                 } else {
                     return;
                 }
@@ -435,7 +437,15 @@ export default class Ceraia extends GargoyleCommand {
                         )
                 ],
                 flags: [MessageFlags.IsComponentsV2],
-                files: [await createSlashBanner(`New Commission by ${member.displayName}`, '#0fad9a', 112, 1080, 40, 'commissions')]
+                files: [
+                    await createBanner(`New Commission by ${member.displayName}`, {
+                        fillStyle: '#0fad9a',
+                        height: 112,
+                        width: 1080,
+                        fontSize: 40,
+                        fileName: 'commissions'
+                    })
+                ]
             });
 
             await interaction.editReply({
@@ -530,7 +540,13 @@ export default class Ceraia extends GargoyleCommand {
                 ],
                 flags: MessageFlags.IsComponentsV2,
                 files: [
-                    await createSlashBanner(`Commission offer accepted by ${interaction.user.username}`, '#0fad9a', 112, 1080, 40, 'freelanceraccept')
+                    await createBanner(`Commission offer accepted by ${interaction.user.username}`, {
+                        fillStyle: '#0fad9a',
+                        height: 112,
+                        width: 1080,
+                        fontSize: 40,
+                        fileName: 'freelanceraccept'
+                    })
                 ]
             });
 
@@ -695,9 +711,36 @@ export default class Ceraia extends GargoyleCommand {
                     fontWeight: FontWeight.Bold,
                     fileName: 'commissions'
                 }),
-                await createUnderlineBanner('Support', '#0fad9a'),
-                await createUnderlineBanner('Join the Team', '#0fad9a'),
-                await createUnderlineBanner('Commission a Freelancer', '#0fad9a')
+                await createBanner('Support', {
+                    bannerStyle: 'underline',
+                    fillStyle: '#0fad9a',
+                    textStyle: '#ffffff',
+                    height: 56,
+                    width: 1080,
+                    fontSize: 48,
+                    fontWeight: FontWeight.Medium,
+                    fileName: 'support'
+                }),
+                await createBanner('Join the Team', {
+                    bannerStyle: 'underline',
+                    fillStyle: '#0fad9a',
+                    textStyle: '#ffffff',
+                    height: 56,
+                    width: 1080,
+                    fontSize: 48,
+                    fontWeight: FontWeight.Medium,
+                    fileName: 'join_the_team'
+                }),
+                await createBanner('Commission a Freelancer', {
+                    bannerStyle: 'underline',
+                    fillStyle: '#0fad9a',
+                    textStyle: '#ffffff',
+                    height: 56,
+                    width: 1080,
+                    fontSize: 48,
+                    fontWeight: FontWeight.Medium,
+                    fileName: 'commission_a_freelancer'
+                })
             ]
         };
     }
@@ -754,164 +797,6 @@ export default class Ceraia extends GargoyleCommand {
     }
 
     public override events: GargoyleEvent[] = [new FreelancerShowcase(), new SpecializedWelcome()];
-}
-
-async function createUnderlineBanner(
-    text: string,
-    fillStyle: string | CanvasGradient | CanvasPattern,
-    height: number = 56,
-    width: number = 1080,
-    fontSize: number = 48
-): Promise<AttachmentBuilder> {
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-
-    // Make underline
-    ctx.fillStyle = fillStyle;
-    ctx.fillRect(0, height - 3, width, height);
-
-    // Set text properties
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${fontSize}px Montserrat`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Add text
-    ctx.fillText(text, width / 2, height / 2);
-
-    // Create an attachment from the canvas
-    return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
-}
-
-async function createFilledBanner(
-    text: string,
-    fillStyle: string | CanvasGradient | CanvasPattern,
-    height: number = 56,
-    width: number = 1080,
-    fontSize: number = 48
-): Promise<AttachmentBuilder> {
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-
-    // Set background color
-    ctx.fillStyle = fillStyle;
-    ctx.fillRect(0, 0, width, height);
-
-    // Set text properties
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${fontSize}px Montserrat`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Add text
-    ctx.fillText(text, width / 2, height / 2);
-
-    // Create an attachment from the canvas
-    return new AttachmentBuilder(canvas.toBuffer(), { name: `${text.toLowerCase().split(' ').join('_')}.png` });
-}
-
-async function createBanner(
-    text: string,
-    options?: {
-        fillStyle?: string | CanvasGradient | CanvasPattern;
-        textStyle?: string | CanvasGradient | CanvasPattern;
-        width?: number;
-        height?: number;
-        fontSize?: number;
-        fontWeight?: FontWeight;
-        textAlign?: CanvasTextAlign;
-        textBaseline?: CanvasTextBaseline;
-        fileName?: string;
-        bannerStyle?: 'underline' | 'slash' | 'filled';
-    }
-): Promise<AttachmentBuilder> {
-    const {
-        fillStyle = '#0fad9a',
-        textStyle = '#ffffff',
-        height = 56,
-        width = 1080,
-        fontSize = 48,
-        fontWeight = FontWeight.Medium,
-        textAlign = 'center',
-        textBaseline = 'middle',
-        fileName,
-        bannerStyle = 'slash'
-    } = options ?? {};
-
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-
-    if (bannerStyle === 'slash') {
-        // Make slash shape on the left
-        ctx.fillStyle = fillStyle;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(width / 20, 0);
-        ctx.lineTo(width / 20 + height / Math.tan(Math.PI / 2.5), height);
-        ctx.lineTo(0, height);
-        ctx.closePath();
-        ctx.fill();
-
-        // Make underline
-        ctx.fillStyle = fillStyle;
-        ctx.fillRect(0, height - 4, width, height);
-    } else if (bannerStyle === 'filled') {
-        ctx.fillStyle = fillStyle;
-        ctx.fillRect(0, 0, width, height);
-    } else if (bannerStyle === 'underline') {
-        ctx.fillStyle = fillStyle;
-        ctx.fillRect(0, height - 4, width, height);
-    }
-
-    // Set text properties and add text
-    ctx.fillStyle = textStyle;
-    ctx.font = `${fontWeight} ${fontSize}px Montserrat`;
-    ctx.textAlign = textAlign;
-    ctx.textBaseline = textBaseline;
-    ctx.fillText(text, width / 2, height / 2);
-
-    // Create an attachment from the canvas
-    return new AttachmentBuilder(canvas.toBuffer(), {
-        name: fileName ? `${fileName}.png` : `${text.toLowerCase().replaceAll(' ', '_')}.png`
-    });
-}
-
-async function createSlashBanner(
-    text: string,
-    fillStyle: string | CanvasGradient | CanvasPattern,
-    height: number = 56,
-    width: number = 1080,
-    fontSize: number = 48,
-    name?: string
-): Promise<AttachmentBuilder> {
-    const canvas = createCanvas(1080, height);
-    const ctx = canvas.getContext('2d');
-
-    // Make slash shape on the left
-    ctx.fillStyle = fillStyle;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(width / 20, 0);
-    ctx.lineTo(width / 20 + height / Math.tan(Math.PI / 2.5), height);
-    ctx.lineTo(0, height);
-    ctx.closePath();
-    ctx.fill();
-
-    // Make underline
-    ctx.fillStyle = fillStyle;
-    ctx.fillRect(0, height - 4, width, height);
-
-    // Set text properties
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `500 ${fontSize}px Montserrat`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Add text
-    ctx.fillText(text, width / 2, height / 2);
-
-    // Create an attachment from the canvas
-    return new AttachmentBuilder(canvas.toBuffer(), { name: name ? `${name}.png` : `${text.toLowerCase().split(' ').join('_')}.png` });
 }
 
 async function createProfileBanner(user: User, price: string, rating: string = 'No Rating', width = 1080, height = 256) {
@@ -1220,19 +1105,6 @@ async function createCommissionaryCommission(commissionData: {
 }) {
     const commission = new databaseCommissionaryCommission(commissionData);
     return await commission.save();
-}
-
-enum FontWeight {
-    Thin = '100',
-    ExtraLight = '200',
-    Light = '300',
-    Medium = '500',
-    SemiBold = '600',
-    Bold = '700',
-    ExtraBold = '800',
-    Black = '900',
-    Regular = '400',
-    Normal = '400'
 }
 
 enum Emoji {
