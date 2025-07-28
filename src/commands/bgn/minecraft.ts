@@ -205,7 +205,7 @@ export default class Ceraia extends GargoyleCommand {
             .map((option, index) => {
                 const count = voteCounts[index] || 0;
                 const percentage = totalVotes > 0 ? ((count / totalVotes) * 100).toFixed(2) : '0.00';
-                const emoji = index < 5 ? Object.values(BGNPollEmojis)[index] : '';
+                const emoji = index < 5 ? Object.values(BGNCubeEmojis)[index] : '';
                 return `${emoji} **${option}** - ${count} vote(s) (${percentage}%)`;
             })
             .join('\n');
@@ -219,7 +219,7 @@ export default class Ceraia extends GargoyleCommand {
                             .setThumbnailAccessory(new ThumbnailBuilder().setURL(client.guilds.cache.get(minecraftBgnGuild)?.iconURL()!))
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
-                                    `# Brad's Minecraft` +
+                                    `# ${BGNCubeEmojis.Cube_Blue} Brad's Minecraft` +
                                         `\nWelcome to Brad's Minecraft, we are currently still setting everything up.` +
                                         '\n\nIt is highly important to us that we make a server that ***you*** will enjoy!' +
                                         '\nSo cast your vote and let us know what you want to see!' +
@@ -232,13 +232,13 @@ export default class Ceraia extends GargoyleCommand {
                         new TextDisplayBuilder().setContent(
                             `Currently, the server is in a testing phase, so please be patient with us as we work out any issues.` +
                                 `\nHowever, we have already decided the following:` +
-                                `\n- All Staff commands will be logged, open & available to the public.` +
+                                `\n${BGNCubeEmojis.Cube_Blue} All Staff commands will be logged, open & available to the public.` +
                                 `\n> This is to ensure not only that there is no abuse of power, but also to grant transparency to the community.` +
-                                `\n- Our staff will remain a barebones team, with purely the powers they require to do their job.` +
+                                `\n${BGNCubeEmojis.Cube_Blue} Our staff will remain a barebones team, with purely the powers they require to do their job.` +
                                 `\n> This is to ensure that we do not have any staff members who are overpowered or have too many commands.` +
-                                `\n- Any major changes to the server will be decided upon by the community.` +
+                                `\n${BGNCubeEmojis.Cube_Blue} Any major changes to the server will be decided upon by the community.` +
                                 `\n> This is to ensure that the community has a say in what happens on the server, and that we do not make any changes that the community does not want.` +
-                                `\n- *** NO PAY TO WIN ***` +
+                                `\n${BGNCubeEmojis.Cube_Blue} ***NO PAY TO WIN***` +
                                 `\n> Donations may be accepted at some point in the future, however they will not and should not grant anyone an edge over others.`
                         )
                     )
@@ -258,7 +258,7 @@ export default class Ceraia extends GargoyleCommand {
                                 voteData.options.map((option, index) => ({
                                     label: option.substring(0, 25),
                                     value: `${index}`,
-                                    emoji: index < 5 ? Object.values(BGNPollEmojis)[index] : ''
+                                    emoji: index < 5 ? Object.values(BGNCubeEmojis)[index] : ''
                                 }))
                             )
                         )
@@ -326,6 +326,15 @@ enum BGNPollEmojis {
     Poll_Green = '<:poll_green:1399274468232269907>',
     Poll_Yellow = '<:poll_yellow:1399274632342671393>',
     Poll_Purple = '<:poll_purple:1399274743344926722>'
+}
+
+enum BGNCubeEmojis {
+    //<:cube:1399289771045552148> <:cube:1399289834832662620> <:cube:1399289917162655826> <:cube:1399289988025290803> <:cube:1399290093474287636>
+    Cube_Blue = '<:cube_blue:1399289771045552148>',
+    Cube_Red = '<:cube_red:1399289834832662620>',
+    Cube_Green = '<:cube_green:1399289917162655826>',
+    Cube_Yellow = '<:cube_yellow:1399289988025290803>',
+    Cube_Purple = '<:cube_purple:1399290093474287636>'
 }
 
 const minecraftVoteSchema = new Schema({
