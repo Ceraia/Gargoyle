@@ -1,6 +1,8 @@
+import { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
+import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import { createBanner, FontWeight } from '@src/system/backend/tools/banners.js';
@@ -14,10 +16,12 @@ import {
     InteractionEditReplyOptions,
     MediaGalleryBuilder,
     MediaGalleryItemBuilder,
+    Message,
     MessageActionRowComponentBuilder,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
+    PermissionFlagsBits,
     SectionBuilder,
     TextChannel,
     TextDisplayBuilder,
@@ -40,6 +44,10 @@ export default class Ceraia extends GargoyleCommand {
             .addSubcommand((subcommand) =>
                 subcommand.setName('clearnicks').setDescription('Clears all nicknames in the guild')
             ) as GargoyleSlashCommandBuilder
+    ];
+
+    public override textCommands: GargoyleTextCommandBuilder[] = [
+        new GargoyleTextCommandBuilder().setName('bgnmc').setDescription('BGN\s Minecraft advertisement banner command')
     ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
@@ -93,6 +101,63 @@ export default class Ceraia extends GargoyleCommand {
                         )
                 );
             }
+        }
+    }
+
+    public override async executeTextCommand(client: GargoyleClient, message: Message, ...args: string[]): Promise<void> {
+        if (args[0] === 'bgnmc') {
+            // BGNMC is a command to send an advertisement banner for the BGN Minecraft server
+            if (!client.guilds.cache.get(minecraftBgnGuild)?.members.cache.get(message.author.id)?.permissions.has(PermissionFlagsBits.Administrator))
+                return;
+
+            if (!message.guild) return;
+
+            await message.delete().catch(() => {});
+
+            (message.channel as TextChannel).send({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0x00d2ff)
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .setThumbnailAccessory(new ThumbnailBuilder().setURL(client.guilds.cache.get(minecraftBgnGuild)?.iconURL()!))
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(
+                                        `# ${BGNCubeEmojis.Cube_Blue} Introducing Brad's Minecraft` +
+                                            `\nIntroducing Brad's Minecraft, a community-driven Minecraft server where your voice matters!` +
+                                            `\n\nJoin us in shaping the future of our server by participating in community votes and sharing your ideas!` +
+                                            `\n\n> Do you have any suggestions? Message <@!${message.author.id}>!`
+                                    )
+                                )
+                        )
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`Join our community and be part of the adventure!`))
+                                .setButtonAccessory(
+                                    new GargoyleURLButtonBuilder('https://discord.gg/A7V5NRwgjP')
+                                        .setLabel('Join the Discord!')
+                                        .setEmoji(BGNEmojis.Discord)
+                                )
+                        )
+                        .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://info.png`)))
+                        .addTextDisplayComponents(this.bgnMcInfo)
+                ],
+                flags: [MessageFlags.IsComponentsV2],
+                files: [
+                    await createBanner('Info', {
+                        fillStyle: BGNColors.Blue,
+                        textStyle: '#ffffff',
+                        width: 1080,
+                        height: 56,
+                        fontSize: 40,
+                        fontWeight: FontWeight.Bold,
+                        textAlign: 'center',
+                        textBaseline: 'middle',
+                        bannerStyle: 'underline',
+                        fileName: `info`
+                    })
+                ]
+            });
         }
     }
 
@@ -165,6 +230,19 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
+    private bgnMcInfo = new TextDisplayBuilder().setContent(
+        `Currently, the server is in a testing phase, so please be patient with us as we work out any issues.` +
+            `\nHowever, we have already decided the following:` +
+            `\n${BGNCubeEmojis.Cube_Blue} All Staff commands will be logged, open & available to the public.` +
+            `\n> This is to ensure not only that there is no abuse of power, but also to grant transparency to the community.` +
+            `\n${BGNCubeEmojis.Cube_Blue} Our staff will remain a barebones team, with purely the powers they require to do their job.` +
+            `\n> This is to ensure that we do not have any staff members who are overpowered or have too many commands.` +
+            `\n${BGNCubeEmojis.Cube_Blue} Any major changes to the server will be decided upon by the community.` +
+            `\n> This is to ensure that the community has a say in what happens on the server, and that we do not make any changes that the community does not want.` +
+            `\n${BGNCubeEmojis.Cube_Blue} ***NO PAY TO WIN***` +
+            `\n> Donations may be accepted at some point in the future, however they will not and should not grant anyone an edge over others.`
+    );
+
     private async createMinecraftVoteMessage(client: GargoyleClient, messageId: string) {
         const voteData = await databaseMinecraftVote.findOne({ messageId });
         if (!voteData) throw new Error('Vote not found');
@@ -198,7 +276,7 @@ export default class Ceraia extends GargoyleCommand {
 
         // Add the canvas as an attachment
         const voteImage = new AttachmentBuilder(canvas.toBuffer(), {
-            name: 'banner.png'
+            name: 'votecounter.png'
         });
 
         const voteOptions = voteData.options
@@ -228,20 +306,7 @@ export default class Ceraia extends GargoyleCommand {
                             )
                     )
                     .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://info.png`)))
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            `Currently, the server is in a testing phase, so please be patient with us as we work out any issues.` +
-                                `\nHowever, we have already decided the following:` +
-                                `\n${BGNCubeEmojis.Cube_Blue} All Staff commands will be logged, open & available to the public.` +
-                                `\n> This is to ensure not only that there is no abuse of power, but also to grant transparency to the community.` +
-                                `\n${BGNCubeEmojis.Cube_Blue} Our staff will remain a barebones team, with purely the powers they require to do their job.` +
-                                `\n> This is to ensure that we do not have any staff members who are overpowered or have too many commands.` +
-                                `\n${BGNCubeEmojis.Cube_Blue} Any major changes to the server will be decided upon by the community.` +
-                                `\n> This is to ensure that the community has a say in what happens on the server, and that we do not make any changes that the community does not want.` +
-                                `\n${BGNCubeEmojis.Cube_Blue} ***NO PAY TO WIN***` +
-                                `\n> Donations may be accepted at some point in the future, however they will not and should not grant anyone an edge over others.`
-                        )
-                    )
+                    .addTextDisplayComponents(this.bgnMcInfo)
                     .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://staff.png`)))
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
@@ -249,9 +314,12 @@ export default class Ceraia extends GargoyleCommand {
                                 `\nAll staff applications will be reviewed at some point, so please be patient.`
                         )
                     )
+
                     .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://vote.png`)))
                     .addTextDisplayComponents(new TextDisplayBuilder().setContent(voteData.description))
-                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://banner.png`)))
+                    .addMediaGalleryComponents(
+                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://votecounter.png`))
+                    )
                     .addActionRowComponents(
                         new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
                             new GargoyleStringSelectMenuBuilder(this, 'vote').addOptions(
@@ -335,6 +403,10 @@ enum BGNCubeEmojis {
     Cube_Green = '<:cube_green:1399289917162655826>',
     Cube_Yellow = '<:cube_yellow:1399289988025290803>',
     Cube_Purple = '<:cube_purple:1399290093474287636>'
+}
+
+enum BGNEmojis {
+    Discord = '<:discord:1399301352798031912>'
 }
 
 const minecraftVoteSchema = new Schema({
