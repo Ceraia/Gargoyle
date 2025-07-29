@@ -405,6 +405,7 @@ export default class Ceraia extends GargoyleCommand {
 
     public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'vote') {
+            await interaction.deferUpdate();
             const selectedOption = interaction.values[0];
             const voteData = await databaseMinecraftVote.findOne({ messageId: interaction.message.id });
             if (!voteData) throw new Error('Vote not found');
