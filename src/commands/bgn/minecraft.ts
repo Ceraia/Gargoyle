@@ -130,6 +130,7 @@ export default class Ceraia extends GargoyleCommand {
                     }
                     linkingUser.discordUserId = interaction.user.id;
                     this.linkingUsers.set(code, linkingUser);
+                    await this.linkedUser(client, code);
                     await interaction.reply({
                         content: `Successfully linked your Discord account to your Minecraft account: ${linkingUser.minecraftUsername}`,
                         flags: [MessageFlags.Ephemeral]
@@ -244,6 +245,7 @@ export default class Ceraia extends GargoyleCommand {
             }
             linkingUser.discordUserId = message.author.id;
             this.linkingUsers.set(code, linkingUser);
+            await this.linkedUser(client, code);
             await message.reply({
                 content: `Successfully linked your Discord account to your Minecraft account: ${linkingUser.minecraftUsername}`
             });
@@ -319,7 +321,7 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
-    public override executeApiRequest(client: GargoyleClient, request: Request): Promise<Response> {
+    public override async executeApiRequest(client: GargoyleClient, request: Request): Promise<Response> {
         const url = new URL(request.url);
         if (url.pathname === '/api/minecraft/user/link') {
             // Linking a member
@@ -360,6 +362,7 @@ export default class Ceraia extends GargoyleCommand {
             // If the linking code exists and the user has a discord user id, then we can link the user
             linkingUser.minecraftUsername = minecraftUsername;
             this.linkingUsers.set(linkingCode, linkingUser);
+            await this.linkedUser(client, linkingCode);
             return Promise.resolve(new Response('Linked', { status: 200, headers: { 'Content-Type': 'text/plain' } }));
         } else if (url.pathname === '/api/minecraft/user/booster') {
             // Check if the user is a booster
