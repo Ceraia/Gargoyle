@@ -123,7 +123,7 @@ export default class Ceraia extends GargoyleCommand {
                                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(client.guilds.cache.get(minecraftBgnGuild)?.iconURL()!))
                                 .addTextDisplayComponents(
                                     new TextDisplayBuilder().setContent(
-                                        `# ${BGNCubeEmojis.Cube_Blue} Introducing Brad's Minecraft` +
+                                        `# ${BGNCubeEmojis.Cube_Blue} Introducing Brad's Minecraft!` +
                                             `\nIntroducing Brad's Minecraft, a community-driven Minecraft server where your voice matters!` +
                                             `\n\nJoin us in shaping the future of our server by participating in community votes and sharing your ideas!` +
                                             `\n\n> Do you have any suggestions? Message <@!${message.author.id}>!`
