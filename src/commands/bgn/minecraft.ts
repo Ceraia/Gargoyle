@@ -392,6 +392,24 @@ export default class Ceraia extends GargoyleCommand {
         return Promise.resolve(new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
     }
 
+    private async linkedUser(client: GargoyleClient, linkingCode: string) {
+        const linkingUser = this.linkingUsers.get(linkingCode);
+        if (!linkingUser) {
+            return;
+        }
+        if (!linkingUser.discordUserId) {
+            return;
+        }
+
+        const discordMember = await client.guilds.cache.get(minecraftBgnGuild)?.members.fetch(linkingUser.discordUserId);
+        if (!discordMember) {
+            return;
+        }
+
+        await discordMember.setNickname(linkingUser.minecraftUsername).catch(() => {});
+        this.linkingUsers.delete(linkingCode);
+    }
+
     private linkingUsers = new Map<string, { discordUserId: string | null; minecraftUsername: string | null }>();
 
     private bgnMcInfo = new TextDisplayBuilder().setContent(
