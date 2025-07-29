@@ -13,7 +13,7 @@ const guildSchema = new Schema({
         }
     },
     autoRoles: {
-        type: Array,
+        type: [String],
         default: []
     }
 });

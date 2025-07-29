@@ -1,22 +1,30 @@
 import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
+import { GargoyleRoleSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
+    AnySelectMenuInteraction,
     APIGuildMember,
     ApplicationCommandType,
     ChatInputCommandInteraction,
+    ClientEvents,
+    ContainerBuilder,
     ContextMenuCommandBuilder,
+    Events,
     GuildMember,
     InteractionContextType,
+    MessageActionRowComponentBuilder,
     MessageContextMenuCommandInteraction,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
     TextChannel,
+    TextDisplayBuilder,
     TextInputBuilder,
     TextInputStyle
 } from 'discord.js';
@@ -94,6 +102,7 @@ export default class Server extends GargoyleCommand {
                             .setDescription('Give a role to all users')
                             .addRoleOption((option) => option.setName('role').setDescription('Role to give').setRequired(true))
                     )
+                    .addSubcommand((subcommand) => subcommand.setName('auto').setDescription('Set a role to be given automatically to new members'))
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
@@ -159,20 +168,17 @@ export default class Server extends GargoyleCommand {
                     interaction.reply({ content: `Server prefix set to \`${prefix}\``, flags: MessageFlags.Ephemeral }).catch(() => {});
                 });
         } else if (interaction.options.getSubcommandGroup() === 'role') {
-            const role = interaction.options.getRole('role', true);
             const user = interaction.options.getUser('user');
-
-            if (!role) return;
 
             if (!interaction.guild) return;
 
             const member: GuildMember | APIGuildMember | null =
-                (await interaction.guild.members.cache.get(user?.id!)) ||
-                (await interaction.guild.members.fetch(interaction.user.id).catch(() => null));
+                interaction.guild.members.cache.get(user?.id!) || (await interaction.guild.members.fetch(interaction.user.id).catch(() => null));
 
             if (!member) return interaction.reply({ content: 'Member not found', flags: MessageFlags.Ephemeral }).catch(() => {});
 
             if (interaction.options.getSubcommand() === 'give') {
+                const role = interaction.options.getRole('role', true);
                 if (typeof member === 'string')
                     return interaction.reply({ content: 'Member not found', flags: MessageFlags.Ephemeral }).catch(() => {});
 
@@ -183,6 +189,7 @@ export default class Server extends GargoyleCommand {
                     interaction.reply({ content: `Role ${role.name} given to ${member.displayName}`, flags: MessageFlags.Ephemeral }).catch(() => {});
                 });
             } else if (interaction.options.getSubcommand() === 'take') {
+                const role = interaction.options.getRole('role', true);
                 const resolvedRole = interaction.guild?.roles.cache.get(role.id);
                 if (!resolvedRole)
                     return interaction.reply({ content: 'Role not found in the guild.', flags: MessageFlags.Ephemeral }).catch(() => {});
@@ -192,6 +199,7 @@ export default class Server extends GargoyleCommand {
                         .catch(() => {});
                 });
             } else if (interaction.options.getSubcommand() === 'all') {
+                const role = interaction.options.getRole('role', true);
                 interaction.deferReply({ flags: MessageFlags.Ephemeral });
                 interaction.guild.members.fetch().then(async (members) => {
                     const resolvedRole = interaction.guild?.roles.cache.get(role.id);
@@ -210,6 +218,68 @@ export default class Server extends GargoyleCommand {
 
                     await interaction.reply({ content: `Role ${role.name} given to all users`, flags: MessageFlags.Ephemeral }).catch(() => {});
                 });
+            } else if (interaction.options.getSubcommand() === 'auto') {
+                if (!client.db)
+                    return interaction.reply({ content: 'Database not available, please try again later', flags: MessageFlags.Ephemeral });
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                const dbGuild = await client.db.getGuild(interaction.guildId!);
+                const guildRoles = interaction.guild.roles.cache;
+
+                dbGuild.autoRoles = dbGuild.autoRoles.filter((r) => guildRoles.has(r));
+                await dbGuild.save();
+
+                interaction.editReply({
+                    components: [
+                        new ContainerBuilder()
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('Select roles to automatically assign on member join'))
+                            .addActionRowComponents(
+                                new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                    new GargoyleRoleSelectMenuBuilder(this, 'autoroles')
+                                        .setDefaultRoles(dbGuild.autoRoles)
+                                        .setPlaceholder('Select roles to auto assign')
+                                        .setMaxValues(25)
+                                        .setMinValues(0)
+                                )
+                            )
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+            }
+        }
+    }
+
+    public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'autoroles') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            if (!interaction.guild) return;
+            if (!client.db) {
+                interaction.editReply({ content: 'Database not available, please try again later' });
+                return;
+            }
+
+            if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageRoles)) {
+                interaction.editReply({ content: 'You do not have permission to manage roles.' });
+                return;
+            }
+
+            const selectedRoles = interaction.values;
+            const guildRoles = interaction.guild.roles.cache;
+
+            for (const role of selectedRoles) {
+                const rolePosition = guildRoles.get(role)?.position ?? 0;
+                if ((interaction.member as GuildMember).roles.highest.position <= rolePosition) {
+                    interaction.editReply({ content: 'You cannot select roles higher than your highest role.' });
+                    return;
+                }
+            }
+
+            const dbGuild = await client.db.getGuild(interaction.guildId!);
+            dbGuild.autoRoles = selectedRoles.filter((r) => guildRoles.has(r));
+            try {
+                await dbGuild.save();
+                interaction.editReply({ content: 'Auto roles saved successfully.' }).catch(() => {});
+            } catch {
+                interaction.editReply({ content: 'Failed to save auto roles.' }).catch(() => {});
             }
         }
     }
@@ -256,6 +326,24 @@ export default class Server extends GargoyleCommand {
                         )
                     )
             );
+        }
+    }
+
+    public override events: GargoyleEvent[] = [new MemberJoin()];
+}
+
+class MemberJoin extends GargoyleEvent {
+    public override event = Events.GuildMemberAdd as const;
+    public override async execute(client: GargoyleClient, member: GuildMember) {
+        if (!client.db) return;
+        const dbGuild = await client.db.getGuild(member.guild.id);
+        if (dbGuild.autoRoles.length > 0) {
+            const rolesToAdd = dbGuild.autoRoles.filter((roleId) => member.guild.roles.cache.has(roleId));
+            if (rolesToAdd.length > 0) {
+                try {
+                    await member.roles.add(rolesToAdd);
+                } catch (error) {}
+            }
         }
     }
 }
