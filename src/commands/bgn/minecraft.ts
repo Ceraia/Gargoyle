@@ -6,6 +6,7 @@ import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTex
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import { createBanner, FontWeight } from '@src/system/backend/tools/banners.js';
+import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import { createCanvas } from 'canvas';
 import {
     ActionRowBuilder,
@@ -66,11 +67,12 @@ export default class Ceraia extends GargoyleCommand {
     ];
 
     public override textCommands: GargoyleTextCommandBuilder[] = [
-        new GargoyleTextCommandBuilder().setName('bgnmc').setDescription('BGN\s Minecraft advertisement banner command'),
+        new GargoyleTextCommandBuilder().setName('bgnmc').setDescription('BGN\s Minecraft advertisement banner command').setPrivate(true),
         new GargoyleTextCommandBuilder()
             .setName('link')
             .setDescription('Links your Discord account to your Minecraft account')
-            .addGuild(minecraftBgnGuild)
+            .addGuild(minecraftBgnGuild),
+        new GargoyleTextCommandBuilder().setName('codetest').setDescription('Test codes').setPrivate(true)
     ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
@@ -218,50 +220,55 @@ export default class Ceraia extends GargoyleCommand {
 
             await message.delete().catch(() => {});
 
-            (message.channel as TextChannel).send({
-                components: [
-                    new ContainerBuilder()
-                        .setAccentColor(0x00d2ff)
-                        .addSectionComponents(
-                            new SectionBuilder()
-                                .setThumbnailAccessory(new ThumbnailBuilder().setURL(client.guilds.cache.get(minecraftBgnGuild)?.iconURL()!))
-                                .addTextDisplayComponents(
-                                    new TextDisplayBuilder().setContent(
-                                        `# ${BGNCubeEmojis.Cube_Blue} Introducing Brad's Minecraft!` +
-                                            `\nIntroducing Brad's Minecraft, a community-driven Minecraft server where your voice matters!` +
-                                            `\n\nJoin us in shaping the future of our server by participating in community votes and sharing your ideas!` +
-                                            `\n\n> Do you have any suggestions? Message <@!${message.author.id}>!`
+            await sendAsServer(
+                {
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0x00d2ff)
+                            .addSectionComponents(
+                                new SectionBuilder()
+                                    .setThumbnailAccessory(new ThumbnailBuilder().setURL(client.guilds.cache.get(minecraftBgnGuild)?.iconURL()!))
+                                    .addTextDisplayComponents(
+                                        new TextDisplayBuilder().setContent(
+                                            `# ${BGNCubeEmojis.Cube_Blue} Introducing Brad's Minecraft!` +
+                                                `\nIntroducing Brad's Minecraft, a community-driven Minecraft server where your voice matters!` +
+                                                `\n\nJoin us in shaping the future of our server by participating in community votes and sharing your ideas!` +
+                                                `\n\n> Do you have any suggestions? Message <@!${message.author.id}>!`
+                                        )
                                     )
-                                )
-                        )
-                        .addSectionComponents(
-                            new SectionBuilder()
-                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`Join our community and be part of the adventure!`))
-                                .setButtonAccessory(
-                                    new GargoyleURLButtonBuilder('https://discord.gg/A7V5NRwgjP')
-                                        .setLabel('Join the Discord!')
-                                        .setEmoji(BGNEmojis.Discord)
-                                )
-                        )
-                        .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://info.png`)))
-                        .addTextDisplayComponents(this.bgnMcInfo)
-                ],
-                flags: [MessageFlags.IsComponentsV2],
-                files: [
-                    await createBanner('Info', {
-                        fillStyle: BGNColors.Blue,
-                        textStyle: '#ffffff',
-                        width: 1080,
-                        height: 56,
-                        fontSize: 40,
-                        fontWeight: FontWeight.Bold,
-                        textAlign: 'center',
-                        textBaseline: 'middle',
-                        bannerStyle: 'underline',
-                        fileName: `info`
-                    })
-                ]
-            });
+                            )
+                            .addSectionComponents(
+                                new SectionBuilder()
+                                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`Join our community and be part of the adventure!`))
+                                    .setButtonAccessory(
+                                        new GargoyleURLButtonBuilder('https://discord.gg/A7V5NRwgjP')
+                                            .setLabel('Join the Discord!')
+                                            .setEmoji(BGNEmojis.Discord)
+                                    )
+                            )
+                            .addMediaGalleryComponents(
+                                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://info.png`))
+                            )
+                            .addTextDisplayComponents(this.bgnMcInfo)
+                    ],
+                    flags: [MessageFlags.IsComponentsV2],
+                    files: [
+                        await createBanner('Info', {
+                            fillStyle: BGNColors.Blue,
+                            textStyle: '#ffffff',
+                            width: 1080,
+                            height: 56,
+                            fontSize: 40,
+                            fontWeight: FontWeight.Bold,
+                            textAlign: 'center',
+                            textBaseline: 'middle',
+                            bannerStyle: 'underline',
+                            fileName: `info`
+                        })
+                    ]
+                },
+                message.channel as TextChannel
+            );
         } else if (args[0] === 'link') {
             // Link command to link the user's Discord account to their Minecraft account
             if (args.length < 2) {
@@ -302,6 +309,21 @@ export default class Ceraia extends GargoyleCommand {
             await message.reply({
                 content: `Successfully linked your Discord account to your Minecraft account: ${linkingUser.minecraftUsername}`
             });
+        } else if (args[0] === 'codetest') {
+            message.reply({
+                components: [
+                    new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                        new GargoyleStringSelectMenuBuilder(this, 'test')
+                            .addOptions([
+                                { value: 'one', label: 'Discord', emoji: BGNEmojis.Discord },
+                                { value: 'two', label: 'Cube', emoji: BGNCubeEmojis.Cube_Blue },
+                                { value: 'three', label: 'Poll', emoji: BGNPollEmojis.Poll_Blue }
+                            ])
+                            .setMinValues(3)
+                            .setMaxValues(3)
+                    )
+                ]
+            });
         }
     }
 
@@ -315,12 +337,23 @@ export default class Ceraia extends GargoyleCommand {
                 .split(';')
                 .map((option) => option.trim());
 
-            const message = await (interaction.channel as TextChannel).send({
-                components: [
-                    new ContainerBuilder().setAccentColor(0x00d2ff).addTextDisplayComponents(new TextDisplayBuilder().setContent('One moment...'))
-                ],
-                flags: MessageFlags.IsComponentsV2
-            });
+            const message = await sendAsServer(
+                {
+                    components: [
+                        new ContainerBuilder().setAccentColor(0x00d2ff).addTextDisplayComponents(new TextDisplayBuilder().setContent('One moment...'))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
+                },
+                interaction.channel as TextChannel
+            );
+
+            if (!message) {
+                await interaction.editReply({
+                    content:
+                        'Failed to send the vote message. make sure I have the appropriate permissions to send messages, and to manage webhooks in this channel.'
+                });
+                return;
+            }
 
             const voteData = {
                 ownerId: interaction.user.id,
@@ -335,7 +368,7 @@ export default class Ceraia extends GargoyleCommand {
             const newVote = new databaseMinecraftVote(voteData);
             await newVote.save();
 
-            message.edit(await this.createMinecraftVoteMessage(client, message.id));
+            await editAsServer(await this.createMinecraftVoteMessage(client, message.id), interaction.channel as TextChannel, message.id);
 
             await interaction.editReply('Vote created successfully!');
         } else if (args[0] === 'edit') {
@@ -363,39 +396,42 @@ export default class Ceraia extends GargoyleCommand {
             await voteData.save();
 
             const message = await interaction.channel!.messages.fetch(args[1]);
-            if (message) message.edit(await this.createMinecraftVoteMessage(client, voteData.messageId));
+            if (message)
+                await editAsServer(await this.createMinecraftVoteMessage(client, voteData.messageId), message.channel as TextChannel, message.id);
 
             await interaction.editReply('Vote edited successfully!');
         }
     }
 
     public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
-        const selectedOption = interaction.values[0];
-        const voteData = await databaseMinecraftVote.findOne({ messageId: interaction.message.id });
-        if (!voteData) throw new Error('Vote not found');
+        if (args[0] === 'vote') {
+            const selectedOption = interaction.values[0];
+            const voteData = await databaseMinecraftVote.findOne({ messageId: interaction.message.id });
+            if (!voteData) throw new Error('Vote not found');
 
-        const userVote = voteData.votes.find((vote) => vote.userId === interaction.user.id);
-        if (userVote) {
-            userVote.vote = parseInt(selectedOption, 10);
-        } else {
-            voteData.votes.push({ userId: interaction.user.id, vote: parseInt(selectedOption, 10) });
-        }
+            const userVote = voteData.votes.find((vote) => vote.userId === interaction.user.id);
+            if (userVote) {
+                userVote.vote = parseInt(selectedOption, 10);
+            } else {
+                voteData.votes.push({ userId: interaction.user.id, vote: parseInt(selectedOption, 10) });
+            }
 
-        await voteData.save();
+            await voteData.save();
 
-        const updatedMessage = await this.createMinecraftVoteMessage(client, interaction.message.id);
-        await interaction.update(updatedMessage);
+            const updatedMessage = await this.createMinecraftVoteMessage(client, interaction.message.id);
+            await editAsServer(updatedMessage, interaction.channel as TextChannel, interaction.message.id);
 
-        if (userVote) {
-            await interaction.followUp({
-                content: `Your vote has been updated to **${voteData.options[parseInt(selectedOption, 10)]}**.`,
-                flags: [MessageFlags.Ephemeral]
-            });
-        } else {
-            await interaction.followUp({
-                content: `You have voted for **${voteData.options[parseInt(selectedOption, 10)]}**.`,
-                flags: [MessageFlags.Ephemeral]
-            });
+            if (userVote) {
+                await interaction.followUp({
+                    content: `Your vote has been updated to **${voteData.options[parseInt(selectedOption, 10)]}**.`,
+                    flags: [MessageFlags.Ephemeral]
+                });
+            } else {
+                await interaction.followUp({
+                    content: `You have voted for **${voteData.options[parseInt(selectedOption, 10)]}**.`,
+                    flags: [MessageFlags.Ephemeral]
+                });
+            }
         }
     }
 
