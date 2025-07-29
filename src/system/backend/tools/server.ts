@@ -1,20 +1,24 @@
-import { Guild, Message, MessageCreateOptions, MessageResolvable, TextBasedChannel, TextChannel, WebhookMessageEditOptions } from 'discord.js';
-import GargoyleClient from '../classes/gargoyleClient.js';
+import {
+    Guild,
+    Message,
+    MessageCreateOptions,
+    MessageEditOptions,
+    MessageResolvable,
+    TextBasedChannel,
+    TextChannel,
+    WebhookMessageEditOptions
+} from 'discord.js';
+
 import client from '@src/system/botClient.js';
 
-export async function sendAsServer(
-    client: GargoyleClient,
-    message: MessageCreateOptions,
-    channel: TextBasedChannel,
-    guild?: Guild
-): Promise<Message | null> {
+export async function sendAsServer(message: MessageCreateOptions, channel: TextBasedChannel, guild?: Guild): Promise<Message | null> {
     const target = channel.isThread() ? channel.parent : channel;
     if (!target || target.isDMBased()) return Promise.resolve(null);
     const webhooks = await target.fetchWebhooks();
 
     let webhook;
 
-    webhook = webhooks.find((webhook) => webhook.owner && webhook.owner.id === client.user?.id);
+    webhook = webhooks.find((webhook) => webhook.owner && webhook.owner.id === target.client.user.id);
 
     if (!webhook) {
         webhook = await target.createWebhook({
@@ -37,7 +41,7 @@ export async function sendAsServer(
 }
 
 export async function editAsServer(
-    message: MessageCreateOptions,
+    message: MessageEditOptions,
     channel: TextChannel,
     messageId: string | MessageResolvable
 ): Promise<Message | null> {
@@ -71,5 +75,5 @@ export async function editAsServer(
 }
 
 function sanitizeNameString(str: string): string {
-    return str.replaceAll(/discord/gi, 'DC');
+    return str.replaceAll(/discord/gi, 'DC').replaceAll('1488', 'Numbers');
 }

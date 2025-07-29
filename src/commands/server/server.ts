@@ -3,7 +3,6 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
-import client from '@src/system/botClient.js';
 import {
     ActionRowBuilder,
     APIGuildMember,
@@ -137,7 +136,6 @@ export default class Server extends GargoyleCommand {
                 interaction.options.getAttachment('attachment9')
             ];
             return sendAsServer(
-                client,
                 {
                     files: [...attachments.filter((attachment) => attachment !== null)]
                 },
@@ -219,7 +217,7 @@ export default class Server extends GargoyleCommand {
     public override executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
         if (args[0] === 'message') {
             interaction.reply({ content: 'Sending message, one moment...', flags: MessageFlags.Ephemeral });
-            sendAsServer(client, { content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel);
+            sendAsServer({ content: interaction.fields.getTextInputValue('message') }, interaction.channel as TextChannel);
         } else if (args[0] === 'edit') {
             if (!interaction.channel) return;
             (interaction.channel as TextChannel).messages.fetch(args[1]).then((message) => {

@@ -337,7 +337,7 @@ export default class RoleCommand extends GargoyleCommand {
                     ]
                 });
 
-                await sendAsServer(client, message, interaction.channel as TextChannel);
+                await sendAsServer(message, interaction.channel as TextChannel);
             } catch (err) {
                 client.logger.error('Failed to make panel', err as string);
                 await interaction.update({

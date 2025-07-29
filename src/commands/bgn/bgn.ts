@@ -151,7 +151,7 @@ export default class Brads extends GargoyleCommand {
             }
 
             try {
-                await sendAsServer(client, this.panelMessage, channel);
+                await sendAsServer(this.panelMessage, channel);
                 await interaction.reply({ content: 'Sent the panel to the channel.', flags: [MessageFlags.Ephemeral] });
             } catch (err) {
                 client.logger.error(err as string);
@@ -857,9 +857,9 @@ export default class Brads extends GargoyleCommand {
                 ]
             } as MessageCreateOptions;
 
-            await sendAsServer(client, { ...message, allowedMentions: {} }, thread);
+            await sendAsServer({ ...message, allowedMentions: {} }, thread);
 
-            if (extraMessage) await sendAsServer(client, { ...extraMessage, allowedMentions: {} }, thread);
+            if (extraMessage) await sendAsServer({ ...extraMessage, allowedMentions: {} }, thread);
 
             /*
              * This might look odd, but mentioning a user in a webhook does not add them to a thread.

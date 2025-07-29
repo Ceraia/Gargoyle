@@ -71,7 +71,7 @@ export default class VoicechatCommand extends GargoyleCommand {
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommand() === 'panel') {
             interaction.reply({ content: 'Sending the panel!', flags: MessageFlags.Ephemeral });
-            sendAsServer(client, this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
+            sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel);
         } else if (interaction.options.getSubcommand() === 'create') {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             if (!interaction.guild) return;
@@ -111,17 +111,14 @@ export default class VoicechatCommand extends GargoyleCommand {
         }
     }
 
-    public override executeTextCommand(client: GargoyleClient, message: Message) {
-        sendAsServer(client, this.panelMessage as MessageCreateOptions, message.channel as TextChannel);
+    public override executeTextCommand(_client: GargoyleClient, message: Message) {
+        sendAsServer(this.panelMessage as MessageCreateOptions, message.channel as TextChannel);
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (interaction.message.webhookId)
             editAsServer(this.panelMessage as MessageEditOptions, interaction.channel as TextChannel, interaction.message.id);
-        else
-            interaction.message
-                .delete()
-                .then(() => sendAsServer(client, this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
+        else interaction.message.delete().then(() => sendAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel));
 
         if (args[0] !== 'rename') await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!interaction.guildId || !interaction.user.id) return;

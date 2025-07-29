@@ -391,7 +391,6 @@ class MemberLeave extends GargoyleEvent {
 
             if (crustaceanChannel && crustaceanChannel.isSendable()) {
                 sendAsServer(
-                    client,
                     {
                         content: leaveMessage().replace('{member}', `<@!${member.id}>`)
                     },
@@ -426,7 +425,6 @@ class MemberJoin extends GargoyleEvent {
 
         if (crustaceanChannel.isSendable()) {
             sendAsServer(
-                client,
                 {
                     content: inviteMessage().replace('{member}', `<@!${member.id}>`),
                     components: [
