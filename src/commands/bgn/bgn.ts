@@ -555,7 +555,7 @@ export default class Brads extends GargoyleCommand {
             }
 
             await interaction.message.edit(this.panelMessage as MessageEditOptions).catch(async () => {
-                await editAsServer(this.panelMessage, interaction.channel as TextChannel, interaction.message.id);
+                await editAsServer(this.panelMessage as MessageEditOptions, interaction.channel as TextChannel, interaction.message.id);
             });
 
             const role = interaction.guild.roles.cache.find((role) => role.name.toLowerCase() === args[0].toLowerCase());

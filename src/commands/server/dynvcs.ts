@@ -117,7 +117,7 @@ export default class VoicechatCommand extends GargoyleCommand {
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (interaction.message.webhookId)
-            editAsServer(this.panelMessage as MessageCreateOptions, interaction.channel as TextChannel, interaction.message.id);
+            editAsServer(this.panelMessage as MessageEditOptions, interaction.channel as TextChannel, interaction.message.id);
         else
             interaction.message
                 .delete()
