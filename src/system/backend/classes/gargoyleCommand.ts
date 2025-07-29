@@ -69,6 +69,10 @@ abstract class GargoyleCommand {
         client.logger.error(`${interaction.customId} with argument ${args} does not have a modal command implementation.`);
         interaction.reply({ content: 'This command does not have a modal command implementation.', flags: MessageFlags.Ephemeral });
     }
+    public executeApiRequest(client: GargoyleClient, request: Request): Promise<Response> {
+        client.logger.warning(`API request to ${request.url} does not have an implementation.`);
+        return Promise.resolve(new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
+    }
 }
 
 export default GargoyleCommand;

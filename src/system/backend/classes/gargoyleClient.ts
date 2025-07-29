@@ -4,7 +4,7 @@ import { Logger } from '../tools/logger.js';
 import registerEvents from '../initializers/registerEvents.js';
 import GargoyleCommand from './gargoyleCommand.js';
 import loadCommands from '../initializers/loadCommands.js';
-
+import executeWebRequest from '../tools/web.js';
 /**
  * Represents a client for the Gargoyle system, extending the base Client class.
  * Handles database connection, command loading, and event registration.
@@ -99,6 +99,7 @@ class GargoyleClient extends Client {
      */
     override async login(token?: string): Promise<string> {
         this.startHealthCheckServer();
+        this.startApiServer();
 
         this.db = new Database(this);
 
@@ -143,6 +144,25 @@ class GargoyleClient extends Client {
         });
         this.logger.log('Health check server is running on port 3000');
     }
+
+    /**
+     * Starts the API server for handling web requests.
+     * Listens on port 3001 and executes commands based on the request URL.
+     */
+    private startApiServer() {
+        Bun.serve({
+            port: 3001,
+            fetch: (req) => {
+                return executeWebRequest(this, req);
+            }
+        });
+        this.logger.log('API server is running on port 3001');
+    }
+}
+
+enum GargoyleClientEvents {
+    WebPost = 'webPost',
+    ApiRequest = 'apiRequest'
 }
 
 export default GargoyleClient;
