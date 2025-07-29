@@ -41,13 +41,23 @@ export default class Ceraia extends GargoyleCommand {
             .setDescription('BGN\s Minecraft commands')
             .addGuild(minecraftBgnGuild)
             .addSubcommand((subcommand) => subcommand.setName('vote').setDescription('Make a new vote'))
+            .addSubcommand((subcommand) => subcommand.setName('clearnicks').setDescription('Clears all nicknames in the guild'))
             .addSubcommand((subcommand) =>
-                subcommand.setName('clearnicks').setDescription('Clears all nicknames in the guild')
+                subcommand
+                    .setName('link')
+                    .setDescription('Links your Discord account to your Minecraft account')
+                    .addStringOption((option) =>
+                        option.setName('code').setDescription('The linking code').setMaxLength(4).setMinLength(4).setRequired(false)
+                    )
             ) as GargoyleSlashCommandBuilder
     ];
 
     public override textCommands: GargoyleTextCommandBuilder[] = [
-        new GargoyleTextCommandBuilder().setName('bgnmc').setDescription('BGN\s Minecraft advertisement banner command')
+        new GargoyleTextCommandBuilder().setName('bgnmc').setDescription('BGN\s Minecraft advertisement banner command'),
+        new GargoyleTextCommandBuilder()
+            .setName('link')
+            .setDescription('Links your Discord account to your Minecraft account')
+            .addGuild(minecraftBgnGuild)
     ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
@@ -100,6 +110,46 @@ export default class Ceraia extends GargoyleCommand {
                             )
                         )
                 );
+            } else if (interaction.options.getSubcommand() === 'link') {
+                const code = interaction.options.getString('code');
+                if (code) {
+                    const linkingUser = this.linkingUsers.get(code);
+                    if (!linkingUser) {
+                        await interaction.reply({
+                            content: 'Invalid linking code.',
+                            flags: [MessageFlags.Ephemeral]
+                        });
+                        return;
+                    }
+                    if (!linkingUser.minecraftUsername) {
+                        await interaction.reply({
+                            content: 'You need to link this code in the Minecraft server!',
+                            flags: [MessageFlags.Ephemeral]
+                        });
+                        return;
+                    }
+                    linkingUser.discordUserId = interaction.user.id;
+                    this.linkingUsers.set(code, linkingUser);
+                    await interaction.reply({
+                        content: `Successfully linked your Discord account to your Minecraft account: ${linkingUser.minecraftUsername}`,
+                        flags: [MessageFlags.Ephemeral]
+                    });
+                } else {
+                    for (const [code, linkingUser] of this.linkingUsers.entries()) {
+                        if (linkingUser.discordUserId === interaction.user.id) {
+                            this.linkingUsers.delete(code);
+                        }
+                    }
+                    const useableLinkingCode = createLinkingCode();
+                    this.linkingUsers.set(useableLinkingCode, {
+                        discordUserId: interaction.user.id,
+                        minecraftUsername: null
+                    });
+                    await interaction.reply({
+                        content: `Your linking code is: \`\\link ${useableLinkingCode}\`. Use this code in the Minecraft server to link your account.`,
+                        flags: [MessageFlags.Ephemeral]
+                    });
+                }
             }
         }
     }
@@ -157,6 +207,45 @@ export default class Ceraia extends GargoyleCommand {
                         fileName: `info`
                     })
                 ]
+            });
+        } else if (args[0] === 'link') {
+            // Link command to link the user's Discord account to their Minecraft account
+            if (args.length < 2) {
+                for (const [code, linkingUser] of this.linkingUsers.entries()) {
+                    if (linkingUser.discordUserId === message.author.id) {
+                        this.linkingUsers.delete(code);
+                    }
+                }
+                const useableLinkingCode = createLinkingCode();
+                this.linkingUsers.set(useableLinkingCode, {
+                    discordUserId: message.author.id,
+                    minecraftUsername: null
+                });
+                await message.reply({
+                    content: `Your linking code is: \`\\link ${useableLinkingCode}\`. Use this code in the Minecraft server to link your account.`,
+                    allowedMentions: { users: [] }
+                });
+                return;
+            }
+
+            const code = args[1];
+            const linkingUser = this.linkingUsers.get(code);
+            if (!linkingUser) {
+                await message.reply({
+                    content: 'Invalid linking code.'
+                });
+                return;
+            }
+            if (!linkingUser.minecraftUsername) {
+                await message.reply({
+                    content: 'You need to link this code in the Minecraft server!'
+                });
+                return;
+            }
+            linkingUser.discordUserId = message.author.id;
+            this.linkingUsers.set(code, linkingUser);
+            await message.reply({
+                content: `Successfully linked your Discord account to your Minecraft account: ${linkingUser.minecraftUsername}`
             });
         }
     }
@@ -233,7 +322,7 @@ export default class Ceraia extends GargoyleCommand {
     public override executeApiRequest(client: GargoyleClient, request: Request): Promise<Response> {
         const url = new URL(request.url);
         if (url.pathname === '/api/minecraft/user/link') {
-            // api/minecraft/user/link?minecraftUsername=example&linkingCode=1234
+            // Linking a member
             const minecraftUsername = url.searchParams.get('minecraftUsername');
             if (!minecraftUsername) {
                 return Promise.resolve(new Response('Missing minecraftUsername parameter', { status: 400 }));
@@ -272,6 +361,32 @@ export default class Ceraia extends GargoyleCommand {
             linkingUser.minecraftUsername = minecraftUsername;
             this.linkingUsers.set(linkingCode, linkingUser);
             return Promise.resolve(new Response('Linked', { status: 200, headers: { 'Content-Type': 'text/plain' } }));
+        } else if (url.pathname === '/api/minecraft/user/booster') {
+            // Check if the user is a booster
+            const minecraftUsername = url.searchParams.get('minecraftUsername');
+            if (!minecraftUsername) {
+                return Promise.resolve(
+                    new Response('Missing minecraftUsername parameter', { status: 400, headers: { 'Content-Type': 'text/plain' } })
+                );
+            }
+            const linkingUser = Array.from(this.linkingUsers.values()).find((user) => user.minecraftUsername === minecraftUsername);
+            if (!linkingUser) {
+                return Promise.resolve(new Response('User not linked', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
+            }
+            if (!linkingUser.discordUserId) {
+                return Promise.resolve(new Response('User not linked to Discord', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
+            }
+            const discordMember = client.guilds.cache.get(minecraftBgnGuild)?.members.cache.get(linkingUser.discordUserId);
+            if (!discordMember) {
+                return Promise.resolve(new Response('Discord user not found', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
+            }
+            const isBooster = discordMember.premiumSinceTimestamp !== null;
+            return Promise.resolve(
+                new Response(isBooster ? 'Yes' : 'No', {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/plain' }
+                })
+            );
         }
 
         return Promise.resolve(new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
