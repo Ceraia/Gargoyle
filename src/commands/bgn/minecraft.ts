@@ -230,6 +230,55 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
+    public override executeApiRequest(client: GargoyleClient, request: Request): Promise<Response> {
+        const url = new URL(request.url);
+        if (url.pathname === '/api/minecraft/user/link') {
+            // api/minecraft/user/link?minecraftUsername=example&linkingCode=1234
+            const minecraftUsername = url.searchParams.get('minecraftUsername');
+            if (!minecraftUsername) {
+                return Promise.resolve(new Response('Missing minecraftUsername parameter', { status: 400 }));
+            }
+
+            const linkingCode = url.searchParams.get('linkingCode');
+            if (!linkingCode) {
+                // Delete any existing linking codes for this Minecraft username, this ensures that the user can only have one active linking code at a time
+                for (const [code, linkingUser] of this.linkingUsers.entries()) {
+                    if (linkingUser.minecraftUsername === minecraftUsername) {
+                        this.linkingUsers.delete(code);
+                    }
+                }
+
+                // Create a new linking code for the user and send it back
+                const useableLinkingCode = createLinkingCode();
+                this.linkingUsers.set(useableLinkingCode, {
+                    discordUserId: null,
+                    minecraftUsername: minecraftUsername
+                });
+                return Promise.resolve(new Response(useableLinkingCode, { status: 200, headers: { 'Content-Type': 'text/plain' } }));
+            }
+
+            // Check if the linking code exists
+            const linkingUser = this.linkingUsers.get(linkingCode);
+            if (!linkingUser) {
+                return Promise.resolve(new Response('Invalid linking code', { status: 400, headers: { 'Content-Type': 'text/plain' } })); // Delete any minecraft username linked to the user
+            }
+
+            // There is a linking code, but no discord user, so the user needs to complete the linking process in the Discord server
+            if (!linkingUser.discordUserId) {
+                return Promise.resolve(new Response('No Discord account linked', { status: 400, headers: { 'Content-Type': 'text/plain' } }));
+            }
+
+            // If the linking code exists and the user has a discord user id, then we can link the user
+            linkingUser.minecraftUsername = minecraftUsername;
+            this.linkingUsers.set(linkingCode, linkingUser);
+            return Promise.resolve(new Response('Linked', { status: 200, headers: { 'Content-Type': 'text/plain' } }));
+        }
+
+        return Promise.resolve(new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
+    }
+
+    private linkingUsers = new Map<string, { discordUserId: string | null; minecraftUsername: string | null }>();
+
     private bgnMcInfo = new TextDisplayBuilder().setContent(
         `Currently, the server is in a testing phase, so please be patient with us as we work out any issues.` +
             `\nHowever, we have already decided the following:` +
@@ -377,6 +426,10 @@ export default class Ceraia extends GargoyleCommand {
 
         return interactionEditReply;
     }
+}
+
+function createLinkingCode() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
 enum BGNColors {
