@@ -40,7 +40,20 @@ export default class Ceraia extends GargoyleCommand {
             .setName('minecraft')
             .setDescription('BGN\s Minecraft commands')
             .addGuild(minecraftBgnGuild)
-            .addSubcommand((subcommand) => subcommand.setName('vote').setDescription('Make a new vote'))
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('vote')
+                    .setDescription('Vote related commands')
+                    .addSubcommand((subcommand) => subcommand.setName('create').setDescription('Create a vote'))
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('edit')
+                            .setDescription('Edit an existing vote')
+                            .addStringOption((option) =>
+                                option.setName('message').setDescription('The message ID of the vote to edit').setRequired(true)
+                            )
+                    )
+            )
             .addSubcommand((subcommand) => subcommand.setName('clearnicks').setDescription('Clears all nicknames in the guild'))
             .addSubcommand((subcommand) =>
                 subcommand
@@ -62,7 +75,78 @@ export default class Ceraia extends GargoyleCommand {
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'minecraft') {
-            if (interaction.options.getSubcommand() === 'clearnicks') {
+            if (interaction.options.getSubcommandGroup() === 'vote') {
+                if (interaction.options.getSubcommand() === 'create') {
+                    interaction.showModal(
+                        new GargoyleModalBuilder(this, 'create')
+                            .setTitle('Create a vote')
+                            .addComponents(
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                                    new TextInputBuilder()
+                                        .setCustomId('title')
+                                        .setLabel('Vote Title')
+                                        .setStyle(TextInputStyle.Short)
+                                        .setRequired(true)
+                                ),
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                                    new TextInputBuilder()
+                                        .setCustomId('description')
+                                        .setLabel('Vote Description')
+                                        .setStyle(TextInputStyle.Paragraph)
+                                        .setRequired(true)
+                                ),
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                                    new TextInputBuilder()
+                                        .setCustomId('options')
+                                        .setLabel('Vote Options (semicolon separated)')
+                                        .setStyle(TextInputStyle.Paragraph)
+                                        .setRequired(true)
+                                )
+                            )
+                    );
+                } else if (interaction.options.getSubcommand() === 'edit') {
+                    const messageId = interaction.options.getString('message', true);
+
+                    const voteData = await databaseMinecraftVote.findOne({ messageId });
+                    if (!voteData) {
+                        await interaction.reply({
+                            content: 'Vote not found.',
+                            flags: [MessageFlags.Ephemeral]
+                        });
+                        return;
+                    }
+                    interaction.showModal(
+                        new GargoyleModalBuilder(this, 'edit', messageId)
+                            .setTitle('Edit Vote')
+                            .addComponents(
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                                    new TextInputBuilder()
+                                        .setCustomId('title')
+                                        .setLabel('Vote Title')
+                                        .setStyle(TextInputStyle.Short)
+                                        .setRequired(true)
+                                        .setValue(voteData.title)
+                                ),
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                                    new TextInputBuilder()
+                                        .setCustomId('description')
+                                        .setLabel('Vote Description')
+                                        .setStyle(TextInputStyle.Paragraph)
+                                        .setRequired(true)
+                                        .setValue(voteData.description)
+                                ),
+                                new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                                    new TextInputBuilder()
+                                        .setCustomId('options')
+                                        .setLabel('Vote Options (semicolon separated)')
+                                        .setStyle(TextInputStyle.Paragraph)
+                                        .setRequired(true)
+                                        .setValue(voteData.options.join('; '))
+                                )
+                            )
+                    );
+                }
+            } else if (interaction.options.getSubcommand() === 'clearnicks') {
                 await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
                 client.logger.info(`Clearing all nicknames in guild ${interaction.guildId}`);
                 const members = await interaction.guild!.members.fetch();
@@ -79,37 +163,6 @@ export default class Ceraia extends GargoyleCommand {
                 await interaction.editReply({
                     content: 'All nicknames have been cleared.'
                 });
-            } else if (interaction.options.getSubcommand() === 'vote') {
-                interaction.showModal(
-                    new GargoyleModalBuilder(this, 'vote')
-                        .setTitle('Create a vote')
-                        .addComponents(
-                            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
-                                new TextInputBuilder().setCustomId('title').setLabel('Vote Title').setStyle(TextInputStyle.Short).setRequired(true)
-                            ),
-                            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
-                                new TextInputBuilder()
-                                    .setCustomId('description')
-                                    .setLabel('Vote Description')
-                                    .setStyle(TextInputStyle.Paragraph)
-                                    .setRequired(true)
-                            ),
-                            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
-                                new TextInputBuilder()
-                                    .setCustomId('options')
-                                    .setLabel('Vote Options (semicolon separated)')
-                                    .setStyle(TextInputStyle.Paragraph)
-                                    .setRequired(true)
-                            ),
-                            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
-                                new TextInputBuilder()
-                                    .setCustomId('time')
-                                    .setLabel('Vote Duration (in hours)')
-                                    .setStyle(TextInputStyle.Short)
-                                    .setRequired(true)
-                            )
-                        )
-                );
             } else if (interaction.options.getSubcommand() === 'link') {
                 const code = interaction.options.getString('code');
                 if (code) {
@@ -253,7 +306,7 @@ export default class Ceraia extends GargoyleCommand {
     }
 
     public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
-        if (args[0] === 'vote') {
+        if (args[0] === 'create') {
             await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
             const title = interaction.fields.getTextInputValue('title');
             const description = interaction.fields.getTextInputValue('description');
@@ -261,7 +314,6 @@ export default class Ceraia extends GargoyleCommand {
                 .getTextInputValue('options')
                 .split(';')
                 .map((option) => option.trim());
-            const duration = parseInt(interaction.fields.getTextInputValue('time'), 10);
 
             const message = await (interaction.channel as TextChannel).send({
                 components: [
@@ -270,7 +322,6 @@ export default class Ceraia extends GargoyleCommand {
                 flags: MessageFlags.IsComponentsV2
             });
 
-            const endDate = new Date(Date.now() + duration * 60 * 60 * 1000);
             const voteData = {
                 ownerId: interaction.user.id,
                 title: title,
@@ -278,8 +329,7 @@ export default class Ceraia extends GargoyleCommand {
                 options: options,
                 channelId: interaction.channelId,
                 messageId: message.id,
-                votes: [],
-                endDate
+                votes: []
             };
 
             const newVote = new databaseMinecraftVote(voteData);
@@ -288,6 +338,34 @@ export default class Ceraia extends GargoyleCommand {
             message.edit(await this.createMinecraftVoteMessage(client, message.id));
 
             await interaction.editReply('Vote created successfully!');
+        } else if (args[0] === 'edit') {
+            // Args[0] is edit
+            // Args[1] is the message ID of the vote to edit
+            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            const title = interaction.fields.getTextInputValue('title');
+            const description = interaction.fields.getTextInputValue('description');
+            const options = interaction.fields
+                .getTextInputValue('options')
+                .split(';')
+                .map((option) => option.trim());
+
+            const voteData = await databaseMinecraftVote.findOne({ messageId: args[1] });
+            if (!voteData) {
+                await interaction.editReply({
+                    content: 'Vote not found.'
+                });
+                return;
+            }
+
+            voteData.title = title;
+            voteData.description = description;
+            voteData.options = options;
+            await voteData.save();
+
+            const message = await interaction.channel!.messages.fetch(args[1]);
+            if (message) message.edit(await this.createMinecraftVoteMessage(client, voteData.messageId));
+
+            await interaction.editReply('Vote edited successfully!');
         }
     }
 
@@ -629,11 +707,7 @@ const minecraftVoteSchema = new Schema({
             userId: String,
             vote: Number
         }
-    ],
-    endDate: {
-        type: Date,
-        required: true
-    }
+    ]
 });
 
 const databaseMinecraftVote = model('MinecraftVotes', minecraftVoteSchema);
