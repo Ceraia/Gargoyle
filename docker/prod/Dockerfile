@@ -10,4 +10,6 @@ RUN bun install
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD curl --fail http://localhost:3000/health || exit 1
 
+EXPOSE 3001
+
 CMD ["bun", "run", "."]

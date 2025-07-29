@@ -13,6 +13,8 @@ services:
       MONGO_URI: ${MONGO_URI}
       DEBUG_LEVEL: 6
       LOG_TO_FILE: false
+    ports:
+      - 3001:3001
     networks:
       - gargoyle
 
