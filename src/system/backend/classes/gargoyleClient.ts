@@ -160,9 +160,4 @@ class GargoyleClient extends Client {
     }
 }
 
-enum GargoyleClientEvents {
-    WebPost = 'webPost',
-    ApiRequest = 'apiRequest'
-}
-
 export default GargoyleClient;

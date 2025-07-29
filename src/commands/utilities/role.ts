@@ -69,13 +69,6 @@ export default class RoleCommand extends GargoyleCommand {
             .setContexts([InteractionContextType.Guild])
     ];
 
-    /**
-     * @argument number is equal to the message ID
-     * @argument map is a map of which index has what roles
-     * @argument role is a collection of the roles for that message
-     */
-    private rolePanelBuilderCache: Map<number, Map<number, Role[]>> = new Map();
-
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
         if (interaction.options.getSubcommandGroup(false) == null) {
             if (interaction.options.getSubcommand() === 'button') {

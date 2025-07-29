@@ -96,14 +96,14 @@ export default class Crustacean extends GargoyleCommand {
                         .setTitle('Crustacean Invite System')
                         .setDescription(
                             'Crustacean is a custom invite & invite tracking system for your server.\n' +
-                            'Crustacean is a W.I.P system to allow you to more accurately "whitelist" who gets access to your server, primarily meant for communities who value reputation of members.\n' +
-                            'Crustacean is not meant to replace the default Discord invite system, but rather to supplement it.\n' +
-                            "In short, as people's minds have atrophied and cannot be bothered to read all text;\n\n" +
-                            '- Track invitations, and see who invited who. \n' +
-                            '- Track reputation of members, and add merit accordingly. \n' +
-                            '- Track in-game names of members (for whitelisting for minecraft for example). \n\n' +
-                            '-# Crustacean is a work in progress, and may not work as expected, any bugs and feature requests can be forwarded to `@axodouble.`' +
-                            '-# This idea is based off of the lobste.rs invite system.'
+                                'Crustacean is a W.I.P system to allow you to more accurately "whitelist" who gets access to your server, primarily meant for communities who value reputation of members.\n' +
+                                'Crustacean is not meant to replace the default Discord invite system, but rather to supplement it.\n' +
+                                "In short, as people's minds have atrophied and cannot be bothered to read all text;\n\n" +
+                                '- Track invitations, and see who invited who. \n' +
+                                '- Track reputation of members, and add merit accordingly. \n' +
+                                '- Track in-game names of members (for whitelisting for minecraft for example). \n\n' +
+                                '-# Crustacean is a work in progress, and may not work as expected, any bugs and feature requests can be forwarded to `@axodouble.`' +
+                                '-# This idea is based off of the lobste.rs invite system.'
                         )
                 ]
             });
@@ -230,7 +230,7 @@ export default class Crustacean extends GargoyleCommand {
                 const buffer = Buffer.from(content, 'utf-8');
                 const attachment = new AttachmentBuilder(buffer, { name: 'message.txt' });
 
-                return await interaction.editReply({ content: 'The tree is too long, sending as a file.', files: [attachment] }).catch(() => { });
+                return await interaction.editReply({ content: 'The tree is too long, sending as a file.', files: [attachment] }).catch(() => {});
             } else return interaction.editReply({ content: `${tree}` });
         }
 
@@ -251,10 +251,10 @@ export default class Crustacean extends GargoyleCommand {
 
         const tree = await generateFullInviteTree(message.guild.id, user.id, true).catch(async (err) => {
             client.logger.error(err.stack);
-            return await message.reply({ content: 'An error occurred generating the tree, please try again later.' }).catch(() => { });
+            return await message.reply({ content: 'An error occurred generating the tree, please try again later.' }).catch(() => {});
         });
 
-        await message.reply({ content: `${tree}` }).catch(() => { });
+        await message.reply({ content: `${tree}` }).catch(() => {});
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
@@ -398,8 +398,7 @@ class MemberLeave extends GargoyleEvent {
                     crustaceanChannel as TextChannel
                 );
             }
-        } catch (err) {
-        }
+        } catch (err) {}
     }
 }
 
@@ -496,7 +495,7 @@ class ReputationMessage extends GargoyleEvent {
         await crustaceanUser.save();
 
         if (message.mentions.users.size > 0 && containsThanks(message.content)) {
-            await message.react('❤️').catch(() => { });
+            await message.react('❤️').catch(() => {});
 
             // Check if the author has thanked someone in the last 12 hours
             if (this.thanksCache.has(message.author.id)) {

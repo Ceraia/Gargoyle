@@ -35,7 +35,6 @@ import GargoyleButtonBuilder, { GargoyleURLButtonBuilder } from '@src/system/bac
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
-import { int } from 'zod/v4';
 
 export default class Brads extends GargoyleCommand {
     public override category: string = 'bgn';
@@ -536,7 +535,6 @@ export default class Brads extends GargoyleCommand {
                 await interaction.editReply({ content: 'This can only be used in a guild channel.' });
                 return;
             }
-            
         }
 
         if (interaction.channel.type !== ChannelType.GuildText) {

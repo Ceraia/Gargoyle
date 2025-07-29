@@ -1,75 +1,73 @@
-import { Guild, MessageCreateOptions, MessageResolvable, TextBasedChannel, TextChannel, WebhookMessageEditOptions } from 'discord.js';
+import { Guild, Message, MessageCreateOptions, MessageResolvable, TextBasedChannel, TextChannel, WebhookMessageEditOptions } from 'discord.js';
 import GargoyleClient from '../classes/gargoyleClient.js';
 import client from '@src/system/botClient.js';
 
-export function sendAsServer(client: GargoyleClient, message: MessageCreateOptions, channel: TextBasedChannel, guild?: Guild): Promise<void> {
+export async function sendAsServer(
+    client: GargoyleClient,
+    message: MessageCreateOptions,
+    channel: TextBasedChannel,
+    guild?: Guild
+): Promise<Message | null> {
     const target = channel.isThread() ? channel.parent : channel;
-    if (target && !target.isDMBased())
-        return target
-            .fetchWebhooks()
-            .then(async (webhooks) => {
-                let webhook;
+    if (!target || target.isDMBased()) return Promise.resolve(null);
+    const webhooks = await target.fetchWebhooks();
 
-                webhook = webhooks.find((webhook) => webhook.owner && webhook.owner.id === client.user?.id);
+    let webhook;
 
-                if (!webhook) {
-                    webhook = await target.createWebhook({
-                        name: sanitizeNameString(guild ? guild.name : target.guild?.name || target.client.user.username),
-                        reason: 'Server Message'
-                    });
-                }
+    webhook = webhooks.find((webhook) => webhook.owner && webhook.owner.id === client.user?.id);
 
-                await webhook.send({
-                    avatarURL: guild ? guild.iconURL() || undefined : target.guild?.iconURL() || undefined,
-                    username: sanitizeNameString(guild ? guild.name : target.guild?.name || target.client.user.username),
-                    threadId: channel.isThread() ? channel.id : undefined,
-                    ...message
-                });
-            })
-            .catch((error) => {
-                client.logger.error(error.stack);
-            });
-    return Promise.resolve();
+    if (!webhook) {
+        webhook = await target.createWebhook({
+            name: sanitizeNameString(guild ? guild.name : target.guild?.name || target.client.user.username),
+            reason: 'Server Message'
+        });
+    }
+
+    try {
+        return await webhook.send({
+            avatarURL: guild ? guild.iconURL() || undefined : target.guild?.iconURL() || undefined,
+            username: sanitizeNameString(guild ? guild.name : target.guild?.name || target.client.user.username),
+            threadId: channel.isThread() ? channel.id : undefined,
+            ...message
+        });
+    } catch (err) {
+        client.logger.error(err as string, `Error sending message as server in ${target.id}`);
+        return null;
+    }
 }
 
-export function editAsServer(message: MessageCreateOptions, channel: TextChannel, messageId: string | MessageResolvable): Promise<boolean> {
-    return channel
-        .fetchWebhooks()
-        .then(async (webhooks) => {
-            let webhook;
+export async function editAsServer(
+    message: MessageCreateOptions,
+    channel: TextChannel,
+    messageId: string | MessageResolvable
+): Promise<Message | null> {
+    const webhooks = await channel.fetchWebhooks();
 
-            webhook = webhooks.find((webhook) => webhook.owner && webhook.owner.id === channel.client.user?.id);
+    let webhook;
 
-            if (!webhook) {
-                webhook = await channel.createWebhook({
-                    name: sanitizeNameString(channel.guild ? channel.guild.name : channel.client.user.username),
-                    reason: 'Server Message'
-                });
-            }
+    webhook = webhooks.find((webhook) => webhook.owner && webhook.owner.id === channel.client.user?.id);
 
-            let messageEdit: MessageResolvable;
-
-            if (typeof messageId === 'string') {
-                messageEdit = await channel.messages.fetch(messageId);
-            } else {
-                messageEdit = messageId;
-            }
-
-            await webhook
-                ?.editMessage(messageEdit, message as WebhookMessageEditOptions)
-                .then(() => {
-                    return true;
-                })
-                .catch((err) => {
-                    client.logger.error(err);
-                    return false;
-                });
-            return false;
-        })
-        .catch((err) => {
-            client.logger.error(err);
-            return false;
+    if (!webhook) {
+        webhook = await channel.createWebhook({
+            name: sanitizeNameString(channel.guild ? channel.guild.name : channel.client.user.username),
+            reason: 'Server Message'
         });
+    }
+
+    let messageEdit: MessageResolvable;
+
+    if (typeof messageId === 'string') {
+        messageEdit = await channel.messages.fetch(messageId);
+    } else {
+        messageEdit = messageId;
+    }
+
+    try {
+        return await webhook.editMessage(messageEdit, message as WebhookMessageEditOptions);
+    } catch (err) {
+        client.logger.error(err as string, `Error editing message as server in ${channel.id}`);
+        return null;
+    }
 }
 
 function sanitizeNameString(str: string): string {

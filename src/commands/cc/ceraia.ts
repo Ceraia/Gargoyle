@@ -7,7 +7,7 @@ import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { createBanner, FontWeight } from '@src/system/backend/tools/banners.js';
 import client from '@src/system/botClient.js';
-import { CanvasGradient, CanvasPattern, CanvasTextAlign, CanvasTextBaseline, createCanvas, Image, registerFont } from 'canvas';
+import { createCanvas, Image, registerFont } from 'canvas';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
@@ -454,7 +454,7 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
-    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+    public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'viewprofile') {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 

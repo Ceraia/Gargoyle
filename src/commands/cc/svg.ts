@@ -1,20 +1,12 @@
-import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
 import { createCanvas, Image } from 'canvas';
 import {
-    ActionRowBuilder,
-    ButtonInteraction,
-    ButtonStyle,
     ChatInputCommandInteraction,
     ContainerBuilder,
-    ContainerComponent,
     MediaGalleryBuilder,
-    MediaGalleryComponent,
-    MediaGalleryItem,
     MediaGalleryItemBuilder,
-    MessageActionRowComponentBuilder,
     MessageFlags,
     PermissionFlagsBits
 } from 'discord.js';

@@ -42,7 +42,7 @@ abstract class GargoyleCommand {
         client.logger.error(`${interaction.commandName} does not have a slash command implementation.`);
         interaction.reply({ content: 'This command does not have a slash command implementation.', flags: MessageFlags.Ephemeral });
     }
-    public executeTextCommand(client: GargoyleClient, message: Message, ...args: string[]): void {
+    public executeTextCommand(client: GargoyleClient, message: Message, ..._args: string[]): void {
         client.logger.error(`${message.content} does not have a text command implementation.`);
         message.reply({ content: 'This command does not have a text command implementation.' }).then((message) => {
             setTimeout(() => {
@@ -69,7 +69,7 @@ abstract class GargoyleCommand {
         client.logger.error(`${interaction.customId} with argument ${args} does not have a modal command implementation.`);
         interaction.reply({ content: 'This command does not have a modal command implementation.', flags: MessageFlags.Ephemeral });
     }
-    public executeApiRequest(client: GargoyleClient, request: Request): Promise<Response> {
+    public executeApiRequest(_client: GargoyleClient, _request: Request): Promise<Response> {
         return Promise.resolve(new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
     }
 }

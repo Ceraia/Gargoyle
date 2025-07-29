@@ -64,14 +64,20 @@ export default class Steam extends GargoyleCommand {
                             new SectionBuilder()
                                 .addTextDisplayComponents(
                                     new TextDisplayBuilder().setContent(
-                                        `#${resolved.nickname}` + 
-                                        resolved.realName ? `> - Name : ${resolved.realName}` : `` +
-                                        resolved.lastLogOffAt ? `> - Last Seen : ${resolved.lastLogOffAt}` : `` +
-                                        resolved.countryCode ? `> - Country Code : ${resolved.countryCode}` : `` +
-                                        resolved.createdAt ? `> - Created at : ${resolved.createdAt}` : `` +
-                                        resolved.steamID ? `> - Steam ID : ${resolved.steamID}` : `` 
+                                        `#${resolved.nickname}` + resolved.realName
+                                            ? `> - Name : ${resolved.realName}`
+                                            : `` + resolved.lastLogOffAt
+                                              ? `> - Last Seen : ${resolved.lastLogOffAt}`
+                                              : `` + resolved.countryCode
+                                                ? `> - Country Code : ${resolved.countryCode}`
+                                                : `` + resolved.createdAt
+                                                  ? `> - Created at : ${resolved.createdAt}`
+                                                  : `` + resolved.steamID
+                                                    ? `> - Steam ID : ${resolved.steamID}`
+                                                    : ``
                                     )
-                                ).setButtonAccessory(new GargoyleURLButtonBuilder(resolved.url).setLabel('Profile Link'))
+                                )
+                                .setButtonAccessory(new GargoyleURLButtonBuilder(resolved.url).setLabel('Profile Link'))
                                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(resolved.avatar.medium).setDescription(`${resolved.nickname}`))
                         )
                     ]
