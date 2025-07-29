@@ -2,7 +2,7 @@ import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 
 export default async function executeWebRequest(client: GargoyleClient, request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const commandName = url.pathname.split('/').pop();
+    const commandName = url.pathname.split('/')[2];
 
     const command = client.commands.find((command) => {
         return (
