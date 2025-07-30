@@ -5,6 +5,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { createBanner, FontWeight } from '@src/system/backend/tools/banners.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import { createCanvas } from 'canvas';
@@ -12,13 +13,18 @@ import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
     AttachmentBuilder,
+    ChannelType,
     ChatInputCommandInteraction,
+    ClientEvents,
     ContainerBuilder,
+    Events,
+    GuildMember,
     InteractionEditReplyOptions,
     MediaGalleryBuilder,
     MediaGalleryItemBuilder,
     Message,
     MessageActionRowComponentBuilder,
+    MessageCreateOptions,
     MessageFlags,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
@@ -55,7 +61,19 @@ export default class Ceraia extends GargoyleCommand {
                             )
                     )
             )
-            .addSubcommand((subcommand) => subcommand.setName('clearnicks').setDescription('Clears all nicknames in the guild'))
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('management')
+                    .setDescription('Management commands')
+                    .addSubcommand((subcommand) => subcommand.setName('register').setDescription('Register a Minecraft server'))
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('supporter')
+                            .setDescription('Set a user as a supporter')
+                            .addUserOption((option) => option.setName('user').setDescription('The user to set as a supporter').setRequired(true))
+                    )
+                    .addSubcommand((subcommand) => subcommand.setName('clearnicks').setDescription('Clears all nicknames in the guild'))
+            )
             .addSubcommand((subcommand) =>
                 subcommand
                     .setName('link')
@@ -148,23 +166,75 @@ export default class Ceraia extends GargoyleCommand {
                             )
                     );
                 }
-            } else if (interaction.options.getSubcommand() === 'clearnicks') {
-                await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-                client.logger.info(`Clearing all nicknames in guild ${interaction.guildId}`);
-                const members = await interaction.guild!.members.fetch();
-
-                for (const member of members) {
-                    const [_memberId, memberData] = member;
-                    if (memberData.nickname) {
-                        try {
-                            await memberData.setNickname(null);
-                        } catch (error) {}
-                    }
+            } else if (interaction.options.getSubcommandGroup() === 'management') {
+                if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+                    await interaction.reply({
+                        content: 'You do not have permission to use this command.',
+                        flags: [MessageFlags.Ephemeral]
+                    });
+                    return;
                 }
+                if (interaction.options.getSubcommand() === 'clearnicks') {
+                    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+                    client.logger.info(`Clearing all nicknames in guild ${interaction.guildId}`);
+                    const members = await interaction.guild!.members.fetch();
 
-                await interaction.editReply({
-                    content: 'All nicknames have been cleared.'
-                });
+                    for (const member of members) {
+                        const [_memberId, memberData] = member;
+                        if (memberData.nickname) {
+                            try {
+                                await memberData.setNickname(null);
+                            } catch (error) {}
+                        }
+                    }
+
+                    await interaction.editReply({
+                        content: 'All nicknames have been cleared.'
+                    });
+                } else if (interaction.options.getSubcommand() === 'register') {
+                    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+                    const guildData = await databaseMinecraftGuild.findOne({ guildId: minecraftBgnGuild });
+
+                    // Generate a new secret, alphanumeric 32 characters
+                    const secret = [...Array(32)].map(() => Math.random().toString(36).toUpperCase()[2]).join('');
+                    if (!guildData) {
+                        const newGuildData = new databaseMinecraftGuild({
+                            guildId: minecraftBgnGuild,
+                            serverSecret: secret
+                        });
+                        await newGuildData.save();
+                    } else {
+                        guildData.serverSecret = secret;
+                        await guildData.save();
+                    }
+
+                    await interaction.editReply({
+                        content:
+                            `# ${BGNEmojis.RedWarning} THIS CONTAINS YOUR SERVER SECRET ${BGNEmojis.RedWarning}` +
+                            `\nWrite this down, this will only be shown *once*, **it can be reset** in the future.` +
+                            `\n||\`\`\`\n/register ${secret}\n\`\`\`||`
+                    });
+                } else if (interaction.options.getSubcommand() === 'supporter') {
+                    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+                    const user = interaction.options.getUser('user', true);
+                    const member = interaction.guild!.members.cache.get(user.id);
+                    if (!member) {
+                        await interaction.editReply({
+                            content: 'User not found in the BGN Minecraft guild.'
+                        });
+                        return;
+                    }
+                    await interaction.editReply({ content: `Sending supporter message` });
+
+                    const message = await sendAsServer(
+                        {
+                            ...(await boostMessage(member))
+                        },
+                        interaction.channel as TextChannel
+                    );
+
+                    message?.react(BGNEmojis.BoosterCheers);
+                }
             } else if (interaction.options.getSubcommand() === 'link') {
                 const code = interaction.options.getString('code');
                 if (code) {
@@ -224,7 +294,7 @@ export default class Ceraia extends GargoyleCommand {
                 {
                     components: [
                         new ContainerBuilder()
-                            .setAccentColor(0x00d2ff)
+                            .setAccentColor(hexToNumber(BGNColors.Blue))
                             .addSectionComponents(
                                 new SectionBuilder()
                                     .setThumbnailAccessory(new ThumbnailBuilder().setURL(client.guilds.cache.get(minecraftBgnGuild)?.iconURL()!))
@@ -340,7 +410,9 @@ export default class Ceraia extends GargoyleCommand {
             const message = await sendAsServer(
                 {
                     components: [
-                        new ContainerBuilder().setAccentColor(0x00d2ff).addTextDisplayComponents(new TextDisplayBuilder().setContent('One moment...'))
+                        new ContainerBuilder()
+                            .setAccentColor(hexToNumber(BGNColors.Blue))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('One moment...'))
                     ],
                     flags: MessageFlags.IsComponentsV2
                 },
@@ -440,12 +512,29 @@ export default class Ceraia extends GargoyleCommand {
         const url = new URL(request.url);
         if (url.pathname === '/api/minecraft/user/link') {
             // Linking a member
-            const minecraftUsername = url.searchParams.get('minecraftUsername');
+            // curl -X POST "http://localhost:3000/api/minecraft/user/link" \
+            //   -H "Content-Type: application/json" \
+            //   -d '{"secret":"your_server_secret_here", "minecraftUsername":"TestPlayer", "linkingCode":"1234"}'
+
+            const { secret, minecraftUsername, linkingCode } = (await request.json()) as {
+                secret: string;
+                minecraftUsername: string;
+                linkingCode?: string;
+            };
+
+            if (!secret) {
+                return Promise.resolve(new Response('Missing secret parameter', { status: 400, headers: { 'Content-Type': 'text/plain' } }));
+            }
+
             if (!minecraftUsername) {
                 return Promise.resolve(new Response('Missing minecraftUsername parameter', { status: 400 }));
             }
 
-            const linkingCode = url.searchParams.get('linkingCode');
+            const guildData = await databaseMinecraftGuild.findOne({ guildId: minecraftBgnGuild });
+            if (!guildData || guildData.serverSecret !== secret) {
+                return Promise.resolve(new Response('Invalid secret', { status: 403, headers: { 'Content-Type': 'text/plain' } }));
+            }
+
             if (!linkingCode) {
                 // Delete any existing linking codes for this Minecraft username, this ensures that the user can only have one active linking code at a time
                 for (const [code, linkingUser] of this.linkingUsers.entries()) {
@@ -489,14 +578,14 @@ export default class Ceraia extends GargoyleCommand {
             }
             const linkingUser = Array.from(this.linkingUsers.values()).find((user) => user.minecraftUsername === minecraftUsername);
             if (!linkingUser) {
-                return Promise.resolve(new Response('User not linked', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
+                return Promise.resolve(new Response('User not linked', { status: 400, headers: { 'Content-Type': 'text/plain' } }));
             }
             if (!linkingUser.discordUserId) {
-                return Promise.resolve(new Response('User not linked to Discord', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
+                return Promise.resolve(new Response('User not linked to Discord', { status: 400, headers: { 'Content-Type': 'text/plain' } }));
             }
             const discordMember = client.guilds.cache.get(minecraftBgnGuild)?.members.cache.get(linkingUser.discordUserId);
             if (!discordMember) {
-                return Promise.resolve(new Response('Discord user not found', { status: 404, headers: { 'Content-Type': 'text/plain' } }));
+                return Promise.resolve(new Response('Discord user not found', { status: 400, headers: { 'Content-Type': 'text/plain' } }));
             }
             const isBooster = discordMember.premiumSinceTimestamp !== null;
             return Promise.resolve(
@@ -591,7 +680,7 @@ export default class Ceraia extends GargoyleCommand {
         const interactionEditReply: InteractionEditReplyOptions = {
             components: [
                 new ContainerBuilder()
-                    .setAccentColor(0x00d2ff)
+                    .setAccentColor(hexToNumber(BGNColors.Blue))
                     .addSectionComponents(
                         new SectionBuilder()
                             .setThumbnailAccessory(new ThumbnailBuilder().setURL(client.guilds.cache.get(minecraftBgnGuild)?.iconURL()!))
@@ -677,10 +766,84 @@ export default class Ceraia extends GargoyleCommand {
 
         return interactionEditReply;
     }
+
+    public override events: GargoyleEvent[] = [new MemberBoosted()];
+}
+
+class MemberBoosted extends GargoyleEvent {
+    public override event: keyof ClientEvents = Events.GuildMemberUpdate;
+
+    public override async execute(_client: GargoyleClient, oldMember: GuildMember, newMember: GuildMember): Promise<void> {
+        if (oldMember.premiumSinceTimestamp === null && newMember.premiumSinceTimestamp !== null) {
+            if (oldMember.guild.id !== minecraftBgnGuild) return;
+            const guild = oldMember.guild;
+
+            const boosterChannel = guild.channels.cache.find(
+                (channel) => channel.name.toLowerCase().includes('boosters') && channel.type === ChannelType.GuildText
+            ) as TextChannel | undefined;
+            if (!boosterChannel) return;
+
+            try {
+                const message = await sendAsServer(
+                    {
+                        ...(await boostMessage(newMember))
+                    },
+                    boosterChannel
+                );
+
+                message?.react(BGNEmojis.BoosterCheers);
+            } catch {}
+        }
+    }
+}
+
+async function boostMessage(member: GuildMember) {
+    return {
+        components: [
+            new ContainerBuilder()
+                .setAccentColor(hexToNumber(BGNColors.Orange))
+                .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://boosted.png`)))
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .setThumbnailAccessory(new ThumbnailBuilder().setURL(member.displayAvatarURL()))
+
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `# ${BGNEmojis.BoosterCheers} <@!${member.id}> ` +
+                                    `\nThank you for your support!` +
+                                    `\n${BGNEmojis.OrangeContainer} A special package with Booster features awaits you!` +
+                                    `\n-# Booster features are purely cosmetic and will not effect gameplay in any meaningful way.`
+                            )
+                        )
+                )
+        ],
+        files: [
+            await createBanner(`${member.displayName} has boosted the server!`, {
+                fillStyle: BGNColors.Orange,
+                textStyle: '#ffffff',
+                width: 1080,
+                height: 56,
+                fontSize: 40,
+                fontWeight: FontWeight.Bold,
+                textAlign: 'center',
+                textBaseline: 'middle',
+                bannerStyle: 'underline',
+                fileName: `boosted`
+            })
+        ],
+        flags: [MessageFlags.IsComponentsV2],
+        allowedMentions: {
+            parse: []
+        }
+    } as MessageCreateOptions;
 }
 
 function createLinkingCode() {
     return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+function hexToNumber(hex: string): number {
+    return parseInt(hex.replace('#', ''), 16);
 }
 
 enum BGNColors {
@@ -688,7 +851,8 @@ enum BGNColors {
     Red = '#ff6b6b',
     Green = '#4ecdc4',
     Yellow = '#ffeaa7',
-    Purple = '#dda0dd'
+    Purple = '#dda0dd',
+    Orange = '#ff8c42'
 }
 
 enum BGNPollEmojis {
@@ -710,8 +874,23 @@ enum BGNCubeEmojis {
 }
 
 enum BGNEmojis {
-    Discord = '<:discord:1399301352798031912>'
+    Discord = '<:discord:1399301352798031912>',
+    RedWarning = '<:shield:1399992174497759293>',
+    BoosterCheers = '<:cheers:1400024058375962716>',
+    BlueContainer = '<:container_blue:1400023892445106297>',
+    OrangeContainer = '<:container_orange:1400053085790797924>'
 }
+
+const minecraftGuildSchema = new Schema({
+    guildId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    serverSecret: {
+        type: String
+    }
+});
 
 const minecraftVoteSchema = new Schema({
     ownerId: {
@@ -748,3 +927,5 @@ const minecraftVoteSchema = new Schema({
 });
 
 const databaseMinecraftVote = model('MinecraftVotes', minecraftVoteSchema);
+
+const databaseMinecraftGuild = model('MinecraftGuilds', minecraftGuildSchema);
