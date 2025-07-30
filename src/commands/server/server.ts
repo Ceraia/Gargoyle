@@ -11,7 +11,6 @@ import {
     APIGuildMember,
     ApplicationCommandType,
     ChatInputCommandInteraction,
-    ClientEvents,
     ContainerBuilder,
     ContextMenuCommandBuilder,
     Events,
