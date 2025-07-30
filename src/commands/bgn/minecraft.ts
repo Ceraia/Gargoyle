@@ -233,7 +233,7 @@ export default class Ceraia extends GargoyleCommand {
                         interaction.channel as TextChannel
                     );
 
-                    message?.react(BGNEmojis.BoosterCheers);
+                    message?.react(BGNEmojis.GreenCheers);
                 }
             } else if (interaction.options.getSubcommand() === 'link') {
                 const code = interaction.options.getString('code');
@@ -791,7 +791,7 @@ class MemberBoosted extends GargoyleEvent {
                     boosterChannel
                 );
 
-                message?.react(BGNEmojis.BoosterCheers);
+                message?.react(BGNEmojis.GreenCheers);
             } catch {}
         }
     }
@@ -801,7 +801,7 @@ async function boostMessage(member: GuildMember) {
     return {
         components: [
             new ContainerBuilder()
-                .setAccentColor(hexToNumber(BGNColors.Orange))
+                .setAccentColor(hexToNumber(BGNColors.Green))
                 .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://boosted.png`)))
                 .addSectionComponents(
                     new SectionBuilder()
@@ -809,9 +809,9 @@ async function boostMessage(member: GuildMember) {
 
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
-                                `# ${BGNEmojis.BoosterCheers} <@!${member.id}> ` +
+                                `# ${BGNEmojis.GreenCheers} <@!${member.id}> ` +
                                     `\nThank you for your support!` +
-                                    `\n${BGNEmojis.OrangeContainer} A special package with Booster features awaits you!` +
+                                    `\n${BGNEmojis.GreenContainer} A special package with Booster features awaits you!` +
                                     `\n-# Booster features are purely cosmetic and will not effect gameplay in any meaningful way.`
                             )
                         )
@@ -819,7 +819,7 @@ async function boostMessage(member: GuildMember) {
         ],
         files: [
             await createBanner(`${member.displayName} has boosted the server!`, {
-                fillStyle: BGNColors.Orange,
+                fillStyle: BGNColors.Green,
                 textStyle: '#ffffff',
                 width: 1080,
                 height: 56,
@@ -876,9 +876,11 @@ enum BGNCubeEmojis {
 enum BGNEmojis {
     Discord = '<:discord:1399301352798031912>',
     RedWarning = '<:shield:1399992174497759293>',
-    BoosterCheers = '<:cheers:1400024058375962716>',
+    OrangeCheers = '<:cheers:1400024058375962716>',
+    GreenCheers = '<:cheers_green:1400085490320937091>',
     BlueContainer = '<:container_blue:1400023892445106297>',
-    OrangeContainer = '<:container_orange:1400053085790797924>'
+    OrangeContainer = '<:container_orange:1400053085790797924>',
+    GreenContainer = '<:container_green:1400085433467146292>'
 }
 
 const minecraftGuildSchema = new Schema({
