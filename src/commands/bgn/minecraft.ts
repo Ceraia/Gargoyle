@@ -26,6 +26,7 @@ import {
     MessageActionRowComponentBuilder,
     MessageCreateOptions,
     MessageFlags,
+    MessageType,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
@@ -767,15 +768,26 @@ export default class Ceraia extends GargoyleCommand {
         return interactionEditReply;
     }
 
-    public override events: GargoyleEvent[] = [new MemberBoosted()];
+    public override events: GargoyleEvent[] = [
+        new MemberBoostedMessage()
+        //new MemberBoosted()
+    ];
 }
 
 class MemberBoosted extends GargoyleEvent {
     public override event: keyof ClientEvents = Events.GuildMemberUpdate;
 
-    public override async execute(_client: GargoyleClient, oldMember: GuildMember, newMember: GuildMember): Promise<void> {
-        if (oldMember.premiumSinceTimestamp === null && newMember.premiumSinceTimestamp !== null) {
+    public override async execute(client: GargoyleClient, oldMember: GuildMember, newMember: GuildMember): Promise<void> {
+        client.logger.trace(`${oldMember.premiumSince}, ${newMember.premiumSince}`);
+        if (!oldMember.premiumSince && newMember.premiumSince) {
             if (oldMember.guild.id !== minecraftBgnGuild) return;
+
+            if (!newMember.roles.cache.find((role) => role.tags?.premiumSubscriberRole)) return;
+
+            if (newMember.premiumSinceTimestamp && newMember.premiumSinceTimestamp < Date.now() - 15 * 1000) return;
+
+            client.logger.info(`Member ${newMember.displayName} has boosted ${newMember.guild.name}`);
+
             const guild = oldMember.guild;
 
             const boosterChannel = guild.channels.cache.find(
@@ -792,6 +804,30 @@ class MemberBoosted extends GargoyleEvent {
                 );
 
                 message?.react(BGNEmojis.GreenCheers);
+            } catch {}
+        }
+    }
+}
+
+class MemberBoostedMessage extends GargoyleEvent {
+    public override event: keyof ClientEvents = Events.MessageCreate;
+
+    public override async execute(client: GargoyleClient, message: Message): Promise<void> {
+        if (!message.guild) return;
+        if (message.guild.id !== minecraftBgnGuild) return;
+        if (!message.member) return;
+        if (message.channel.type !== ChannelType.GuildText) return;
+        if (!message.channel.name.toLowerCase().includes('boosters')) return;
+
+        if (message.type == MessageType.GuildBoost) {
+            try {
+                const authorMember = message.guild.members.cache.get(message.author.id);
+                if (!authorMember) return;
+                const sentMessage = await message.reply({
+                    ...(await boostMessage(authorMember))
+                });
+
+                sentMessage?.react(BGNEmojis.GreenCheers);
             } catch {}
         }
     }
