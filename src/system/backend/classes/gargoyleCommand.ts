@@ -28,6 +28,10 @@ abstract class GargoyleCommand {
      * In favor of using slashCommands instead to allow multiple slash commands in a file.
      */
     public textCommand: GargoyleTextCommandBuilder | null = null;
+    /**
+     * @deprecated
+     * Due to a recent mail exchange with Discord, textcommands are explicitly denied for intent approval.
+     */
     public textCommands: GargoyleTextCommandBuilder[] = [];
     public contextCommands: ContextMenuCommandBuilder[] | null = null;
     public events: GargoyleEvent[] = [];
