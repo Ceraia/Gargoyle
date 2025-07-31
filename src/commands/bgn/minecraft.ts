@@ -559,7 +559,8 @@ export default class Ceraia extends GargoyleCommand {
             if (!role) {
                 role = await interaction.guild?.roles.create({
                     name: `Vote - ${voteData.options[parseInt(selectedOption)]}`.substring(0, 100),
-                    reason: 'Role created for Minecraft vote'
+                    reason: 'Role created for Minecraft vote',
+                    color: parseInt(selectedOption) < 5 ? hexToNumber(Object.values(BGNCubeEmojis)[parseInt(selectedOption)]) : undefined
                 });
             }
 
