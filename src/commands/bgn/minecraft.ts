@@ -61,6 +61,14 @@ export default class Ceraia extends GargoyleCommand {
                                 option.setName('message').setDescription('The message ID of the vote to edit').setRequired(true)
                             )
                     )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('giverole')
+                            .setDescription('Gives roles to select users who voted')
+                            .addStringOption((option) =>
+                                option.setName('message').setDescription('The message ID of the vote to give roles for').setRequired(true)
+                            )
+                    )
             )
             .addSubcommandGroup((subcommandGroup) =>
                 subcommandGroup
@@ -166,6 +174,37 @@ export default class Ceraia extends GargoyleCommand {
                                 )
                             )
                     );
+                } else if (interaction.options.getSubcommand() === 'giverole') {
+                    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+                    const messageId = interaction.options.getString('message', true);
+
+                    const voteData = await databaseMinecraftVote.findOne({ messageId });
+                    if (!voteData) {
+                        await interaction.editReply({
+                            content: 'Vote not found.'
+                        });
+                        return;
+                    }
+
+                    await interaction.editReply({
+                        components: [
+                            new ContainerBuilder()
+                                .setAccentColor(hexToNumber(BGNColors.Blue))
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent('Select the vote option to give a specific role for'))
+                                .addActionRowComponents(
+                                    new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                        new GargoyleStringSelectMenuBuilder(this, 'role', voteData.messageId).setMinValues(1).addOptions(
+                                            voteData.options.map((option, index) => ({
+                                                value: index.toString(),
+                                                label: option,
+                                                emoji: index < 5 ? Object.values(BGNCubeEmojis)[index] : ''
+                                            }))
+                                        )
+                                    )
+                                )
+                        ],
+                        flags: [MessageFlags.IsComponentsV2]
+                    });
                 }
             } else if (interaction.options.getSubcommandGroup() === 'management') {
                 if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
@@ -380,21 +419,6 @@ export default class Ceraia extends GargoyleCommand {
             await message.reply({
                 content: `Successfully linked your Discord account to your Minecraft account: ${linkingUser.minecraftUsername}`
             });
-        } else if (args[0] === 'codetest') {
-            message.reply({
-                components: [
-                    new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                        new GargoyleStringSelectMenuBuilder(this, 'test')
-                            .addOptions([
-                                { value: 'one', label: 'Discord', emoji: BGNEmojis.Discord },
-                                { value: 'two', label: 'Cube', emoji: BGNCubeEmojis.Cube_Blue },
-                                { value: 'three', label: 'Poll', emoji: BGNPollEmojis.Poll_Blue }
-                            ])
-                            .setMinValues(3)
-                            .setMaxValues(3)
-                    )
-                ]
-            });
         }
     }
 
@@ -506,6 +530,64 @@ export default class Ceraia extends GargoyleCommand {
                     flags: [MessageFlags.Ephemeral]
                 });
             }
+        } else if (args[0] === 'role') {
+            // Args[0] is role Args[1] is the message ID of the vote to give roles for
+            await interaction.deferUpdate();
+            const selectedOption = interaction.values[0];
+            const voteData = await databaseMinecraftVote.findOne({ messageId: args[1] });
+            if (!voteData) {
+                interaction.editReply({
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(hexToNumber(BGNColors.Red))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('Failed to find vote, this should not happen.'))
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+                return;
+            }
+
+            let role = interaction.guild?.roles.cache.find((role) => role.name === `Vote - ${voteData.options[parseInt(selectedOption)]}`);
+
+            if (!role) {
+                role = await interaction.guild?.roles.create({
+                    name: `Vote - ${voteData.options[parseInt(selectedOption)]}`.substring(0, 100),
+                    reason: 'Role created for Minecraft vote'
+                });
+            }
+
+            if (!role) {
+                interaction.editReply({
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(hexToNumber(BGNColors.Red))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('Failed to create role, this should not happen.'))
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+                return;
+            }
+
+            for (const memberId of voteData.votes.filter((vote) => vote.vote === parseInt(selectedOption)).map((vote) => vote.userId)) {
+                if (!memberId) continue;
+                const member = await interaction.guild?.members.fetch(memberId);
+                if (member) {
+                    await member.roles.add(role);
+                }
+            }
+
+            await interaction.editReply({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(hexToNumber(BGNColors.Green))
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `Role ${role.name} has been assigned to all voters of ${voteData.options[parseInt(selectedOption)]}.`
+                            )
+                        )
+                ],
+                flags: [MessageFlags.IsComponentsV2]
+            });
         }
     }
 
@@ -916,7 +998,12 @@ enum BGNEmojis {
     GreenCheers = '<:cheers_green:1400085490320937091>',
     BlueContainer = '<:container_blue:1400023892445106297>',
     OrangeContainer = '<:container_orange:1400053085790797924>',
-    GreenContainer = '<:container_green:1400085433467146292>'
+    GreenContainer = '<:container_green:1400085433467146292>',
+    BlueHeart = '<:heart_blue:1400339529214459935>',
+    GreenHeart = '<:heart_green:1400339625066893448>',
+    PurpleHeart = '<:heart_purple:1400339848598130748>',
+    RedHeart = '<:heart_red:1400339417423548487>',
+    YellowHeart = '<:heart_yellow:1400339775184965652>'
 }
 
 const minecraftGuildSchema = new Schema({
