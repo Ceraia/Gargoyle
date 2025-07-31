@@ -105,6 +105,13 @@ export default class Ceraia extends GargoyleCommand {
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'minecraft') {
             if (interaction.options.getSubcommandGroup() === 'vote') {
+                if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) === false) {
+                    await interaction.reply({
+                        content: 'You do not have permission to use this command.',
+                        flags: [MessageFlags.Ephemeral]
+                    });
+                    return;
+                }
                 if (interaction.options.getSubcommand() === 'create') {
                     interaction.showModal(
                         new GargoyleModalBuilder(this, 'create')
