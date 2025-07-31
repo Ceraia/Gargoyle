@@ -577,7 +577,7 @@ export default class Ceraia extends GargoyleCommand {
 
             for (const memberId of voteData.votes.filter((vote) => vote.vote === parseInt(selectedOption)).map((vote) => vote.userId)) {
                 if (!memberId) continue;
-                const member = await interaction.guild?.members.fetch(memberId);
+                const member = await interaction.guild?.members.fetch(memberId).catch(() => null);
                 if (member) {
                     await member.roles.add(role);
                 }
