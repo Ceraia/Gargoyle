@@ -50,6 +50,7 @@ export default class Ceraia extends GargoyleCommand {
                     .setName('vote')
                     .setDescription('Vote related commands')
                     .addSubcommand((subcommand) => subcommand.setName('create').setDescription('Create a vote'))
+                    .addSubcommand((subcommand) => subcommand.setName('modcreate').setDescription('Create a vote for mods'))
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('edit')
@@ -215,6 +216,8 @@ export default class Ceraia extends GargoyleCommand {
                         ],
                         flags: [MessageFlags.IsComponentsV2]
                     });
+                } else if (interaction.options.getSubcommand() === 'modcreate') {
+                    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
                 }
             } else if (interaction.options.getSubcommandGroup() === 'management') {
                 if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
@@ -1084,6 +1087,54 @@ const minecraftVoteSchema = new Schema({
         }
     ]
 });
+
+const minecraftModVoteModUserSubschema = new Schema(
+    {
+        userId: {
+            type: String,
+            required: true
+        },
+        vote: {
+            type: Number,
+            required: true
+        }
+    },
+    { _id: false }
+);
+
+const minecraftModVoteModSubschema = new Schema(
+    {
+        name: {
+            type: String,
+            required: true
+        },
+        link: {
+            type: String,
+            required: true
+        },
+        votes: [minecraftModVoteModUserSubschema]
+    },
+    { _id: false }
+);
+
+const minecraftModVoteSchema = new Schema({
+    ownerId: {
+        type: String,
+        required: true
+    },
+    messageId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    channelId: {
+        type: String,
+        required: true
+    },
+    mods: [minecraftModVoteModSubschema]
+});
+
+const databaseMinecraftModVote = model('MinecraftModVotes', minecraftModVoteSchema);
 
 const databaseMinecraftVote = model('MinecraftVotes', minecraftVoteSchema);
 
