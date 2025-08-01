@@ -1,11 +1,10 @@
-import { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
+import GargoyleButtonBuilder, { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
-import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { createBanner, FontWeight } from '@src/system/backend/tools/banners.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import { createCanvas } from 'canvas';
@@ -13,11 +12,10 @@ import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
     AttachmentBuilder,
-    ChannelType,
+    ButtonInteraction,
+    ButtonStyle,
     ChatInputCommandInteraction,
-    ClientEvents,
     ContainerBuilder,
-    Events,
     GuildMember,
     InteractionEditReplyOptions,
     MediaGalleryBuilder,
@@ -26,7 +24,6 @@ import {
     MessageActionRowComponentBuilder,
     MessageCreateOptions,
     MessageFlags,
-    MessageType,
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
@@ -82,6 +79,12 @@ export default class Ceraia extends GargoyleCommand {
                             .addUserOption((option) => option.setName('user').setDescription('The user to set as a supporter').setRequired(true))
                     )
                     .addSubcommand((subcommand) => subcommand.setName('clearnicks').setDescription('Clears all nicknames in the guild'))
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('votes')
+                            .setDescription('List all created votes by a user')
+                            .addUserOption((option) => option.setName('owner').setDescription('The user to list votes for').setRequired(false))
+                    )
             )
             .addSubcommand((subcommand) =>
                 subcommand
@@ -281,6 +284,40 @@ export default class Ceraia extends GargoyleCommand {
                     );
 
                     message?.react(BGNEmojis.GreenCheers);
+                } else if (interaction.options.getSubcommand() === 'votes') {
+                    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+                    const owner = interaction.options.getUser('owner') || interaction.user;
+                    const votes = await databaseMinecraftVote.find({ ownerId: owner.id });
+                    if (votes.length === 0) {
+                        await interaction.editReply({
+                            content: `No votes found for ${owner.username}.`
+                        });
+                        return;
+                    }
+
+                    await interaction.editReply({
+                        components: [
+                            new ContainerBuilder().setAccentColor(hexToNumber(BGNColors.Blue)).addActionRowComponents(
+                                new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                    new GargoyleStringSelectMenuBuilder(this, 'openvotes')
+                                        .addOptions(
+                                            votes.map((vote) => ({
+                                                value: vote.messageId,
+                                                label: vote.title.length > 25 ? vote.title.substring(0, 22) + '...' : vote.title,
+                                                description:
+                                                    vote.description.length > 50 ? vote.description.substring(0, 47) + '...' : vote.description,
+                                                emoji: BGNCubeEmojis.Cube_Blue
+                                            }))
+                                        )
+                                        .setMaxValues(1)
+                                        .setMinValues(1)
+                                        .setPlaceholder('Select a vote to view')
+                                )
+                            )
+                        ],
+                        flags: [MessageFlags.IsComponentsV2]
+                    });
                 }
             } else if (interaction.options.getSubcommand() === 'link') {
                 const code = interaction.options.getString('code');
@@ -596,6 +633,55 @@ export default class Ceraia extends GargoyleCommand {
                 ],
                 flags: [MessageFlags.IsComponentsV2]
             });
+        } else if (args[0] === 'openvotes') {
+            await interaction.deferUpdate();
+
+            const messageId = interaction.values[0];
+            const voteData = await databaseMinecraftVote.findOne({ messageId });
+            if (!voteData) {
+                await interaction.editReply({
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(hexToNumber(BGNColors.Red))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('Vote not found.'))
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+                return;
+            }
+
+            await interaction.followUp({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(hexToNumber(BGNColors.Blue))
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(
+                                        `# ${voteData.title}` +
+                                            `\nMessageID: ${voteData.messageId}` +
+                                            `\n\nDescription: ${voteData.description.substring(0, 100)}`
+                                    )
+                                )
+                                .setButtonAccessory(
+                                    new GargoyleButtonBuilder(this, 'delete', voteData.messageId).setStyle(ButtonStyle.Danger).setLabel('Delete Vote')
+                                )
+                        )
+                ],
+                flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral]
+            });
+        }
+    }
+
+    public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'delete') {
+            // Args[0] is delete, Args[1] is the message ID of the vote to delete
+            await interaction.deferUpdate();
+            databaseMinecraftVote.deleteOne({ messageId: args[1] }).catch(() => {});
+            await interaction.followUp({
+                content: 'Vote deleted successfully.',
+                flags: [MessageFlags.Ephemeral]
+            });
         }
     }
 
@@ -857,70 +943,6 @@ export default class Ceraia extends GargoyleCommand {
 
         return interactionEditReply;
     }
-
-    public override events: GargoyleEvent[] = [
-        new MemberBoostedMessage()
-        //new MemberBoosted()
-    ];
-}
-
-class MemberBoosted extends GargoyleEvent {
-    public override event: keyof ClientEvents = Events.GuildMemberUpdate;
-
-    public override async execute(client: GargoyleClient, oldMember: GuildMember, newMember: GuildMember): Promise<void> {
-        client.logger.trace(`${oldMember.premiumSince}, ${newMember.premiumSince}`);
-        if (!oldMember.premiumSince && newMember.premiumSince) {
-            if (oldMember.guild.id !== minecraftBgnGuild) return;
-
-            if (!newMember.roles.cache.find((role) => role.tags?.premiumSubscriberRole)) return;
-
-            if (newMember.premiumSinceTimestamp && newMember.premiumSinceTimestamp < Date.now() - 15 * 1000) return;
-
-            client.logger.info(`Member ${newMember.displayName} has boosted ${newMember.guild.name}`);
-
-            const guild = oldMember.guild;
-
-            const boosterChannel = guild.channels.cache.find(
-                (channel) => channel.name.toLowerCase().includes('boosters') && channel.type === ChannelType.GuildText
-            ) as TextChannel | undefined;
-            if (!boosterChannel) return;
-
-            try {
-                const message = await sendAsServer(
-                    {
-                        ...(await boostMessage(newMember))
-                    },
-                    boosterChannel
-                );
-
-                message?.react(BGNEmojis.GreenCheers);
-            } catch {}
-        }
-    }
-}
-
-class MemberBoostedMessage extends GargoyleEvent {
-    public override event: keyof ClientEvents = Events.MessageCreate;
-
-    public override async execute(client: GargoyleClient, message: Message): Promise<void> {
-        if (!message.guild) return;
-        if (message.guild.id !== minecraftBgnGuild) return;
-        if (!message.member) return;
-        if (message.channel.type !== ChannelType.GuildText) return;
-        if (!message.channel.name.toLowerCase().includes('boosters')) return;
-
-        if (message.type == MessageType.GuildBoost) {
-            try {
-                const authorMember = message.guild.members.cache.get(message.author.id);
-                if (!authorMember) return;
-                const sentMessage = await message.reply({
-                    ...(await boostMessage(authorMember))
-                });
-
-                sentMessage?.react(BGNEmojis.GreenCheers);
-            } catch {}
-        }
-    }
 }
 
 async function boostMessage(member: GuildMember) {
@@ -1004,6 +1026,7 @@ enum BGNEmojis {
     RedWarning = '<:shield:1399992174497759293>',
     OrangeCheers = '<:cheers:1400024058375962716>',
     GreenCheers = '<:cheers_green:1400085490320937091>',
+    BlueCheers = '<:cheers_blue:1400388904980320286>',
     BlueContainer = '<:container_blue:1400023892445106297>',
     OrangeContainer = '<:container_orange:1400053085790797924>',
     GreenContainer = '<:container_green:1400085433467146292>',
@@ -1011,7 +1034,8 @@ enum BGNEmojis {
     GreenHeart = '<:heart_green:1400339625066893448>',
     PurpleHeart = '<:heart_purple:1400339848598130748>',
     RedHeart = '<:heart_red:1400339417423548487>',
-    YellowHeart = '<:heart_yellow:1400339775184965652>'
+    YellowHeart = '<:heart_yellow:1400339775184965652>',
+    BlueHandshake = '<:handshake_blue:1400388978661654649>'
 }
 
 const minecraftGuildSchema = new Schema({
