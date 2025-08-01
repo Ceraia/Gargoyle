@@ -660,7 +660,9 @@ export default class Ceraia extends GargoyleCommand {
                                     new TextDisplayBuilder().setContent(
                                         `# ${voteData.title}` +
                                             `\nMessageID: ${voteData.messageId}` +
-                                            `\n\nDescription: ${voteData.description.substring(0, 100)}`
+                                            `\nVotes: ${voteData.votes.length}` +
+                                            `\nSent in: <#${voteData.channelId}>` +
+                                            `\n\nDescription:\n\n ${voteData.description.substring(0, 3000)}`
                                     )
                                 )
                                 .setButtonAccessory(
