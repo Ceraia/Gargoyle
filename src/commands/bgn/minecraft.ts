@@ -14,6 +14,7 @@ import {
     AttachmentBuilder,
     ButtonInteraction,
     ButtonStyle,
+    ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
     GuildMember,
@@ -36,6 +37,7 @@ import {
     ThumbnailBuilder
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
+import { writeFileSync } from 'node:fs';
 
 const minecraftBgnGuild = '1039152052644880435';
 
@@ -585,6 +587,14 @@ export default class Ceraia extends GargoyleCommand {
             await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
             const name = interaction.fields.getTextInputValue('name');
             const link = interaction.fields.getTextInputValue('link');
+            const description: string | undefined = interaction.fields.getTextInputValue('description');
+
+            if (link && !link.startsWith('https://') && !link.startsWith('http://')) {
+                await interaction.editReply({
+                    content: 'The link must start with https:// or http://'
+                });
+                return;
+            }
 
             const modVoteData = await databaseMinecraftModVote.findOne({ messageId: args[1] });
             if (!modVoteData) {
@@ -594,13 +604,69 @@ export default class Ceraia extends GargoyleCommand {
                 return;
             }
 
-            modVoteData.mods.push({ suggesterDiscordId: interaction.user.id, name: name, link: link });
+            modVoteData.mods.push({
+                suggesterDiscordId: interaction.user.id,
+                name: name,
+                link: link,
+                description: description || 'No description available.'
+            });
             await modVoteData.save();
 
             const updatedMessage = await this.createMinecraftModVoteMessage(client, modVoteData.messageId);
             await editAsServer(updatedMessage, interaction.channel as TextChannel, modVoteData.messageId);
 
             await interaction.editReply('Mod suggestion added successfully!');
+        } else if (args[0] === 'report') {
+            // Args[0] is report, Args[1] is the message ID of the mod vote, Args[2] is the mod index to report
+            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+            const modVoteData = await databaseMinecraftModVote.findOne({ messageId: args[1] });
+            if (!modVoteData) {
+                await interaction.editReply({
+                    content: 'Mod vote not found.'
+                });
+                return;
+            }
+
+            const reportsChannel = interaction.guild?.channels.cache.find(
+                (channel) => channel.name.toLowerCase().includes('reports') && channel.type === ChannelType.GuildText
+            );
+            if (!reportsChannel || reportsChannel.type !== ChannelType.GuildText) {
+                await interaction.editReply({
+                    content: 'No reports channel found.'
+                });
+                return;
+            }
+
+            const modIndex = parseInt(args[2], 10);
+            if (isNaN(modIndex) || modIndex < 0 || modIndex >= modVoteData.mods.length) {
+                await interaction.editReply({
+                    content: 'Invalid mod index.'
+                });
+                return;
+            }
+            const mod = modVoteData.mods[modIndex];
+            await reportsChannel.send({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(hexToNumber(BGNColors.Red))
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `# Mod Report: ${mod.name}` +
+                                    `\n> Suggested by <@!${mod.suggesterDiscordId}>` +
+                                    `\n\n**Link:** ${mod.link}` +
+                                    `\n**Description:** ${mod.description || 'No description available.'}` +
+                                    `\n\n**Reported by:** <@!${interaction.user.id}>` +
+                                    `\n**Reason:** ${interaction.fields.getTextInputValue('reason') || 'No reason provided.'}`
+                            )
+                        )
+                ],
+                flags: MessageFlags.IsComponentsV2
+            });
+
+            await interaction.editReply({
+                content: `Mod ${mod.name} has been reported successfully, a moderator will have a look.`
+            });
         }
     }
 
@@ -735,7 +801,7 @@ export default class Ceraia extends GargoyleCommand {
         }
     }
 
-    public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'delete') {
             // Args[0] is delete, Args[1] is the message ID of the vote to delete
             await interaction.deferUpdate();
@@ -754,12 +820,29 @@ export default class Ceraia extends GargoyleCommand {
                         ),
                         new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
                             new TextInputBuilder().setCustomId('link').setLabel('Mod Link').setStyle(TextInputStyle.Short).setRequired(true)
+                        ),
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('description')
+                                .setLabel('Mod Description (optional)')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(false)
                         )
                     )
             );
         } else if (args[0] === 'modvote') {
             // Args[0] is modvote, Args[1] is the mod vote message, Args[2] is which mod index to show, Args[3] is the action (yes/idc/no)
-            await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            // await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+            if (args.length < 3) {
+                await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+                await editAsServer(
+                    await this.createMinecraftModVoteMessage(client, interaction.message.id),
+                    interaction.channel as TextChannel,
+                    interaction.message.id
+                );
+            } else {
+                await interaction.deferUpdate();
+            }
 
             const modVoteData = await databaseMinecraftModVote.findOne({ messageId: args[1] });
             if (!modVoteData) {
@@ -771,16 +854,11 @@ export default class Ceraia extends GargoyleCommand {
 
             let modIndex = parseInt(args[2] || '0', 10);
 
-            if (modVoteData.mods.length < modIndex) {
+            if (modVoteData.mods.length <= modIndex) {
                 modIndex = 0;
             }
 
-            if (isNaN(modIndex) || modIndex < 0 || modIndex >= modVoteData.mods.length) {
-                await interaction.editReply({
-                    content: 'Invalid mod index.'
-                });
-                return;
-            }
+            client.logger.trace(`${modIndex}`);
 
             if (modVoteData.mods.length === 0) {
                 await interaction.editReply({
@@ -805,6 +883,11 @@ export default class Ceraia extends GargoyleCommand {
                 await modVoteData.save();
             }
 
+            const upvotes = modVoteData.mods[modIndex].votes.filter((vote) => vote.vote === 1).length;
+            const downvotes = modVoteData.mods[modIndex].votes.filter((vote) => vote.vote === -1).length;
+            const passingEmoji =
+                upvotes > downvotes ? BGNCubeEmojis.Cube_Green : upvotes < downvotes ? BGNCubeEmojis.Cube_Red : BGNCubeEmojis.Cube_Yellow;
+
             await interaction.editReply({
                 components: [
                     new ContainerBuilder()
@@ -813,7 +896,8 @@ export default class Ceraia extends GargoyleCommand {
                             new SectionBuilder()
                                 .addTextDisplayComponents(
                                     new TextDisplayBuilder().setContent(
-                                        `# ${modVoteData.mods[modIndex].name}` +
+                                        `# ${passingEmoji} ${modVoteData.mods[modIndex].name} (${modIndex + 1}/${modVoteData.mods.length})` +
+                                            `\n> ${modVoteData.mods[modIndex].description || 'No description available.'}` +
                                             `\n-# Suggested by <@!${modVoteData.mods[modIndex].suggesterDiscordId}>`
                                     )
                                 )
@@ -827,27 +911,63 @@ export default class Ceraia extends GargoyleCommand {
                             new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
                                 new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex}`, `yes`)
                                     .setLabel('Vote Yes')
-                                    .setStyle(ButtonStyle.Success)
+                                    .setStyle(ButtonStyle.Secondary)
+                                    .setEmoji(BGNCubeEmojis.Cube_Green)
                                     .setDisabled(
                                         modVoteData.mods[modIndex].votes.some((vote) => vote.userId === interaction.user.id && vote.vote === 1)
                                     ),
                                 new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex}`, `idc`)
                                     .setLabel('Abstain')
                                     .setStyle(ButtonStyle.Secondary)
+                                    .setEmoji(BGNCubeEmojis.Cube_Yellow)
                                     .setDisabled(
                                         modVoteData.mods[modIndex].votes.some((vote) => vote.userId === interaction.user.id && vote.vote === 0)
                                     ),
                                 new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex}`, `no`)
                                     .setLabel('Vote No')
-                                    .setStyle(ButtonStyle.Danger)
+                                    .setStyle(ButtonStyle.Secondary)
+                                    .setEmoji(BGNCubeEmojis.Cube_Red)
                                     .setDisabled(
                                         modVoteData.mods[modIndex].votes.some((vote) => vote.userId === interaction.user.id && vote.vote === -1)
-                                    )
+                                    ),
+                                new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex + 1}`)
+                                    .setLabel(`Next Mod`)
+                                    .setEmoji(BGNEmojis.BlueHandshake)
+                                    .setStyle(ButtonStyle.Secondary),
+                                new GargoyleButtonBuilder(this, 'report', args[1], `${modIndex}`)
+                                    .setLabel(`Report Mod`)
+                                    .setStyle(ButtonStyle.Secondary)
+                                    .setEmoji(BGNEmojis.RedWarning)
                             )
                         )
                 ],
                 flags: [MessageFlags.IsComponentsV2]
             });
+        } else if (args[0] === 'report') {
+            // Args[0] is report, Args[1] is the message ID of the mod vote, Args[2] is the mod index to report
+            const modVoteData = await databaseMinecraftModVote.findOne({ messageId: args[1] });
+            if (!modVoteData) {
+                await interaction.followUp({
+                    content: 'Mod vote not found.',
+                    flags: [MessageFlags.Ephemeral]
+                });
+                return;
+            }
+            await interaction.showModal(
+                new GargoyleModalBuilder(this, 'report', args[1], args[2])
+                    .setTitle(`Report ${modVoteData.mods[parseInt(args[2])].name}`)
+                    .setComponents(
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('reason')
+                                .setLabel('Reason for reporting')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                                .setMaxLength(2000)
+                        )
+                    )
+            );
+            return;
         }
     }
 
@@ -1144,18 +1264,24 @@ export default class Ceraia extends GargoyleCommand {
             const totalVotes = upvotes + downvotes;
             const percentage = totalVotes > 0 ? ((upvotes / totalVotes) * 100).toFixed(2) : 'No Votes';
 
-            modString += `\n${BGNCubeEmojis.Cube_Purple} **[${mod.name}](${mod.link})** - ${votes} vote(s) (${percentage}%)`;
+            const passingEmoji =
+                upvotes > downvotes ? BGNCubeEmojis.Cube_Green : upvotes < downvotes ? BGNCubeEmojis.Cube_Red : BGNCubeEmojis.Cube_Yellow;
+
+            modString += `\n${passingEmoji} **[${mod.name}](${mod.link})** (${percentage}%)`;
         }
 
         container.addTextDisplayComponents(new TextDisplayBuilder().setContent('# Current Mod Votes:\n' + modString));
 
         container.addActionRowComponents(
             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                new GargoyleButtonBuilder(this, 'modsuggest')
+                new GargoyleButtonBuilder(this, 'modsuggest', messageId)
                     .setLabel('Add Mod Suggestion')
                     .setStyle(ButtonStyle.Secondary)
                     .setEmoji(BGNPollEmojis.Poll_Blue),
-                new GargoyleButtonBuilder(this, 'modvote').setLabel('Vote for Mod').setStyle(ButtonStyle.Secondary).setEmoji(BGNEmojis.BlueHandshake)
+                new GargoyleButtonBuilder(this, 'modvote', messageId)
+                    .setLabel('Vote for Mod')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji(BGNEmojis.BlueHandshake)
             )
         );
 
@@ -1326,6 +1452,10 @@ const minecraftModVoteModSubschema = new Schema(
         name: {
             type: String,
             required: true
+        },
+        description: {
+            type: String,
+            required: false
         },
         link: {
             type: String,
