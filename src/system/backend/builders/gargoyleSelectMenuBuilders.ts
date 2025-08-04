@@ -29,14 +29,16 @@ class GargoyleStringSelectMenuBuilder extends StringSelectMenuBuilder {
      */
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(
-            `cmd-${
-                command.slashCommand?.name.toLowerCase() ??
-                command.textCommand?.name.toLowerCase() ??
-                command.slashCommands[0].name.toLowerCase() ??
-                command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
-        );
+        const customId = `cmd-${
+            command.slashCommand?.name.toLowerCase() ??
+            command.textCommand?.name.toLowerCase() ??
+            command.slashCommands[0].name.toLowerCase() ??
+            command.textCommands[0].name.toLowerCase()
+        }-${argument.join('-').toLowerCase()}`;
+        if (customId.length > 100) {
+            throw new Error(`Custom ID exceeds 100 characters: ${customId}`);
+        }
+        this.setCustomId(customId);
     }
 
     public addOption(label: string, value: string): this {
@@ -62,14 +64,16 @@ class GargoyleUserSelectMenuBuilder extends UserSelectMenuBuilder {
      */
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(
-            `cmd-${
-                command.slashCommand?.name.toLowerCase() ??
-                command.textCommand?.name.toLowerCase() ??
-                command.slashCommands[0].name.toLowerCase() ??
-                command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
-        );
+        const customId = `cmd-${
+            command.slashCommand?.name.toLowerCase() ??
+            command.textCommand?.name.toLowerCase() ??
+            command.slashCommands[0].name.toLowerCase() ??
+            command.textCommands[0].name.toLowerCase()
+        }-${argument.join('-').toLowerCase()}`;
+        if (customId.length > 100) {
+            throw new Error(`Custom ID exceeds 100 characters: ${customId}`);
+        }
+        this.setCustomId(customId);
     }
 }
 
@@ -88,14 +92,16 @@ class GargoyleRoleSelectMenuBuilder extends RoleSelectMenuBuilder {
      */
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(
-            `cmd-${
-                command.slashCommand?.name.toLowerCase() ??
-                command.textCommand?.name.toLowerCase() ??
-                command.slashCommands[0].name.toLowerCase() ??
-                command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
-        );
+        const customId = `cmd-${
+            command.slashCommand?.name.toLowerCase() ??
+            command.textCommand?.name.toLowerCase() ??
+            command.slashCommands[0].name.toLowerCase() ??
+            command.textCommands[0].name.toLowerCase()
+        }-${argument.join('-').toLowerCase()}`;
+        if (customId.length > 100) {
+            throw new Error(`Custom ID exceeds 100 characters: ${customId}`);
+        }
+        this.setCustomId(customId);
     }
 }
 
@@ -114,14 +120,16 @@ class GargoyleMentionableSelectMenuBuilder extends MentionableSelectMenuBuilder 
      */
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(
-            `cmd-${
-                command.slashCommand?.name.toLowerCase() ??
-                command.textCommand?.name.toLowerCase() ??
-                command.slashCommands[0].name.toLowerCase() ??
-                command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
-        );
+        const customId = `cmd-${
+            command.slashCommand?.name.toLowerCase() ??
+            command.textCommand?.name.toLowerCase() ??
+            command.slashCommands[0].name.toLowerCase() ??
+            command.textCommands[0].name.toLowerCase()
+        }-${argument.join('-').toLowerCase()}`;
+        if (customId.length > 100) {
+            throw new Error(`Custom ID exceeds 100 characters: ${customId}`);
+        }
+        this.setCustomId(customId);
     }
 }
 
@@ -140,14 +148,16 @@ class GargoyleChannelSelectMenuBuilder extends ChannelSelectMenuBuilder {
      */
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(
-            `cmd-${
-                command.slashCommand?.name.toLowerCase() ??
-                command.textCommand?.name.toLowerCase() ??
-                command.slashCommands[0].name.toLowerCase() ??
-                command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
-        );
+        const customId = `cmd-${
+            command.slashCommand?.name.toLowerCase() ??
+            command.textCommand?.name.toLowerCase() ??
+            command.slashCommands[0].name.toLowerCase() ??
+            command.textCommands[0].name.toLowerCase()
+        }-${argument.join('-').toLowerCase()}`;
+        if (customId.length > 100) {
+            throw new Error(`Custom ID exceeds 100 characters: ${customId}`);
+        }
+        this.setCustomId(customId);
     }
 }
 

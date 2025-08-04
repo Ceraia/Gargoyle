@@ -18,15 +18,19 @@ class GargoyleButtonBuilder extends ButtonBuilder {
      */
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        if (this.data.style !== ButtonStyle.Link)
-            this.setCustomId(
-                `cmd-${
-                    command.slashCommand?.name.toLowerCase() ??
-                    command.textCommand?.name.toLowerCase() ??
-                    command.slashCommands[0].name.toLowerCase() ??
-                    command.textCommands[0].name.toLowerCase()
-                }-${argument.join('-').toLowerCase()}`
-            );
+        if (this.data.style !== ButtonStyle.Link) {
+            const customId = `cmd-${
+                command.slashCommand?.name.toLowerCase() ??
+                command.textCommand?.name.toLowerCase() ??
+                command.slashCommands[0].name.toLowerCase() ??
+                command.textCommands[0].name.toLowerCase()
+            }-${argument.join('-').toLowerCase()}`;
+            if (customId.length > 100) {
+                throw new Error(`Custom ID exceeds 100 characters: ${customId}`);
+            }
+            this.setCustomId(customId);
+        }
+
         this.setStyle(ButtonStyle.Primary);
         this.setDisabled(false);
     }

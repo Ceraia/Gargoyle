@@ -18,14 +18,17 @@ class GargoyleModalBuilder extends ModalBuilder {
      */
     constructor(command: GargoyleCommand, ...argument: string[]) {
         super();
-        this.setCustomId(
-            `cmd-${
-                command.slashCommand?.name.toLowerCase() ??
-                command.textCommand?.name.toLowerCase() ??
-                command.slashCommands[0].name.toLowerCase() ??
-                command.textCommands[0].name.toLowerCase()
-            }-${argument.join('-').toLowerCase()}`
-        );
+
+        const customId = `cmd-${
+            command.slashCommand?.name.toLowerCase() ??
+            command.textCommand?.name.toLowerCase() ??
+            command.slashCommands[0].name.toLowerCase() ??
+            command.textCommands[0].name.toLowerCase()
+        }-${argument.join('-').toLowerCase()}`;
+        if (customId.length > 100) {
+            throw new Error(`Custom ID exceeds 100 characters: ${customId}`);
+        }
+        this.setCustomId(customId);
     }
 }
 
