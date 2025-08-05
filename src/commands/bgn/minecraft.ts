@@ -1355,9 +1355,9 @@ export default class Ceraia extends GargoyleCommand {
             const totalVotes = upvotes + downvotes;
             const percentage = totalVotes > 0 ? ((upvotes / totalVotes) * 100).toFixed(2) : '0.00';
             ctx.fillStyle = BGNColors.Green;
-            ctx.fillRect(0, y, (upvotes / modVoteData.mods.length) * 1080, 20);
+            ctx.fillRect(0, y, (upvotes / mod.votes.length) * 1080, 20);
             ctx.fillStyle = BGNColors.Red;
-            ctx.fillRect((upvotes / modVoteData.mods.length) * 1080, y, (downvotes / modVoteData.mods.length) * 1080, 20);
+            ctx.fillRect((upvotes / mod.votes.length) * 1080, y, (downvotes / mod.votes.length) * 1080, 20);
             ctx.fillStyle = '#ffffff';
             ctx.font = '16px Arial';
             ctx.fillText(`${mod.name} (${percentage}%)`, 10, y + 15);
