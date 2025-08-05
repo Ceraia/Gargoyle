@@ -604,6 +604,7 @@ export default class Ceraia extends GargoyleCommand {
             }
 
             modVoteData.mods.push({
+                id: Date.now().toString(),
                 suggesterDiscordId: interaction.user.id,
                 name: name,
                 link: link,
@@ -644,7 +645,17 @@ export default class Ceraia extends GargoyleCommand {
                 });
                 return;
             }
+
             const mod = modVoteData.mods[modIndex];
+
+            let modId = mod.id;
+
+            if (!modId) {
+                modId = `${Date.now()}`;
+                mod.id = modId;
+                await modVoteData.save();
+            }
+
             await reportsChannel.send({
                 components: [
                     new ContainerBuilder()
@@ -671,7 +682,7 @@ export default class Ceraia extends GargoyleCommand {
                         )
                         .addActionRowComponents(
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                                new GargoyleButtonBuilder(this, 'modremove', modVoteData.messageId, modIndex.toString())
+                                new GargoyleButtonBuilder(this, 'modremove', modVoteData.messageId, modId)
                                     .setStyle(ButtonStyle.Secondary)
                                     .setLabel('Remove Mod')
                                     .setEmoji(BGNEmojis.RedWarning)
@@ -999,7 +1010,7 @@ export default class Ceraia extends GargoyleCommand {
             );
             return;
         } else if (args[0] === 'modremove') {
-            // Args[0] is modremove, Args[1] is the message ID of the mod vote, Args[2] is the mod index to remove
+            // Args[0] is modremove, Args[1] is the message ID of the mod vote, Args[2] is the modId
             await interaction.deferUpdate();
             const modVoteData = await databaseMinecraftModVote.findOne({ messageId: args[1] });
             if (!modVoteData) {
@@ -1010,18 +1021,18 @@ export default class Ceraia extends GargoyleCommand {
                 return;
             }
 
-            const modIndex = parseInt(args[2], 10);
-            if (isNaN(modIndex) || modIndex < 0 || modIndex >= modVoteData.mods.length) {
+            const modId = args[2];
+            const modIndex = modVoteData.mods.findIndex((mod) => mod.id === modId);
+            if (modIndex === -1) {
                 await interaction.followUp({
-                    content: 'Invalid mod index.',
+                    content: 'Mod ID not found.',
                     flags: [MessageFlags.Ephemeral]
                 });
                 return;
             }
-
             const modName = modVoteData.mods[modIndex].name;
-
             modVoteData.mods.splice(modIndex, 1);
+
             await modVoteData.save();
 
             const updatedMessage = await this.createMinecraftModVoteMessage(client, modVoteData.messageId);
@@ -1520,6 +1531,11 @@ const minecraftModVoteModUserSubschema = new Schema(
 
 const minecraftModVoteModSubschema = new Schema(
     {
+        id: {
+            type: String,
+            required: false,
+            unique: true
+        },
         suggesterDiscordId: {
             type: String,
             required: true
