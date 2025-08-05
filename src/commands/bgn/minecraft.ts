@@ -863,11 +863,15 @@ export default class Ceraia extends GargoyleCommand {
             // await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
             if (args.length < 3) {
                 await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-                await editAsServer(
-                    await this.createMinecraftModVoteMessage(client, interaction.message.id),
-                    interaction.channel as TextChannel,
-                    interaction.message.id
-                );
+                try {
+                    await editAsServer(
+                        await this.createMinecraftModVoteMessage(client, interaction.message.id),
+                        interaction.channel as TextChannel,
+                        interaction.message.id
+                    );
+                } catch (error) {
+                    client.logger.error(`Failed to edit mod vote message: ${error}`);
+                }
             } else {
                 await interaction.deferUpdate();
             }
