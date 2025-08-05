@@ -860,7 +860,6 @@ export default class Ceraia extends GargoyleCommand {
             );
         } else if (args[0] === 'modvote') {
             // Args[0] is modvote, Args[1] is the mod vote message, Args[2] is which mod index to show, Args[3] is the action (yes/idc/no)
-            // await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
             if (args.length < 3) {
                 await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
                 try {
@@ -876,6 +875,7 @@ export default class Ceraia extends GargoyleCommand {
                 await interaction.deferUpdate();
             }
 
+            client.logger.trace(`Mod vote args: ${args.join(', ')}`);
             const modVoteData = await databaseMinecraftModVote.findOne({ messageId: args[1] });
             if (!modVoteData) {
                 await interaction.editReply({
@@ -1345,22 +1345,31 @@ export default class Ceraia extends GargoyleCommand {
                 )
         );
 
-        let modString = '';
+        let canvas = createCanvas(1080, modVoteData.mods.length * 20);
+        const ctx = canvas.getContext('2d');
 
+        let y = 0;
         for (const mod of modVoteData.mods) {
-            // Vote can be 1, 0, and -1, 0 is no vote, 1 is upvote, -1 is downvote
             const upvotes = mod.votes.filter((vote) => vote.vote === 1).length;
             const downvotes = mod.votes.filter((vote) => vote.vote === -1).length;
             const totalVotes = upvotes + downvotes;
-            const percentage = totalVotes > 0 ? ((upvotes / totalVotes) * 100).toFixed(2) : 'No Votes';
-
-            const passingEmoji =
-                upvotes > downvotes ? BGNCubeEmojis.Cube_Green : upvotes < downvotes ? BGNCubeEmojis.Cube_Red : BGNCubeEmojis.Cube_Yellow;
-
-            modString += `\n${passingEmoji} **[${mod.name}](${mod.link})** (${percentage}%)`;
+            const percentage = totalVotes > 0 ? ((upvotes / totalVotes) * 100).toFixed(2) : '0.00';
+            ctx.fillStyle = BGNColors.Green;
+            ctx.fillRect(0, y, (upvotes / modVoteData.mods.length) * 1080, 20);
+            ctx.fillStyle = BGNColors.Red;
+            ctx.fillRect((upvotes / modVoteData.mods.length) * 1080, y, (downvotes / modVoteData.mods.length) * 1080, 20);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '16px Arial';
+            ctx.fillText(`${mod.name} (${percentage}%)`, 10, y + 15);
+            y += 20;
         }
+        const modImage = new AttachmentBuilder(canvas.toBuffer(), {
+            name: 'modvote.png'
+        });
 
-        container.addTextDisplayComponents(new TextDisplayBuilder().setContent('# Current Mod Votes:\n' + modString));
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent('# Current Mod Votes:\n'));
+
+        container.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://modvote.png`)));
 
         container.addActionRowComponents(
             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
@@ -1376,7 +1385,8 @@ export default class Ceraia extends GargoyleCommand {
         );
 
         return {
-            components: [container]
+            components: [container],
+            files: [modImage]
         };
     }
 }
