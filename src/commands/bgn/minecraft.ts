@@ -1376,7 +1376,7 @@ export default class Ceraia extends GargoyleCommand {
                 )
         );
 
-        let canvas = createCanvas(1080, 80 + modVoteData.mods.length * 40);
+        let canvas = createCanvas(1080, 80 + modVoteData.mods.length * 44);
         const ctx = canvas.getContext('2d');
 
         let y = 40;
@@ -1388,18 +1388,28 @@ export default class Ceraia extends GargoyleCommand {
             const percentage = totalVotes > 0 ? ((upvotes / (upvotes + downvotes)) * 100).toFixed(2) : '0.00';
 
             ctx.fillStyle = BGNColors.Blue;
-            ctx.fillRect(0, y, (upvotes / totalVotes) * 1080, 40);
+            if (upvotes > 0) {
+                ctx.beginPath();
+                const roundingvalue = downvotes === 0 ? 10 : 0;
+                ctx.roundRect(0, y, (upvotes / totalVotes) * 1080, 40, [10, roundingvalue, roundingvalue, 10]);
+                ctx.fill();
+            }
             ctx.fillStyle = BGNColors.Red;
-            ctx.fillRect(1080 - (downvotes / totalVotes) * 1080, y, (downvotes / totalVotes) * 1080, 40);
+            if (downvotes > 0) {
+                ctx.beginPath();
+                const roundingvalue = upvotes === 0 ? 10 : 0;
+                ctx.roundRect(1080 - (downvotes / totalVotes) * 1080, y, (downvotes / totalVotes) * 1080, 40, [roundingvalue, 10, 10, roundingvalue]);
+                ctx.fill();
+            }
             ctx.fillStyle = '#ffffff';
             ctx.font = `${FontWeight.Bold} 32px Montserrat`;
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'left';
-            ctx.fillText(`${mod.name}`, 10, y + 20);
+            ctx.fillText(`${mod.name}`, 10, y + 22);
             ctx.textAlign = 'right';
-            ctx.fillText(`${percentage}%`, 1070, y + 20);
+            ctx.fillText(`${percentage}%`, 1070, y + 22);
 
-            y += 40;
+            y += 44;
         }
         const modImage = new AttachmentBuilder(canvas.toBuffer(), {
             name: 'modvote.png'
