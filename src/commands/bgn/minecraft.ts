@@ -959,23 +959,18 @@ export default class Ceraia extends GargoyleCommand {
                             .addActionRowComponents(
                                 new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
                                     new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex - 1}`)
-                                        .setLabel(`Previous Mod`)
                                         .setEmoji(BGNEmojis.ArrowLeft)
                                         .setStyle(ButtonStyle.Secondary),
                                     new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex - 5}`)
-                                        .setLabel(`Previous 5 Mods`)
                                         .setEmoji(BGNEmojis.ArrowLeftMax)
                                         .setStyle(ButtonStyle.Secondary),
                                     new GargoyleButtonBuilder(this, 'modvote', args[1], `-99`)
-                                        .setLabel(`Random (Unvoted) Mod`)
                                         .setEmoji(BGNEmojis.Shuffle)
                                         .setStyle(ButtonStyle.Secondary),
                                     new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex + 5}`)
-                                        .setLabel(`Next 5 Mods`)
                                         .setEmoji(BGNEmojis.ArrowRightMax)
                                         .setStyle(ButtonStyle.Secondary),
                                     new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex + 1}`)
-                                        .setLabel(`Next Mod`)
                                         .setEmoji(BGNEmojis.ArrowRight)
                                         .setStyle(ButtonStyle.Secondary)
                                 )
