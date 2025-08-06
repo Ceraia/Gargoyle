@@ -884,9 +884,9 @@ export default class Ceraia extends GargoyleCommand {
                 return;
             }
 
-            let modIndex = parseInt(args[2] || '0', 10);
+            let modIndex = parseInt(args[2].replaceAll('minus', '-') || '0', 10);
 
-            if (args[2] === '-99') {
+            if (args[2] === '99999') {
                 // Random mod that has not been voted for
                 const unvotedMods = modVoteData.mods.filter((mod) => !mod.votes.some((vote) => vote.userId === interaction.user.id));
                 if (unvotedMods.length > 0) {
@@ -958,13 +958,13 @@ export default class Ceraia extends GargoyleCommand {
                             )
                             .addActionRowComponents(
                                 new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
-                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex - 1}`)
+                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${(modIndex - 1).toString().replace('-', 'minus')}`)
                                         .setEmoji(BGNEmojis.ArrowLeft)
                                         .setStyle(ButtonStyle.Secondary),
-                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex - 5}`)
+                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${(modIndex - 5).toString().replace('-', 'minus')}`)
                                         .setEmoji(BGNEmojis.ArrowLeftMax)
                                         .setStyle(ButtonStyle.Secondary),
-                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `-99`)
+                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `99999`)
                                         .setEmoji(BGNEmojis.Shuffle)
                                         .setStyle(ButtonStyle.Secondary),
                                     new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex + 5}`)
