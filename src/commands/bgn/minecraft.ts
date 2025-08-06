@@ -1381,7 +1381,9 @@ export default class Ceraia extends GargoyleCommand {
         const ctx = canvas.getContext('2d');
 
         let y = 40;
-        for (const mod of modVoteData.mods) {
+        for (const mod of modVoteData.mods.sort((a, b) => {
+            return a.name.localeCompare(b.name);
+        })) {
             const upvotes = mod.votes.filter((vote) => vote.vote === 1).length;
             const downvotes = mod.votes.filter((vote) => vote.vote === -1).length;
             const neutralvotes = mod.votes.filter((vote) => vote.vote === 0).length;
