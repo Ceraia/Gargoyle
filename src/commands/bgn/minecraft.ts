@@ -884,7 +884,7 @@ export default class Ceraia extends GargoyleCommand {
                 return;
             }
 
-            let modIndex = parseInt(args[2].replaceAll('minus', '-') || '0', 10);
+            let modIndex = parseInt((args[2] || '0').replaceAll('minus', '-'), 10);
 
             if (args[2] === '99999') {
                 // Random mod that has not been voted for
