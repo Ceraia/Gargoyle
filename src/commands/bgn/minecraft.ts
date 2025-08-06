@@ -886,6 +886,22 @@ export default class Ceraia extends GargoyleCommand {
 
             let modIndex = parseInt(args[2] || '0', 10);
 
+            if (modIndex === -99) {
+                // Random mod that has not been voted for
+                const unvotedMods = modVoteData.mods.filter((mod) => !mod.votes.some((vote) => vote.userId === interaction.user.id));
+                if (unvotedMods.length > 0) {
+                    modIndex = Math.floor(Math.random() * unvotedMods.length);
+                    modIndex = modVoteData.mods.indexOf(unvotedMods[modIndex]);
+                } else {
+                    // If all mods have been voted for, show a random mod
+                    modIndex = Math.floor(Math.random() * modVoteData.mods.length);
+                }
+            }
+
+            if (modIndex < 0) {
+                modIndex = modVoteData.mods.length - 1;
+            }
+
             if (modVoteData.mods.length <= modIndex) {
                 modIndex = 0;
             }
@@ -942,6 +958,30 @@ export default class Ceraia extends GargoyleCommand {
                             )
                             .addActionRowComponents(
                                 new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
+                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex - 1}`)
+                                        .setLabel(`Previous Mod`)
+                                        .setEmoji(BGNEmojis.ArrowLeft)
+                                        .setStyle(ButtonStyle.Secondary),
+                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex - 5}`)
+                                        .setLabel(`Previous 5 Mods`)
+                                        .setEmoji(BGNEmojis.ArrowLeftMax)
+                                        .setStyle(ButtonStyle.Secondary),
+                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `-99`)
+                                        .setLabel(`Random (Unvoted) Mod`)
+                                        .setEmoji(BGNEmojis.Shuffle)
+                                        .setStyle(ButtonStyle.Secondary),
+                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex + 5}`)
+                                        .setLabel(`Next 5 Mods`)
+                                        .setEmoji(BGNEmojis.ArrowRightMax)
+                                        .setStyle(ButtonStyle.Secondary),
+                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex + 1}`)
+                                        .setLabel(`Next Mod`)
+                                        .setEmoji(BGNEmojis.ArrowRight)
+                                        .setStyle(ButtonStyle.Secondary)
+                                )
+                            )
+                            .addActionRowComponents(
+                                new ActionRowBuilder<GargoyleButtonBuilder>().addComponents(
                                     new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex}`, `yes`)
                                         .setLabel('Vote Yes')
                                         .setStyle(ButtonStyle.Secondary)
@@ -963,10 +1003,6 @@ export default class Ceraia extends GargoyleCommand {
                                         .setDisabled(
                                             modVoteData.mods[modIndex].votes.some((vote) => vote.userId === interaction.user.id && vote.vote === -1)
                                         ),
-                                    new GargoyleButtonBuilder(this, 'modvote', args[1], `${modIndex + 1}`)
-                                        .setLabel(`Next Mod`)
-                                        .setEmoji(BGNEmojis.BlueHandshake)
-                                        .setStyle(ButtonStyle.Secondary),
                                     new GargoyleButtonBuilder(this, 'report', args[1], `${modIndex}`)
                                         .setLabel(`Report Mod`)
                                         .setStyle(ButtonStyle.Secondary)
@@ -1481,7 +1517,12 @@ enum BGNEmojis {
     PurpleHeart = '<:heart_purple:1400339848598130748>',
     RedHeart = '<:heart_red:1400339417423548487>',
     YellowHeart = '<:heart_yellow:1400339775184965652>',
-    BlueHandshake = '<:handshake_blue:1400388978661654649>'
+    BlueHandshake = '<:handshake_blue:1400388978661654649>',
+    ArrowLeft = '<:arrowleft:1402442265691033683>',
+    ArrowLeftMax = '<:arrowleftmax:1402442212901650505>',
+    ArrowRight = '<:arrowright:1402442318740721864>',
+    ArrowRightMax = '<:arrowrightmax:1402442173877719100>',
+    Shuffle = '<:shuffle:1402442101869908018>'
 }
 
 const minecraftGuildSchema = new Schema({
