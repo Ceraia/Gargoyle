@@ -1392,14 +1392,19 @@ export default class Ceraia extends GargoyleCommand {
             if (upvotes > 0) {
                 ctx.beginPath();
                 const roundingvalue = downvotes === 0 ? 10 : 0;
-                ctx.roundRect(0, y, (upvotes / totalVotes) * 1080, 40, [10, roundingvalue, roundingvalue, 10]);
+                ctx.roundRect(0, y, (upvotes / totalVotes) * width, 40, [10, roundingvalue, roundingvalue, 10]);
                 ctx.fill();
             }
             ctx.fillStyle = BGNColors.Red;
             if (downvotes > 0) {
                 ctx.beginPath();
                 const roundingvalue = upvotes === 0 ? 10 : 0;
-                ctx.roundRect(1080 - (downvotes / totalVotes) * 1080, y, (downvotes / totalVotes) * 1080, 40, [roundingvalue, 10, 10, roundingvalue]);
+                ctx.roundRect(width - (downvotes / totalVotes) * width, y, (downvotes / totalVotes) * width, 40, [
+                    roundingvalue,
+                    10,
+                    10,
+                    roundingvalue
+                ]);
                 ctx.fill();
             }
             ctx.fillStyle = '#ffffff';
@@ -1408,7 +1413,7 @@ export default class Ceraia extends GargoyleCommand {
             ctx.textAlign = 'left';
             ctx.fillText(`${mod.name}`, 10, y + 22);
             ctx.textAlign = 'right';
-            ctx.fillText(`${percentage}%`, 1070, y + 22);
+            ctx.fillText(`${percentage}%`, width - 10, y + 22);
 
             y += 44;
         }
