@@ -1376,7 +1376,8 @@ export default class Ceraia extends GargoyleCommand {
                 )
         );
 
-        let canvas = createCanvas(1080, 80 + modVoteData.mods.length * 44);
+        let width = 1080 > 80 + modVoteData.mods.length * 44 ? 1080 : 80 + modVoteData.mods.length * 44;
+        let canvas = createCanvas(width, 80 + modVoteData.mods.length * 44);
         const ctx = canvas.getContext('2d');
 
         let y = 40;
