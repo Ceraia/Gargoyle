@@ -1394,6 +1394,7 @@ export default class Ceraia extends GargoyleCommand {
             ctx.fillStyle = '#ffffff';
             ctx.font = `${FontWeight.Bold} 32px Montserrat`;
             ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left';
             ctx.fillText(`${mod.name}`, 10, y + 20);
             ctx.textAlign = 'right';
             ctx.fillText(`${percentage}%`, 1070, y + 20);
