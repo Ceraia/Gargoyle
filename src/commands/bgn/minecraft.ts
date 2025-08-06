@@ -886,7 +886,7 @@ export default class Ceraia extends GargoyleCommand {
 
             let modIndex = parseInt(args[2] || '0', 10);
 
-            if (modIndex === -99) {
+            if (args[2] === '-99') {
                 // Random mod that has not been voted for
                 const unvotedMods = modVoteData.mods.filter((mod) => !mod.votes.some((vote) => vote.userId === interaction.user.id));
                 if (unvotedMods.length > 0) {
