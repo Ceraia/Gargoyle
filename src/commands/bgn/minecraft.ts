@@ -1376,23 +1376,29 @@ export default class Ceraia extends GargoyleCommand {
                 )
         );
 
-        let canvas = createCanvas(1080, modVoteData.mods.length * 20);
+        let canvas = createCanvas(1080, 80 + modVoteData.mods.length * 40);
         const ctx = canvas.getContext('2d');
 
-        let y = 0;
+        let y = 40;
         for (const mod of modVoteData.mods) {
             const upvotes = mod.votes.filter((vote) => vote.vote === 1).length;
             const downvotes = mod.votes.filter((vote) => vote.vote === -1).length;
-            const totalVotes = upvotes + downvotes;
+            const neutralvotes = mod.votes.filter((vote) => vote.vote === 0).length;
+            const totalVotes = upvotes + downvotes + neutralvotes;
             const percentage = totalVotes > 0 ? ((upvotes / totalVotes) * 100).toFixed(2) : '0.00';
+
             ctx.fillStyle = BGNColors.Green;
-            ctx.fillRect(0, y, (upvotes / mod.votes.length) * 1080, 20);
+            ctx.fillRect(0, y, (upvotes / mod.votes.length) * 1080, 40);
             ctx.fillStyle = BGNColors.Red;
-            ctx.fillRect((upvotes / mod.votes.length) * 1080, y, (downvotes / mod.votes.length) * 1080, 20);
+            ctx.fillRect(1080 - (downvotes / mod.votes.length) * 1080, y, (downvotes / mod.votes.length) * 1080, 40);
             ctx.fillStyle = '#ffffff';
-            ctx.font = '16px Arial';
-            ctx.fillText(`${mod.name} (${percentage}%)`, 10, y + 15);
-            y += 20;
+            ctx.font = `${FontWeight.Bold} 32px Montserrat`;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${mod.name}`, 10, y + 20);
+            ctx.textAlign = 'right';
+            ctx.fillText(`${percentage}%`, 1070, y + 20);
+
+            y += 40;
         }
         const modImage = new AttachmentBuilder(canvas.toBuffer(), {
             name: 'modvote.png'
