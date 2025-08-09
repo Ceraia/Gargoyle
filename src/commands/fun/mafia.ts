@@ -14,6 +14,7 @@ import {
     MessageActionRowComponentBuilder,
     MessageEditOptions,
     MessageFlags,
+    PermissionFlagsBits,
     TextChannel,
     TextDisplayBuilder
 } from 'discord.js';
@@ -60,25 +61,59 @@ export default class Fun extends GargoyleCommand {
         new GargoyleSlashCommandBuilder()
             .setName('mafia')
             .setDescription('Play a game of Mafia')
+            .addSubcommand((subcommand) =>
+                subcommand
+                    .setName('start')
+                    .setDescription('Start a new game of Mafia')
+                    .addStringOption((option) =>
+                        option
+                            .setName('mode')
+                            .setDescription('The mode of the game')
+                            .setChoices({ name: 'speed', value: 'speed' }, { name: 'realistic', value: 'realistic' })
+                    )
+            )
+            .addSubcommand((subcommand) => subcommand.setName('fix').setDescription('Fix a mafia game that is stuck'))
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
-            await interaction.reply({ content: 'This command can only be used in chat channel in a server.', flags: MessageFlags.Ephemeral });
-            return;
+        if (interaction.options.getSubcommand() === 'fix') {
+            if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageMessages)) {
+                await interaction.reply({ content: 'You do not have permission to use this command.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const existingGame = await databaseMafiaGame.findOne({ channelId: interaction.channelId });
+            if (!existingGame) {
+                await interaction.reply({ content: 'There is no game running in this channel.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+            await databaseMafiaGame.deleteOne({ channelId: interaction.channelId });
+            await interaction.reply({ content: 'The existing game has been deleted. You can now start a new game.', flags: MessageFlags.Ephemeral });
+        } else if (interaction.options.getSubcommand() === 'start') {
+            if (!interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
+                await interaction.reply({ content: 'This command can only be used in chat channel in a server.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const response = await interaction.reply({
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0x647aa3)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# New Mafia Game' + '\nLoading backend...'))
+                ],
+                flags: [MessageFlags.IsComponentsV2]
+            });
+
+            await response.edit(
+                await this.startMafiaGame(
+                    client,
+                    interaction.channel,
+                    interaction.member as GuildMember,
+                    interaction.options.getString('mode') || 'speed'
+                )
+            );
         }
-
-        const response = await interaction.reply({
-            components: [
-                new ContainerBuilder()
-                    .setAccentColor(0x647aa3)
-                    .addTextDisplayComponents(new TextDisplayBuilder().setContent('# New Mafia Game' + '\nLoading backend...'))
-            ],
-            flags: [MessageFlags.IsComponentsV2]
-        });
-
-        await response.edit(await this.startMafiaGame(client, interaction.channel, interaction.member as GuildMember));
     }
 
     public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
@@ -107,7 +142,7 @@ export default class Fun extends GargoyleCommand {
         }
     }
 
-    private async startMafiaGame(client: GargoyleClient, channel: TextChannel, host: GuildMember): Promise<MessageEditOptions> {
+    private async startMafiaGame(client: GargoyleClient, channel: TextChannel, host: GuildMember, gameMode: string): Promise<MessageEditOptions> {
         if (!client.db) {
             return {
                 components: [
@@ -133,26 +168,10 @@ export default class Fun extends GargoyleCommand {
                 flags: [MessageFlags.IsComponentsV2]
             };
         }
-        const newGame = new databaseMafiaGame({ channelId: channel.id, messageId: host.user.id });
+        const newGame = new databaseMafiaGame({ channelId: channel.id, host: host.user.id, gameMode: gameMode });
         await newGame.save();
         await toggleUserInQueue(channel.id, host.user.id);
-        return {
-            components: [
-                new ContainerBuilder()
-                    .setAccentColor(0x647aa3)
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            '# New Mafia Game' + '\nThe game has been started successfully!' + `\n-# Hosted by <@!${host.user.id}>`
-                        )
-                    )
-                    .addActionRowComponents(
-                        new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
-                            new GargoyleButtonBuilder(this, 'join').setStyle(ButtonStyle.Secondary).setLabel('Join Game')
-                        )
-                    )
-            ],
-            flags: [MessageFlags.IsComponentsV2]
-        };
+        return (await this.updateMafiaGameMessage(channel)) as MessageEditOptions;
     }
 
     private async updateMafiaGameMessage(channel: TextChannel) {
@@ -174,7 +193,7 @@ export default class Fun extends GargoyleCommand {
                     .setAccentColor(0x647aa3)
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
-                            '# New Mafia Game' +
+                            `# New Mafia Game ()` +
                                 `\nWaiting for the host to start the game and for players to join.` +
                                 `\nPlayers (${game.joinQueue.length}/16): ${game.joinQueue.map((userId) => `<@!${userId}>`).join(', ')}` +
                                 `\n-# Hosted by <@!${game.host}>`
@@ -182,12 +201,16 @@ export default class Fun extends GargoyleCommand {
                     )
                     .addActionRowComponents(
                         new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
-                            new GargoyleButtonBuilder(this, 'join').setStyle(ButtonStyle.Secondary).setLabel('Join Game')
+                            new GargoyleButtonBuilder(this, 'join').setStyle(ButtonStyle.Secondary).setLabel('Join Game'),
+                            new GargoyleButtonBuilder(this, 'start')
+                                .setStyle(ButtonStyle.Secondary)
+                                .setLabel('Start Game')
+                                .setDisabled(game.joinQueue.length < 4)
                         )
                     )
             ],
             flags: [MessageFlags.IsComponentsV2]
-        };
+        } as MessageEditOptions;
     }
 }
 
@@ -232,6 +255,11 @@ const mafiaGameSchema = new Schema({
     channelId: {
         type: String,
         required: true
+    },
+    gameMode: {
+        type: String,
+        enum: ['speed', 'realistic'],
+        default: 'speed'
     },
     host: {
         type: String,
