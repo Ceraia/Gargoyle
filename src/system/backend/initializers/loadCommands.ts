@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import GargoyleClient from '../classes/gargoyleClient.js';
 import GargoyleCommand from '../classes/gargoyleCommand.js';
+import GargoyleEvent from '../classes/gargoyleEvent.js';
 
 async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<void> {
     for (const dir of dirs) {
@@ -20,11 +21,24 @@ async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<
                 try {
                     const { default: Command } = await import(path.join(__dirname, dir, file));
                     const command: GargoyleCommand = new Command();
+                    if (!(command instanceof GargoyleCommand)) {
+                        client.logger.error(`File ${file} does not export a valid GargoyleCommand.`);
+                        continue;
+                    }
+                    if (command.deprecated) {
+                        client.logger.info(`Command ${file} is deprecated and will not be registered.`);
+                        continue;
+                    }
                     if (command.slashCommand || command.textCommand || command.slashCommands.length > 0 || command.textCommands.length > 0) {
                         client.logger.debug(`Adding commands from ${file}`);
                         client.commands.push(command);
                     }
                     command.events.forEach((event) => {
+                        if (!(event instanceof GargoyleEvent)) {
+                            client.logger.error(`Event in ${file} is not an instance of GargoyleEvent.`);
+                            return;
+                        }
+
                         if (event.once) {
                             client.logger.debug(`Registering command event as ${event.event} once: ${file}`);
                             client.once(event.event, (...args) => event.execute(client, ...args));

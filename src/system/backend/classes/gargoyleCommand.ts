@@ -18,6 +18,11 @@ import GargoyleSlashCommandBuilder from '../builders/gargoyleSlashCommandBuilder
 abstract class GargoyleCommand {
     public abstract category: string;
     /**
+     * Mark a command as deprecated.
+     * This will prevent the command from being registered in the bot.
+     */
+    public deprecated: boolean | null = null;
+    /**
      * @deprecated
      * In favor of using slashCommands instead to allow multiple slash commands in a file.
      */
