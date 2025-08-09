@@ -95,12 +95,6 @@ export default class Server extends GargoyleCommand {
                             .addUserOption((option) => option.setName('user').setDescription('User to take the role from').setRequired(true))
                             .addRoleOption((option) => option.setName('role').setDescription('Role to take'))
                     )
-                    .addSubcommand((subcommand) =>
-                        subcommand
-                            .setName('all')
-                            .setDescription('Give a role to all users')
-                            .addRoleOption((option) => option.setName('role').setDescription('Role to give').setRequired(true))
-                    )
                     .addSubcommand((subcommand) => subcommand.setName('auto').setDescription('Set a role to be given automatically to new members'))
             )
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
@@ -196,26 +190,6 @@ export default class Server extends GargoyleCommand {
                     interaction
                         .reply({ content: `Role ${role.name} taken from ${member.displayName}`, flags: MessageFlags.Ephemeral })
                         .catch(() => {});
-                });
-            } else if (interaction.options.getSubcommand() === 'all') {
-                const role = interaction.options.getRole('role', true);
-                interaction.deferReply({ flags: MessageFlags.Ephemeral });
-                interaction.guild.members.fetch().then(async (members) => {
-                    const resolvedRole = interaction.guild?.roles.cache.get(role.id);
-                    if (!resolvedRole) {
-                        await interaction.reply({ content: 'Role not found in the guild.', flags: MessageFlags.Ephemeral }).catch(() => {});
-                        return;
-                    }
-
-                    for (const member of members.values()) {
-                        try {
-                            await member.roles.add(resolvedRole);
-                        } catch {
-                            // Handle individual member role addition failure silently
-                        }
-                    }
-
-                    await interaction.reply({ content: `Role ${role.name} given to all users`, flags: MessageFlags.Ephemeral }).catch(() => {});
                 });
             } else if (interaction.options.getSubcommand() === 'auto') {
                 if (!client.db)
