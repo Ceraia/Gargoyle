@@ -173,12 +173,14 @@ export default class Fun extends GargoyleCommand {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const game = await databaseMafiaGame.findOne({ channelId: interaction.channel!.id });
             if (!game) {
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
                 await interaction.editReply({
                     content: 'There is no game running in this channel.'
                 });
                 return;
             }
             if (game.status !== 'in-progress' || game.substatus !== 'discussing') {
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
                 await interaction.editReply({
                     content: 'The game is not in the discussion phase.'
                 });
@@ -186,15 +188,15 @@ export default class Fun extends GargoyleCommand {
             }
 
             // Check if the user has already voted to end discussion
-            if (game.votedToEndDiscussion.includes(interaction.user.id)) {
-                game.votedToEndDiscussion = game.votedToEndDiscussion.filter((id) => id !== interaction.user.id);
-                await game.save();
-                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
-                await interaction.editReply({
-                    content: 'You have removed your vote to end the discussion.'
-                });
-                return;
-            }
+            // if (game.votedToEndDiscussion.includes(interaction.user.id)) {
+            //     game.votedToEndDiscussion = game.votedToEndDiscussion.filter((id) => id !== interaction.user.id);
+            //     await game.save();
+            //     await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+            //     await interaction.editReply({
+            //         content: 'You have removed your vote to end the discussion.'
+            //     });
+            //     return;
+            // }
 
             game.votedToEndDiscussion.push(interaction.user.id);
             await game.save();
@@ -343,7 +345,6 @@ export default class Fun extends GargoyleCommand {
                                         .setMinValues(1)
                                         .setMaxValues(1)
                                         .setPlaceholder('Vote for a player to eliminate')
-                                        .addDefaultUsers(game.players.map((player) => player.userId) as string[])
                                 )
                             )
                     ],
