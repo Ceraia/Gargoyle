@@ -4,7 +4,6 @@ import { GargoyleUserSelectMenuBuilder } from '@src/system/backend/builders/garg
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import { FontWeight } from '@src/system/backend/tools/banners.js';
-import client from '@src/system/botClient.js';
 import { Canvas } from 'canvas';
 import {
     ActionRowBuilder,
@@ -125,7 +124,7 @@ export default class Fun extends GargoyleCommand {
         }
     }
 
-    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+    public override async executeButtonCommand(_client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'join') {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const result = await toggleUserInQueue(interaction.channel!.id, interaction.user.id);
@@ -170,7 +169,7 @@ export default class Fun extends GargoyleCommand {
                 return;
             }
 
-            const assignedRoles = await assignRoles(game.channelId);
+            await assignRoles(game.channelId);
 
             game.status = 'in-progress';
             await game.save();
@@ -221,10 +220,77 @@ export default class Fun extends GargoyleCommand {
                     content: `You have voted to end the discussion. (${game.votedToEndDiscussion.length}/${requiredVotes})`
                 });
             }
+        } else if (args[0] === 'endvote') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            const game = await databaseMafiaGame.findOne({ channelId: interaction.channel!.id });
+            if (!game) {
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+                await interaction.editReply({
+                    content: 'There is no game running in this channel.'
+                });
+                return;
+            }
+            if (game.status !== 'in-progress' || game.substatus !== 'voting') {
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+                await interaction.editReply({
+                    content: 'The game is not in the voting phase.'
+                });
+                return;
+            }
+
+            // Check if the user has already voted to end voting
+            // if (game.votedToEndVote.includes(interaction.user.id)) {
+            //     game.votedToEndVote = game.votedToEndVote.filter((id) => id !== interaction.user.id);
+            //     await game.save();
+            //     await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+            //     await interaction.editReply({
+            //         content: 'You have removed your vote to end the voting.'
+            //     });
+            //     return;
+            // }
+
+            game.votedToEndVote.push(interaction.user.id);
+            await game.save();
+
+            // Check if enough players have voted to end voting
+            const requiredVotes = Math.ceil(game.players.length / 1.5);
+            if (game.votedToEndVote.length >= requiredVotes) {
+                game.substatus = 'nighttime';
+                game.votedToEndVote = [];
+                // Eliminate the player with the most votes
+                const voteCounts = game.playerVotes.reduce(
+                    (acc, vote) => {
+                        acc[vote.vote] = (acc[vote.vote] || 0) + 1;
+                        return acc;
+                    },
+                    {} as Record<string, number>
+                );
+                const mostVotedPlayerId = Object.keys(voteCounts).reduce((a, b) => (voteCounts[a] > voteCounts[b] ? a : b));
+                const mostVotedPlayer = game.players.find((player) => player.userId === mostVotedPlayerId);
+                if (mostVotedPlayer) {
+                    mostVotedPlayer.alive = false; // Mark the player as dead
+                    game.playerVotes.splice(0); // Reset votes for the next round
+                    const alivePlayers = game.players.filter((player) => player.alive);
+                    if (alivePlayers.length <= 2) {
+                        game.status = 'finished'; // End the game if only 2 players are left
+                    }
+                }
+
+                await game.save();
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+                await interaction.editReply({
+                    content: 'Voting has ended. Discussions will resume.'
+                });
+            } else {
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+                await interaction.editReply({
+                    content: `You have voted to end the voting. (${game.votedToEndVote.length}/${requiredVotes})`
+                });
+            }
         }
     }
 
-    public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
+    public override async executeSelectMenuCommand(_client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'vote') {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const game = await databaseMafiaGame.findOne({ channelId: interaction.channel!.id });
