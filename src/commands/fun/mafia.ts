@@ -1,5 +1,6 @@
 import GargoyleCommand from '@classes/gargoyleCommand.js';
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
+import { GargoyleUserSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import {
@@ -15,6 +16,7 @@ import {
     MessageEditOptions,
     MessageFlags,
     PermissionFlagsBits,
+    SectionBuilder,
     TextChannel,
     TextDisplayBuilder
 } from 'discord.js';
@@ -167,6 +169,49 @@ export default class Fun extends GargoyleCommand {
             await game.save();
 
             await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+        } else if (args[0] === 'enddiscuss') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            const game = await databaseMafiaGame.findOne({ channelId: interaction.channel!.id });
+            if (!game) {
+                await interaction.editReply({
+                    content: 'There is no game running in this channel.'
+                });
+                return;
+            }
+            if (game.status !== 'in-progress' || game.substatus !== 'discussing') {
+                await interaction.editReply({
+                    content: 'The game is not in the discussion phase.'
+                });
+                return;
+            }
+
+            // Check if the user has already voted to end discussion
+            if (game.votedToEndDiscussion.includes(interaction.user.id)) {
+                game.votedToEndDiscussion = game.votedToEndDiscussion.filter((id) => id !== interaction.user.id);
+                await game.save();
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+                await interaction.editReply({
+                    content: 'You have removed your vote to end the discussion.'
+                });
+                return;
+            }
+
+            game.votedToEndDiscussion.push(interaction.user.id);
+            await game.save();
+
+            // Check if enough players have voted to end discussion
+            const requiredVotes = Math.ceil(game.players.length / 2.5);
+            if (game.votedToEndDiscussion.length >= requiredVotes) {
+                game.substatus = 'voting';
+                game.votedToEndDiscussion = [];
+                await game.save();
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+            } else {
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+                await interaction.editReply({
+                    content: `You have voted to end the discussion. (${game.votedToEndDiscussion.length}/${requiredVotes})`
+                });
+            }
         }
     }
 
@@ -241,24 +286,70 @@ export default class Fun extends GargoyleCommand {
                 flags: [MessageFlags.IsComponentsV2]
             } as MessageEditOptions;
         } else if (game.status === 'in-progress') {
-            return {
-                components: [
-                    new ContainerBuilder()
-                        .setAccentColor(0x647aa3)
-                        .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(
-                                `# Mafia Game (DEBUG)` +
-                                    `Players: ${game.players.length}/16` +
-                                    `\nGame Mode: ${game.gameMode}` +
-                                    `\nStatus: In Progress` +
-                                    `\nPlayers:` +
-                                    `\n${game.players.map((player) => `<@!${player.userId}> - ${player.role}${player.alive ? '' : ' (Dead)'}`).join('\n')}` +
-                                    `\n-# Hosted by <@!${game.host}>`
+            if (game.substatus == 'discussing') {
+                return {
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0x647aa3)
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    `# Discussions` +
+                                        `\nPlayers: ${game.players.length}/16` +
+                                        `\nGame Mode: ${game.gameMode}` +
+                                        `\nStatus: In Progress` +
+                                        `\nPlayers:` +
+                                        `\n${game.players.map((player) => `<@!${player.userId}> - ${player.role}${player.alive ? '' : ' (Dead)'}`).join('\n')}` +
+                                        `\n-# Hosted by <@!${game.host}>`
+                                )
                             )
-                        )
-                ],
-                flags: [MessageFlags.IsComponentsV2]
-            } as MessageEditOptions;
+                            .addActionRowComponents(
+                                new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
+                                    new GargoyleButtonBuilder(this, 'enddiscuss')
+                                        .setStyle(ButtonStyle.Secondary)
+                                        .setLabel(`End Discussions (${game.votedToEndDiscussion.length}/${(game.players.length / 2.5).toFixed(0)})`),
+                                    new GargoyleButtonBuilder(this, 'actions').setStyle(ButtonStyle.Secondary).setLabel('Actions').setDisabled(true)
+                                )
+                            )
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                } as MessageEditOptions;
+            } else if (game.substatus == 'voting') {
+                return {
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0x647aa3)
+                            .addSectionComponents(
+                                new SectionBuilder()
+                                    .setButtonAccessory(
+                                        new GargoyleButtonBuilder(this, 'endvote')
+                                            .setStyle(ButtonStyle.Secondary)
+                                            .setLabel(`End Voting (${game.votedToEndVote.length}/${(game.players.length / 1.5).toFixed(0)})`)
+                                    )
+                                    .addTextDisplayComponents(
+                                        new TextDisplayBuilder().setContent(
+                                            `# Voting` +
+                                                `\nPlayers: ${game.players.length}/16` +
+                                                `\nGame Mode: ${game.gameMode}` +
+                                                `\nStatus: In Progress` +
+                                                `\nPlayers:` +
+                                                `\n${game.players.map((player) => `<@!${player.userId}> - ${player.role}${player.alive ? '' : ' (Dead)'}`).join('\n')}` +
+                                                `\n-# Hosted by <@!${game.host}>`
+                                        )
+                                    )
+                            )
+                            .addActionRowComponents(
+                                new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
+                                    new GargoyleUserSelectMenuBuilder(this, 'vote')
+                                        .setMinValues(1)
+                                        .setMaxValues(1)
+                                        .setPlaceholder('Vote for a player to eliminate')
+                                        .addDefaultUsers(game.players.map((player) => player.userId) as string[])
+                                )
+                            )
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                } as MessageEditOptions;
+            }
         }
     }
 }
@@ -360,6 +451,20 @@ const mafiaUserSchema = new Schema(
     { _id: false }
 );
 
+const mafiaUserVoteSchema = new Schema(
+    {
+        userId: {
+            type: String,
+            required: true
+        },
+        vote: {
+            type: String,
+            required: true
+        }
+    },
+    { _id: false }
+);
+
 const mafiaGameSchema = new Schema({
     channelId: {
         type: String,
@@ -379,8 +484,25 @@ const mafiaGameSchema = new Schema({
         enum: ['waiting', 'in-progress', 'finished'],
         default: 'waiting'
     },
+    substatus: {
+        type: String,
+        enum: ['discussing', 'voting', 'nighttime'],
+        default: 'discussing'
+    },
     players: {
         type: [mafiaUserSchema],
+        default: []
+    },
+    votedToEndDiscussion: {
+        type: [String],
+        default: []
+    },
+    votedToEndVote: {
+        type: [String],
+        default: []
+    },
+    playerVotes: {
+        type: [mafiaUserVoteSchema],
         default: []
     },
     joinQueue: {
