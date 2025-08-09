@@ -1380,10 +1380,9 @@ export default class Ceraia extends GargoyleCommand {
         let canvas = createCanvas(width, 80 + modVoteData.mods.length * 44);
         const ctx = canvas.getContext('2d');
 
+        let modNumber = 1;
         let y = 40;
-        for (const mod of modVoteData.mods.sort((a, b) => {
-            return a.name.localeCompare(b.name);
-        })) {
+        for (const mod of modVoteData.mods) {
             const upvotes = mod.votes.filter((vote) => vote.vote === 1).length;
             const downvotes = mod.votes.filter((vote) => vote.vote === -1).length;
             const neutralvotes = mod.votes.filter((vote) => vote.vote === 0).length;
@@ -1413,10 +1412,11 @@ export default class Ceraia extends GargoyleCommand {
             ctx.font = `${FontWeight.Bold} 32px Montserrat`;
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'left';
-            ctx.fillText(`${mod.name}`, 10, y + 22);
+            ctx.fillText(`${modNumber}. ${mod.name}`, 10, y + 22);
             ctx.textAlign = 'right';
             ctx.fillText(`${percentage}%`, width - 10, y + 22);
 
+            modNumber++;
             y += 44;
         }
         const modImage = new AttachmentBuilder(canvas.toBuffer(), {
