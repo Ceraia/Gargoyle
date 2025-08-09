@@ -81,7 +81,6 @@ export default class Ceraia extends GargoyleCommand {
                             .setDescription('Set a user as a supporter')
                             .addUserOption((option) => option.setName('user').setDescription('The user to set as a supporter').setRequired(true))
                     )
-                    .addSubcommand((subcommand) => subcommand.setName('clearnicks').setDescription('Clears all nicknames in the guild'))
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('votes')
@@ -263,24 +262,7 @@ export default class Ceraia extends GargoyleCommand {
                     });
                     return;
                 }
-                if (interaction.options.getSubcommand() === 'clearnicks') {
-                    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-                    client.logger.info(`Clearing all nicknames in guild ${interaction.guildId}`);
-                    const members = await interaction.guild!.members.fetch();
-
-                    for (const member of members) {
-                        const [_memberId, memberData] = member;
-                        if (memberData.nickname) {
-                            try {
-                                await memberData.setNickname(null);
-                            } catch (error) {}
-                        }
-                    }
-
-                    await interaction.editReply({
-                        content: 'All nicknames have been cleared.'
-                    });
-                } else if (interaction.options.getSubcommand() === 'register') {
+                if (interaction.options.getSubcommand() === 'register') {
                     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
                     const guildData = await databaseMinecraftGuild.findOne({ guildId: minecraftBgnGuild });
 

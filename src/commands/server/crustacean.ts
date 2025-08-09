@@ -25,6 +25,7 @@ import {
 
 export default class Crustacean extends GargoyleCommand {
     public override category: string = 'server';
+    public override deprecated: boolean = true;
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
             .setName('crustacean')
@@ -70,7 +71,6 @@ export default class Crustacean extends GargoyleCommand {
                             .addUserOption((option) => option.setName('inviter').setDescription('Inviter').setRequired(false))
                     )
             )
-            .addSubcommand((subcommand) => subcommand.setName('missing').setDescription('Get a list of users who are missing an inviter'))
             .addSubcommand((subcommand) =>
                 subcommand
                     .setName('tree')
@@ -142,24 +142,6 @@ export default class Crustacean extends GargoyleCommand {
             await guild.save();
 
             return interaction.reply({ content: `Crustacean role has been set to ${role}`, flags: MessageFlags.Ephemeral });
-        } else if (interaction.options.getSubcommand() === 'missing') {
-            if (!interaction.guild) return interaction.reply({ content: 'This command can only be used in a guild', flags: MessageFlags.Ephemeral });
-
-            // Get all members in the guild who do not have an entry in the database
-            const members = await interaction.guild.members.fetch();
-
-            let missingStr = '';
-
-            for (const member of members) {
-                if (member[1].user.bot) continue;
-                const crustaceanMember = await getCrustaceanUser(client, member[0], guildId);
-
-                if (!crustaceanMember.inviterId) {
-                    missingStr += `<@!${member[0]}>, `;
-                }
-            }
-
-            return interaction.reply({ content: `Missing invitees: ${missingStr}`, flags: MessageFlags.Ephemeral });
         } else if (interaction.options.getSubcommandGroup() === 'set') {
             if (interaction.options.getSubcommand() === 'reputation') {
                 const user = interaction.options.getUser('user', true);
