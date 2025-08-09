@@ -3,8 +3,13 @@ import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBu
 import { GargoyleUserSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import { FontWeight } from '@src/system/backend/tools/banners.js';
+import client from '@src/system/botClient.js';
+import { Canvas } from 'canvas';
 import {
     ActionRowBuilder,
+    AnySelectMenuInteraction,
+    AttachmentBuilder,
     ButtonInteraction,
     ButtonStyle,
     ChannelType,
@@ -12,6 +17,8 @@ import {
     ContainerBuilder,
     GuildMember,
     InteractionContextType,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
     MessageActionRowComponentBuilder,
     MessageEditOptions,
     MessageFlags,
@@ -217,6 +224,45 @@ export default class Fun extends GargoyleCommand {
         }
     }
 
+    public override async executeSelectMenuCommand(client: GargoyleClient, interaction: AnySelectMenuInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'vote') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            const game = await databaseMafiaGame.findOne({ channelId: interaction.channel!.id });
+            if (!game) {
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+                await interaction.editReply({
+                    content: 'There is no game running in this channel.'
+                });
+                return;
+            }
+            if (game.status !== 'in-progress' || game.substatus !== 'voting') {
+                await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+                await interaction.editReply({
+                    content: 'The game is not in the voting phase.'
+                });
+                return;
+            }
+
+            const selectedUserId = interaction.values[0];
+            const existingVoteIndex = game.playerVotes.findIndex((vote) => vote.userId === interaction.user.id);
+            if (existingVoteIndex !== -1) {
+                // User has already voted, update their vote
+                game.playerVotes[existingVoteIndex].vote = selectedUserId;
+                await interaction.editReply({
+                    content: `You have updated your vote to <@!${selectedUserId}>.`
+                });
+            } else {
+                // User is voting for the first time
+                game.playerVotes.push({ userId: interaction.user.id, vote: selectedUserId });
+                await interaction.editReply({
+                    content: `You have voted to eliminate <@!${selectedUserId}>.`
+                });
+            }
+            await game.save();
+            await interaction.message.edit((await this.updateMafiaGameMessage(interaction.channel as TextChannel)) as MessageEditOptions);
+        }
+    }
+
     private async initMafiaGame(client: GargoyleClient, channel: TextChannel, host: GuildMember, gameMode: string): Promise<MessageEditOptions> {
         if (!client.db) {
             return {
@@ -316,10 +362,33 @@ export default class Fun extends GargoyleCommand {
                     flags: [MessageFlags.IsComponentsV2]
                 } as MessageEditOptions;
             } else if (game.substatus == 'voting') {
+                const canvas = new Canvas(1024, game.players.length * 32);
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#647aa3';
+                ctx.fillRect(0, 0, 8, canvas.height);
+
+                let y = 16;
+                for (const player of game.players) {
+                    if (!player.alive) continue;
+                    const playerVotes = game.playerVotes.filter((vote) => vote.vote === player.userId).length;
+                    const playerName = channel.guild.members.cache.get(player.userId)?.displayName || 'Unknown User???';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = `${FontWeight.Bold} 28px Montserrat`;
+                    ctx.fillText(`${playerName} - ${player.role} (${playerVotes} votes)`, 20, y);
+                    y += 32;
+                }
+
+                const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'votes.png' });
+
                 return {
                     components: [
                         new ContainerBuilder()
                             .setAccentColor(0x647aa3)
+                            .addMediaGalleryComponents(
+                                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://votes.png'))
+                            )
                             .addSectionComponents(
                                 new SectionBuilder()
                                     .setButtonAccessory(
@@ -327,6 +396,7 @@ export default class Fun extends GargoyleCommand {
                                             .setStyle(ButtonStyle.Secondary)
                                             .setLabel(`End Voting (${game.votedToEndVote.length}/${(game.players.length / 1.5).toFixed(0)})`)
                                     )
+
                                     .addTextDisplayComponents(
                                         new TextDisplayBuilder().setContent(
                                             `# Voting` +
@@ -344,11 +414,12 @@ export default class Fun extends GargoyleCommand {
                                     new GargoyleUserSelectMenuBuilder(this, 'vote')
                                         .setMinValues(1)
                                         .setMaxValues(1)
-                                        .setPlaceholder('Vote for a player to eliminate')
+                                        .setPlaceholder('Vote who you think is guilty')
                                 )
                             )
                     ],
-                    flags: [MessageFlags.IsComponentsV2]
+                    flags: [MessageFlags.IsComponentsV2],
+                    files: [attachment]
                 } as MessageEditOptions;
             }
         }
