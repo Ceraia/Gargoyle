@@ -2,7 +2,6 @@ services:
   mongo:
     profiles:
       - db
-      - ai
     hostname: mongo
     image: mongo:latest
     environment:
@@ -14,18 +13,6 @@ services:
       - gargoyle
     ports:
       - 27017:27017
-
-  detoxify-api:
-    profiles: 
-      - ai
-    hostname: detoxify-api
-    volumes:
-      - ./container/.cache/application:/root/.cache
-      - ./container/.cache/packages:/.cached_packages
-    expose: [8000]
-    image: ghcr.io/ceraia/detoxify-api:latest
-    networks:
-      - gargoyle
 
 networks:
   gargoyle:
