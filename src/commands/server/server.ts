@@ -226,18 +226,18 @@ export default class Server extends GargoyleCommand {
             if (!interaction.guild) return;
             await interaction.editReply({
                 components: [
-                    new ContainerBuilder()
-                        .addSectionComponents(
-                            new SectionBuilder().setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.guild.iconURL() ?? ''))
-                        )
-                        .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(
-                                `# Information about ${interaction.guild.name}` +
-                                    `\nOwned by ${interaction.guild.ownerId}` +
-                                    `\nMember count: ${interaction.guild.memberCount}` +
-                                    `\nCreated on: <t:${Math.floor(interaction.guild.createdTimestamp / 1000)}:f>`
+                    new ContainerBuilder().addSectionComponents(
+                        new SectionBuilder()
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    `# Information about ${interaction.guild.name}` +
+                                        `\nOwned by ${interaction.guild.ownerId}` +
+                                        `\nMember count: ${interaction.guild.memberCount}` +
+                                        `\nCreated on: <t:${Math.floor(interaction.guild.createdTimestamp / 1000)}:f>`
+                                )
                             )
-                        )
+                            .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.guild.iconURL() ?? ''))
+                    )
                 ],
                 flags: [MessageFlags.IsComponentsV2]
             });
