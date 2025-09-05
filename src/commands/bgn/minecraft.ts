@@ -1444,31 +1444,33 @@ export default class Ceraia extends GargoyleCommand {
 function serverMessage(channel: TextChannel): MessageCreateOptions {
     return {
         components: [
-            new ContainerBuilder()
-                .addSectionComponents(new SectionBuilder().setThumbnailAccessory(new ThumbnailBuilder().setURL(channel.guild.iconURL()!)))
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `# ${BGNCubeEmojis.Cube_Blue} Brad's Minecraft` +
-                            `\n\n` +
-                            `\n## Rules` +
-                            `\n1. Keep it fun for those involved.` +
-                            `\n> Rules are here to keep it fun for those playing.` +
-                            `\n2. Be respectful to others.` +
-                            `\n> This includes but is not limited to: bullying, harassment, racist or hateful comments to unwilling participants.` +
-                            `\n3. No cheating or exploiting bugs.` +
-                            `\n> This creates an unfair advantage to casual players.` +
-                            `\n4. No spamming or advertising.` +
-                            `\n> This includes but is not limited to: excessive messages, images, or reactions.` +
-                            `\n5. Follow Discord's Terms of Service.` +
-                            `\n> This can be read on their website.` +
-                            `\n6. Have fun!` +
-                            `\n\n` +
-                            `## Joining the Server` +
-                            `Grab the latest modpack version from <#1401836820941242368>, and join the server at \`axodouble.com\`` +
-                            `IP: \`axodouble.com\`` +
-                            `Modpack: Brad's Minecraft, <#1401836820941242368>`
+            new ContainerBuilder().addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `# ${BGNCubeEmojis.Cube_Blue} Brad's Minecraft` +
+                                `\n\n` +
+                                `\n## Rules` +
+                                `\n1. Keep it fun for those involved.` +
+                                `\n> Rules are here to keep it fun for those playing.` +
+                                `\n2. Be respectful to others.` +
+                                `\n> This includes but is not limited to: bullying, harassment, racist or hateful comments to unwilling participants.` +
+                                `\n3. No cheating or exploiting bugs.` +
+                                `\n> This creates an unfair advantage to casual players.` +
+                                `\n4. No spamming or advertising.` +
+                                `\n> This includes but is not limited to: excessive messages, images, or reactions.` +
+                                `\n5. Follow Discord's Terms of Service.` +
+                                `\n> This can be read on their website.` +
+                                `\n6. Have fun!` +
+                                `\n\n` +
+                                `## Joining the Server` +
+                                `Grab the latest modpack version from <#1401836820941242368>, and join the server at \`axodouble.com\`` +
+                                `IP: \`axodouble.com\`` +
+                                `Modpack: Brad's Minecraft, <#1401836820941242368>`
+                        )
                     )
-                )
+                    .setThumbnailAccessory(new ThumbnailBuilder().setURL(channel.guild.iconURL()!))
+            )
         ],
         flags: [MessageFlags.IsComponentsV2]
     };
