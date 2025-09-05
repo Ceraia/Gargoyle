@@ -1463,10 +1463,10 @@ function serverMessage(channel: TextChannel): MessageCreateOptions {
                                 `\n> This can be read on their website.` +
                                 `\n6. Have fun!` +
                                 `\n\n` +
-                                `## Joining the Server` +
-                                `Grab the latest modpack version from <#1401836820941242368>, and join the server at \`axodouble.com\`` +
-                                `IP: \`axodouble.com\`` +
-                                `Modpack: Brad's Minecraft, <#1401836820941242368>`
+                                `\n## Joining the Server` +
+                                `\nGrab the latest modpack version from <#1401836820941242368>, and join the server at \`axodouble.com\`` +
+                                `\nIP: \`axodouble.com\`` +
+                                `\nModpack: Brad's Minecraft, <#1401836820941242368>`
                         )
                     )
                     .setThumbnailAccessory(new ThumbnailBuilder().setURL(channel.guild.iconURL()!))
