@@ -22,10 +22,12 @@ import {
     ModalActionRowComponentBuilder,
     ModalSubmitInteraction,
     PermissionFlagsBits,
+    SectionBuilder,
     TextChannel,
     TextDisplayBuilder,
     TextInputBuilder,
-    TextInputStyle
+    TextInputStyle,
+    ThumbnailBuilder
 } from 'discord.js';
 
 export default class Server extends GargoyleCommand {
@@ -97,6 +99,7 @@ export default class Server extends GargoyleCommand {
                     )
                     .addSubcommand((subcommand) => subcommand.setName('auto').setDescription('Set a role to be given automatically to new members'))
             )
+            .addSubcommand((subcommand) => subcommand.setName('info').setDescription('Get information about the server'))
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
     public override contextCommands = [
@@ -218,6 +221,25 @@ export default class Server extends GargoyleCommand {
                     flags: [MessageFlags.IsComponentsV2]
                 });
             }
+        } else if (interaction.options.getSubcommand() === 'info') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            if (!interaction.guild) return;
+            await interaction.editReply({
+                components: [
+                    new ContainerBuilder()
+                        .addSectionComponents(
+                            new SectionBuilder().setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.guild.iconURL() ?? ''))
+                        )
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `# Information about ${interaction.guild.name}` +
+                                    `Owned by ${interaction.guild.ownerId}` +
+                                    `Member count: ${interaction.guild.memberCount}` +
+                                    `Created on: <t:${Math.floor(interaction.guild.createdTimestamp / 1000)}:f>`
+                            )
+                        )
+                ]
+            });
         }
     }
 
