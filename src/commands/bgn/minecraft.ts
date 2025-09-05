@@ -87,6 +87,7 @@ export default class Ceraia extends GargoyleCommand {
                             .setDescription('List all created votes by a user')
                             .addUserOption((option) => option.setName('owner').setDescription('The user to list votes for').setRequired(false))
                     )
+                    .addSubcommand((subcommand) => subcommand.setName('servermsg').setDescription('Sends the server message'))
             )
             .addSubcommand((subcommand) =>
                 subcommand
@@ -339,6 +340,19 @@ export default class Ceraia extends GargoyleCommand {
                         ],
                         flags: [MessageFlags.IsComponentsV2]
                     });
+                } else if (interaction.options.getSubcommand() === 'servermsg') {
+                    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+                    const message = await sendAsServer(
+                        {
+                            ...serverMessage(interaction.channel as TextChannel)
+                        },
+                        interaction.channel as TextChannel
+                    );
+                    if (message) {
+                        await interaction.editReply({ content: 'Server message sent!' });
+                    } else {
+                        await interaction.editReply({ content: 'Failed to send server message.' });
+                    }
                 }
             } else if (interaction.options.getSubcommand() === 'link') {
                 const code = interaction.options.getString('code');
@@ -1189,8 +1203,6 @@ export default class Ceraia extends GargoyleCommand {
     private bgnMcInfo = new TextDisplayBuilder().setContent(
         `Currently, the server is in a testing phase, so please be patient with us as we work out any issues.` +
             `\nHowever, we have already decided the following:` +
-            `\n${BGNCubeEmojis.Cube_Blue} **All Staff commands will be logged, open & available to the public.**` +
-            `\n> This is to ensure not only that there is no abuse of power, but also to grant transparency to the community.` +
             `\n${BGNCubeEmojis.Cube_Blue} **Our staff will remain a barebones team, with purely the powers they require to do their job.**` +
             `\n> This is to ensure that we do not have any staff members who are overpowered or have too many commands.` +
             `\n${BGNCubeEmojis.Cube_Blue} **Any major changes to the server will be decided upon by the community.**` +
@@ -1427,6 +1439,39 @@ export default class Ceraia extends GargoyleCommand {
             files: [modImage]
         };
     }
+}
+
+function serverMessage(channel: TextChannel): MessageCreateOptions {
+    return {
+        components: [
+            new ContainerBuilder()
+                .addSectionComponents(new SectionBuilder().setThumbnailAccessory(new ThumbnailBuilder().setURL(channel.guild.iconURL()!)))
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `# ${BGNCubeEmojis.Cube_Blue} Brad's Minecraft` +
+                            `\n\n` +
+                            `\n## Rules` +
+                            `\n1. Keep it fun for those involved.` +
+                            `\n> Rules are here to keep it fun for those playing.` +
+                            `\n2. Be respectful to others.` +
+                            `\n> This includes but is not limited to: bullying, harassment, racist or hateful comments to unwilling participants.` +
+                            `\n3. No cheating or exploiting bugs.` +
+                            `\n> This creates an unfair advantage to casual players.` +
+                            `\n4. No spamming or advertising.` +
+                            `\n> This includes but is not limited to: excessive messages, images, or reactions.` +
+                            `\n5. Follow Discord's Terms of Service.` +
+                            `\n> This can be read on their website.` +
+                            `\n6. Have fun!` +
+                            `\n\n` +
+                            `## Joining the Server` +
+                            `Grab the latest modpack version from <#1401836820941242368>, and join the server at \`axodouble.com\`` +
+                            `IP: \`axodouble.com\`` +
+                            `Modpack: Brad's Minecraft, <#1401836820941242368>`
+                    )
+                )
+        ],
+        flags: [MessageFlags.IsComponentsV2]
+    };
 }
 
 async function boostMessage(member: GuildMember) {

@@ -233,9 +233,9 @@ export default class Server extends GargoyleCommand {
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
                                 `# Information about ${interaction.guild.name}` +
-                                    `Owned by ${interaction.guild.ownerId}` +
-                                    `Member count: ${interaction.guild.memberCount}` +
-                                    `Created on: <t:${Math.floor(interaction.guild.createdTimestamp / 1000)}:f>`
+                                    `\nOwned by ${interaction.guild.ownerId}` +
+                                    `\nMember count: ${interaction.guild.memberCount}` +
+                                    `\nCreated on: <t:${Math.floor(interaction.guild.createdTimestamp / 1000)}:f>`
                             )
                         )
                 ],
