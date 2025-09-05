@@ -238,7 +238,8 @@ export default class Server extends GargoyleCommand {
                                     `Created on: <t:${Math.floor(interaction.guild.createdTimestamp / 1000)}:f>`
                             )
                         )
-                ]
+                ],
+                flags: [MessageFlags.IsComponentsV2]
             });
         }
     }
