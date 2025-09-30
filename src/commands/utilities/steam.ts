@@ -5,6 +5,7 @@ import {
     ChatInputCommandInteraction,
     ContainerBuilder,
     InteractionContextType,
+    MessageFlags,
     SectionBuilder,
     TextDisplayBuilder,
     ThumbnailBuilder
@@ -80,7 +81,8 @@ export default class Steam extends GargoyleCommand {
                                 .setButtonAccessory(new GargoyleURLButtonBuilder(resolved.url).setLabel('Profile Link'))
                                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(resolved.avatar.medium).setDescription(`${resolved.nickname}`))
                         )
-                    ]
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             } catch (err) {
                 await interaction.editReply(`Failed to resolve input: ${err as string}`);
