@@ -373,6 +373,17 @@ export default class VoicechatCommand extends GargoyleCommand {
         }
     }
 
+    private VCEmojis = {
+        Crown: '<:crown:1422491927806480394>',
+        EyeSlash: '<:eyeslash:1422492247529619566>',
+        UserPlus: '<:userplus:1422492197605081118>',
+        Plus: '<:plus:1422492123776946286>',
+        Minus: '<:minus:1422492095117262848>',
+        Pencil: '<:pencil:1422492000174870572>',
+        Gavel: '<:gavel:1422492059310227547>',
+        Lock: '<:lock:1422492269012844546>'
+    };
+
     private panelMessage: string | InteractionReplyOptions | MessageEditOptions | MessageCreateOptions | MessagePayload = {
         content: null,
         embeds: [],
@@ -383,59 +394,45 @@ export default class VoicechatCommand extends GargoyleCommand {
                 .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Lock:1206326940324331531> Lock/Unlock the VC'))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Lock} Lock/Unlock the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'lock').setEmoji(this.VCEmojis.Lock).setStyle(ButtonStyle.Secondary))
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.EyeSlash} Hide/Show the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'hide').setEmoji(this.VCEmojis.EyeSlash).setStyle(ButtonStyle.Secondary))
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Plus} Increase the VC limit`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'increase').setEmoji(this.VCEmojis.Plus).setStyle(ButtonStyle.Secondary))
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Minus} Decrease the VC limit`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'decrease').setEmoji(this.VCEmojis.Minus).setStyle(ButtonStyle.Secondary))
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Gavel} Ban from the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'ban').setEmoji(this.VCEmojis.Gavel).setStyle(ButtonStyle.Secondary))
+                )
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.UserPlus} Unban / Invite to the VC`))
                         .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'lock').setEmoji('<:Lock:1206326940324331531>').setStyle(ButtonStyle.Secondary)
+                            new GargoyleButtonBuilder(this, 'invite').setEmoji(this.VCEmojis.UserPlus).setStyle(ButtonStyle.Secondary)
                         )
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Eye:1206326935303749722> Hide/Show the VC'))
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'hide').setEmoji('<:Eye:1206326935303749722>').setStyle(ButtonStyle.Secondary)
-                        )
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Pencil} Rename the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'rename').setEmoji(this.VCEmojis.Pencil).setStyle(ButtonStyle.Secondary))
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Plus:1206326946586300476> Increase the VC limit'))
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'increase').setEmoji('<:Plus:1206326946586300476>').setStyle(ButtonStyle.Secondary)
-                        )
-                )
-                .addSectionComponents(
-                    new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Minus:1206326944979877990> Decrease the VC limit'))
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'decrease').setEmoji('<:Minus:1206326944979877990>').setStyle(ButtonStyle.Secondary)
-                        )
-                )
-                .addSectionComponents(
-                    new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Hammer:1206326936612114472> Ban from the VC'))
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'ban').setEmoji('<:Hammer:1206326936612114472>').setStyle(ButtonStyle.Secondary)
-                        )
-                )
-                .addSectionComponents(
-                    new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Mail:1206667313609187330> Unban / Invite to the VC'))
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'invite').setEmoji('<:Mail:1206667313609187330>').setStyle(ButtonStyle.Secondary)
-                        )
-                )
-                .addSectionComponents(
-                    new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:I_:1206326937748905985> Rename the VC'))
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'rename').setEmoji('<:I_:1206326937748905985>').setStyle(ButtonStyle.Secondary)
-                        )
-                )
-                .addSectionComponents(
-                    new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('<:Mic:1206326943201362060> Claim the VC'))
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'claim').setEmoji('<:Mic:1206326943201362060>').setStyle(ButtonStyle.Secondary)
-                        )
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Crown} Claim the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'claim').setEmoji(this.VCEmojis.Crown).setStyle(ButtonStyle.Secondary))
                 )
         ]
     };
