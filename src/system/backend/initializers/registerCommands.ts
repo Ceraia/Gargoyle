@@ -1,4 +1,4 @@
-import { ContextMenuCommandBuilder } from 'discord.js';
+import { ContextMenuCommandBuilder, ApplicationCommandDataResolvable } from 'discord.js';
 import GargoyleSlashCommandBuilder from '../builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '../classes/gargoyleClient.js';
 
@@ -37,7 +37,7 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
     slashCommands.forEach(async (slashCommand) => {
         if (slashCommand.guilds.length <= 0) {
             client.logger.debug(`Registering slash command: ${slashCommand.name}`);
-            await client.application?.commands.create(slashCommand);
+            await client.application?.commands.create(slashCommand as ApplicationCommandDataResolvable);
         } else {
             client.logger.trace(`Slashcommand has guilds: ${slashCommand.guilds.join(',')}`);
 
@@ -47,7 +47,7 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
                 if (!guild) return client.logger.warning(`Cannot find guild ${guildId}`);
 
                 guild.commands
-                    .create(slashCommand)
+                    .create(slashCommand as ApplicationCommandDataResolvable)
                     .catch((err) => {
                         client.logger.error(`Failed to register slash command ${slashCommand?.name} in ${guildId}: ${err.stack}`);
                     })
