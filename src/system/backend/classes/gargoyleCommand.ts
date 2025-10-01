@@ -22,17 +22,7 @@ abstract class GargoyleCommand {
      * This will prevent the command from being registered in the bot.
      */
     public deprecated: boolean | null = null;
-    /**
-     * @deprecated
-     * In favor of using slashCommands instead to allow multiple slash commands in a file.
-     */
-    public slashCommand: GargoyleSlashCommandBuilder | null = null;
     public slashCommands: GargoyleSlashCommandBuilder[] = [];
-    /**
-     * @deprecated
-     * In favor of using slashCommands instead to allow multiple slash commands in a file.
-     */
-    public textCommand: GargoyleTextCommandBuilder | null = null;
     /**
      * @deprecated
      * Due to a recent mail exchange with Discord, textcommands are explicitly denied for intent approval.

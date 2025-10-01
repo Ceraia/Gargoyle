@@ -29,7 +29,7 @@ async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<
                         client.logger.info(`Command ${file} is deprecated and will not be registered.`);
                         continue;
                     }
-                    if (command.slashCommand || command.textCommand || command.slashCommands.length > 0 || command.textCommands.length > 0) {
+                    if (command.slashCommands.length > 0 || command.textCommands.length > 0) {
                         client.logger.debug(`Adding commands from ${file}`);
                         client.commands.push(command);
                     }

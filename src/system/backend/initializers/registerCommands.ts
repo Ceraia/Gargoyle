@@ -5,8 +5,6 @@ import GargoyleClient from '../classes/gargoyleClient.js';
 async function registerCommands(client: GargoyleClient): Promise<void> {
     const slashCommands: GargoyleSlashCommandBuilder[] = [];
     client.commands.forEach((command) => {
-        if (command.slashCommand) slashCommands.push(command.slashCommand);
-
         command.slashCommands.forEach((slashCommand) => {
             slashCommands.push(slashCommand);
         });

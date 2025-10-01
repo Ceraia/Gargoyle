@@ -9,12 +9,9 @@ export default async function executeWebRequest(client: GargoyleClient, request:
     }
 
     const command = client.commands.find((command) => {
-        return (
-            command.slashCommand?.name === commandName ||
-            command.slashCommands.find((slashcommand) => {
-                return slashcommand.name === commandName;
-            })
-        );
+        return command.slashCommands.find((slashcommand) => {
+            return slashcommand.name === commandName;
+        });
     });
 
     if (!command) {

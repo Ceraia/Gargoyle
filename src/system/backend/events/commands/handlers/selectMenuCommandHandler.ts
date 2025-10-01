@@ -12,11 +12,9 @@ export default class SelectCommandHandler extends GargoyleEvent {
 
         const command = client.commands.find((command) => {
             return (
-                command.slashCommand?.name === origin ||
                 command.slashCommands.find((slashCommand) => {
                     return slashCommand.name === origin;
                 }) ||
-                command.textCommand?.name === origin ||
                 command.textCommands.find((textCommand) => {
                     return textCommand.name === origin;
                 })
