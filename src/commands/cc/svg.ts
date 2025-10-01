@@ -31,113 +31,90 @@ export default class Ceraia extends GargoyleCommand {
     ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
-        if (interaction.commandName === 'svg') {
-            if (interaction.options.getSubcommand() === 'emoji') {
-                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-                const svgFile = interaction.options.getAttachment('svg');
-                const color = interaction.options.getString('color');
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-                if (!svgFile || !svgFile.contentType || !svgFile.contentType.startsWith('image/svg+xml')) {
-                    interaction.editReply({ content: 'Please provide a valid SVG file.' });
-                    return;
-                }
+        const svgFile = interaction.options.getAttachment('svg');
+        let color = interaction.options.getString('color');
+        const forceFill = interaction.options.getBoolean('forcefill');
+        const upload = interaction.options.getBoolean('upload');
 
-                if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
-                    interaction.editReply({ content: 'Color must be a valid hex code (e.g., #FF5733).' });
-                    return;
-                }
+        // Validate SVG file
+        if (!svgFile?.contentType?.startsWith('image/svg+xml')) {
+            await interaction.editReply({ content: 'Please provide a valid SVG file.' });
+            return;
+        }
 
-                try {
-                    client.logger.trace(`Generating emoji from SVG: ${svgFile.name}`);
-                    // Create a canvas to draw the SVG
-                    const canvas = createCanvas(256, 256);
-                    const ctx = canvas.getContext('2d');
+        if (color && !color.startsWith('#')) color = `#${color}`;
+        if (color && !/^#[0-9A-Fa-f]{6}$/.test(color)) {
+            await interaction.editReply({ content: 'Color must be a valid hex code (e.g., #FF5733).' });
+            return;
+        }
 
-                    // Load the SVG content
-                    const svgContent = svgFile.url;
-                    const fetchedSvg = await fetch(svgContent);
+        try {
+            client.logger.trace(`Generating emoji from SVG: ${svgFile.name}`);
 
-                    if (!fetchedSvg.ok) {
-                        await interaction.editReply({ content: 'Failed to fetch the SVG file.' });
-                        return;
-                    }
+            // Fetch SVG content
+            const response = await fetch(svgFile.url);
+            if (!response.ok) {
+                await interaction.editReply({ content: 'Failed to fetch the SVG file.' });
+                client.logger.error(`Failed to fetch SVG: ${response.statusText}`);
+                return;
+            }
+            let svgText = await response.text();
 
-                    client.logger.trace(`SVG file fetched successfully: ${svgFile.name}`);
+            // Ensure SVG has width/height
+            svgText = svgText.replace(/width="[^"]*"/g, 'width="1024"').replace(/height="[^"]*"/g, 'height="1024"');
+            if (!svgText.includes('width=') || !svgText.includes('height=')) {
+                svgText = svgText.replace(/<svg([^>]*)>/, '<svg$1 width="1024" height="1024">');
+            }
 
-                    let svgText = await fetchedSvg.text();
-
-                    // If a color is provided, modify the SVG content to use that color
-                    let modifiedSvgText = svgText;
-
-                    modifiedSvgText = modifiedSvgText.replace(/width="[^"]*"/g, 'width="1024"');
-                    modifiedSvgText = modifiedSvgText.replace(/height="[^"]*"/g, 'height="1024"');
-
-                    if (!modifiedSvgText.includes('width=') || !modifiedSvgText.includes('height=')) {
-                        modifiedSvgText = modifiedSvgText.replace(/<svg([^>]*)>/, '<svg$1 width="1024" height="1024">');
-                    }
-
-                    if (color) {
-                        // Replace fill attributes with the new color
-                        modifiedSvgText = modifiedSvgText.replace(/fill="[^"]*"/g, `fill="${color}"`);
-                        // Add fill attribute to svg element if it doesn't exist
-                        if (!modifiedSvgText.includes('fill=') && interaction.options.getBoolean('forcefill')) {
-                            modifiedSvgText = modifiedSvgText.replace(/<svg([^>]*)>/, `<svg$1 fill="${color}">`);
-                        }
-                    }
-
-                    const img = new Image();
-                    img.onload = async () => {
-                        client.logger.trace(`SVG image loaded successfully: ${svgFile.name}`);
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                        // Convert the canvas to a PNG buffer
-                        const buffer = canvas.toBuffer('image/png');
-                        client.logger.trace(`SVG image converted to PNG buffer: ${svgFile.name}`);
-
-                        if (
-                            interaction.options.getBoolean('upload') &&
-                            interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuildExpressions)
-                        ) {
-                            const emoji = await interaction.guild?.emojis.create({
-                                name: svgFile.name.split('.')[0].padEnd(2, '_'),
-                                attachment: buffer
-                            });
-
-                            if (emoji) {
-                                interaction.followUp({ content: `Emoji created: ${emoji.toString()}` });
-                            } else {
-                                interaction.followUp({ content: 'Failed to create emoji.' });
-                            }
-                            return;
-                        } else {
-                            // Send the emoji as a file attachment
-                            interaction.editReply({
-                                components: [
-                                    new ContainerBuilder()
-                                        .setAccentColor(0x1fad9a)
-                                        .addMediaGalleryComponents(
-                                            new MediaGalleryBuilder().addItems(
-                                                new MediaGalleryItemBuilder().setURL(`attachment://${svgFile.name.split('.')[0]}.png`)
-                                            )
-                                        )
-                                ],
-                                files: [
-                                    {
-                                        attachment: buffer,
-                                        name: `${svgFile.name.split('.')[0]}.png`
-                                    }
-                                ],
-                                flags: MessageFlags.IsComponentsV2
-                            });
-                        }
-                    };
-                    img.src = `data:image/svg+xml;base64,${Buffer.from(modifiedSvgText).toString('base64')}`;
-                } catch (error) {
-                    client.logger.error(`SVG Emoji Generation Error: ${error}`);
-                    interaction.editReply({ content: 'An error occurred while processing the SVG file.' });
+            // Apply color if provided
+            if (color) {
+                svgText = svgText.replace(/fill="[^"]*"/g, `fill="${color}"`);
+                if (!svgText.includes('fill=') && forceFill) {
+                    svgText = svgText.replace(/<svg([^>]*)>/, `<svg$1 fill="${color}">`);
                 }
             }
+
+            // Render SVG to PNG
+            const canvas = createCanvas(256, 256);
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = async () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const buffer = canvas.toBuffer('image/png');
+
+                // Upload as emoji if requested and permitted
+                if (upload && interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuildExpressions)) {
+                    const emojiName = svgFile.name.replace(/-/g, '').split('.')[0].padEnd(2, '_');
+                    const emoji = await interaction.guild?.emojis.create({ name: emojiName, attachment: buffer });
+                    await interaction.followUp({ content: emoji ? `Emoji created: ${emoji}` : 'Failed to create emoji.' });
+                    client.logger.error(`Failed to create emoji: ${emoji ? emoji.id : 'Unknown error'}`);
+                    return;
+                }
+
+                // Otherwise, send as file attachment
+                await interaction.editReply({
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0x1fad9a)
+                            .addMediaGalleryComponents(
+                                new MediaGalleryBuilder().addItems(
+                                    new MediaGalleryItemBuilder().setURL(`attachment://${svgFile.name.split('.')[0]}.png`)
+                                )
+                            )
+                    ],
+                    files: [{ attachment: buffer, name: `${svgFile.name.split('.')[0]}.png` }],
+                    flags: MessageFlags.IsComponentsV2
+                });
+            };
+
+            img.src = `data:image/svg+xml;base64,${Buffer.from(svgText).toString('base64')}`;
+        } catch (error) {
+            client.logger.error(`SVG Emoji Generation Error: ${error}`);
+            await interaction.editReply({ content: 'An error occurred while processing the SVG file.' });
         }
     }
 }
