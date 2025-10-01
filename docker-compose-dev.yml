@@ -11,6 +11,8 @@ services:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       PREFIX: ','
       MONGO_URI: ${MONGO_URI}
+      STEAM_API: ${STEAM_API}
+      SUGGESTION_CHANNEL_ID: ${SUGGESTION_CHANNEL_ID}
       DEBUG_LEVEL: 6
       LOG_TO_FILE: false
     ports:

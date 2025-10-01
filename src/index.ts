@@ -8,7 +8,7 @@ const main = async () => {
 
     try {
         await client.login(process.env.DISCORD_TOKEN);
-        client.logger.log('Logged in!');
+        client.logger.log(`Logged in as ${client.user?.displayName || 'unknown'}!`);
     } catch (error) {
         client.logger.error(error as string);
         await client.destroy();
