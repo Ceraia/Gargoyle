@@ -1,10 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 import GargoyleClient from '../classes/gargoyleClient.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
+import GargoyleModule from '../classes/gargoyleModule.js';
 import GargoyleEvent from '../classes/gargoyleEvent.js';
 
-async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<void> {
+async function loadModules(client: GargoyleClient, ...dirs: string[]): Promise<void> {
     for (const dir of dirs) {
         const files = await fs.readdir(path.join(__dirname, dir)).catch((err) => {
             client.logger.error(`Error reading directory: ${dir}`, err as string);
@@ -15,23 +15,23 @@ async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<
             const stat = await fs.lstat(path.join(__dirname, dir, file));
 
             if (stat.isDirectory()) {
-                client.logger.trace(`Loading commands from directory: ${file}`);
-                await loadCommands(client, path.join(dir, file));
+                client.logger.trace(`Loading modules from directory: ${file}`);
+                await loadModules(client, path.join(dir, file));
             } else if (file.endsWith('.ts') || file.endsWith('.js')) {
                 try {
-                    const { default: Command } = await import(path.join(__dirname, dir, file));
-                    const command: GargoyleCommand = new Command();
-                    if (!(command instanceof GargoyleCommand)) {
+                    const { default: Module } = await import(path.join(__dirname, dir, file));
+                    const command: GargoyleModule = new Module();
+                    if (!(command instanceof GargoyleModule)) {
                         client.logger.error(`File ${file} does not export a valid GargoyleCommand.`);
                         continue;
                     }
                     if (command.deprecated) {
-                        client.logger.info(`Command ${file} is deprecated and will not be registered.`);
+                        client.logger.info(`Module ${file} is deprecated and will not be registered.`);
                         continue;
                     }
                     if (command.slashCommands.length > 0 || command.textCommands.length > 0) {
                         client.logger.debug(`Adding commands from ${file}`);
-                        client.commands.push(command);
+                        client.modules.push(command);
                     }
                     command.events.forEach((event) => {
                         if (!(event instanceof GargoyleEvent)) {
@@ -40,19 +40,19 @@ async function loadCommands(client: GargoyleClient, ...dirs: string[]): Promise<
                         }
 
                         if (event.once) {
-                            client.logger.debug(`Registering command event as ${event.event} once: ${file}`);
+                            client.logger.debug(`Registering module event as ${event.event} once: ${file}`);
                             client.once(event.event, (...args) => event.execute(client, ...args));
                         } else {
-                            client.logger.debug(`Registering command event as ${event.event} on: ${file}`);
+                            client.logger.debug(`Registering module event as ${event.event} on: ${file}`);
                             client.on(event.event, (...args) => event.execute(client, ...args));
                         }
                     });
                 } catch (err) {
-                    client.logger.error(err as string, `Error registering command: ${file}`);
+                    client.logger.error(err as string, `Error registering module: ${file}`);
                 }
             }
         }
     }
 }
 
-export default loadCommands;
+export default loadModules;

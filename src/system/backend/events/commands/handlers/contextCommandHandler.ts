@@ -12,7 +12,7 @@ export default class ContextCommandHandler extends GargoyleEvent {
         if (!interaction.isContextMenuCommand()) return;
         if (interaction.user.bot) return;
 
-        const command = client.commands.find((command) =>
+        const command = client.modules.find((command) =>
             command.contextCommands?.find((contextCommand) => contextCommand.name === interaction.commandName)
         );
 

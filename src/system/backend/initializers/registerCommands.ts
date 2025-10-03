@@ -4,13 +4,13 @@ import GargoyleClient from '../classes/gargoyleClient.js';
 
 async function registerCommands(client: GargoyleClient): Promise<void> {
     const slashCommands: GargoyleSlashCommandBuilder[] = [];
-    client.commands.forEach((command) => {
+    client.modules.forEach((command) => {
         command.slashCommands.forEach((slashCommand) => {
             slashCommands.push(slashCommand);
         });
     });
     const contextCommands: ContextMenuCommandBuilder[] = [];
-    client.commands.forEach((command) => {
+    client.modules.forEach((command) => {
         command.contextCommands?.forEach((contextCommand) => {
             contextCommands.push(contextCommand);
         });

@@ -12,7 +12,7 @@ import {
     StringSelectMenuBuilder,
     UserSelectMenuBuilder
 } from 'discord.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
+import GargoyleModule from '../classes/gargoyleModule.js';
 
 /**
  * A custom string select menu builder that sets a custom ID based on the provided command and argument.
@@ -24,10 +24,10 @@ class GargoyleStringSelectMenuBuilder extends StringSelectMenuBuilder {
     /**
      * Creates an instance of GargoyleStringSelectMenuBuilder.
      *
-     * @param {GargoyleCommand} command - The command associated with this select menu.
+     * @param {GargoyleModule} command - The command associated with this select menu.
      * @param {string} argument - The argument to be included in the custom ID.
      */
-    constructor(command: GargoyleCommand, ...argument: string[]) {
+    constructor(command: GargoyleModule, ...argument: string[]) {
         super();
         const customId = `cmd-${
             command.slashCommands[0].name.toLowerCase() ?? command.textCommands[0].name.toLowerCase()
@@ -56,10 +56,10 @@ class GargoyleUserSelectMenuBuilder extends UserSelectMenuBuilder {
     /**
      * Creates an instance of GargoyleUserSelectMenuBuilder.
      *
-     * @param {GargoyleCommand} command - The command associated with this select menu.
+     * @param {GargoyleModule} command - The command associated with this select menu.
      * @param {string} argument - The argument to be included in the custom ID.
      */
-    constructor(command: GargoyleCommand, ...argument: string[]) {
+    constructor(command: GargoyleModule, ...argument: string[]) {
         super();
         const customId = `cmd-${
             command.slashCommands[0].name.toLowerCase() ?? command.textCommands[0].name.toLowerCase()
@@ -81,10 +81,10 @@ class GargoyleRoleSelectMenuBuilder extends RoleSelectMenuBuilder {
     /**
      * Creates an instance of GargoyleRoleSelectMenuBuilder.
      *
-     * @param {GargoyleCommand} command - The command associated with this select menu.
+     * @param {GargoyleModule} command - The command associated with this select menu.
      * @param {string} argument - The argument to be included in the custom ID.
      */
-    constructor(command: GargoyleCommand, ...argument: string[]) {
+    constructor(command: GargoyleModule, ...argument: string[]) {
         super();
         const customId = `cmd-${
             command.slashCommands[0].name.toLowerCase() ?? command.textCommands[0].name.toLowerCase()
@@ -106,10 +106,10 @@ class GargoyleMentionableSelectMenuBuilder extends MentionableSelectMenuBuilder 
     /**
      * Creates an instance of GargoyleMentionableSelectMenuBuilder.
      *
-     * @param {GargoyleCommand} command - The command associated with this select menu.
+     * @param {GargoyleModule} command - The command associated with this select menu.
      * @param {string} argument - The argument to be included in the custom ID.
      */
-    constructor(command: GargoyleCommand, ...argument: string[]) {
+    constructor(command: GargoyleModule, ...argument: string[]) {
         super();
         const customId = `cmd-${
             command.slashCommands[0].name.toLowerCase() ?? command.textCommands[0].name.toLowerCase()
@@ -131,10 +131,10 @@ class GargoyleChannelSelectMenuBuilder extends ChannelSelectMenuBuilder {
     /**
      * Creates an instance of GargoyleChannelSelectMenuBuilder.
      *
-     * @param {GargoyleCommand} command - The command associated with this select menu.
+     * @param {GargoyleModule} command - The command associated with this select menu.
      * @param {string} argument - The argument to be included in the custom ID.
      */
-    constructor(command: GargoyleCommand, ...argument: string[]) {
+    constructor(command: GargoyleModule, ...argument: string[]) {
         super();
         const customId = `cmd-${
             command.slashCommands[0].name.toLowerCase() ?? command.textCommands[0].name.toLowerCase()

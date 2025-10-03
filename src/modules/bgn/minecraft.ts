@@ -4,7 +4,7 @@ import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/ga
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import { createBanner, FontWeight } from '@src/system/backend/tools/banners.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import { createCanvas } from 'canvas';
@@ -40,7 +40,7 @@ import { model, Schema } from 'mongoose';
 
 const minecraftBgnGuild = '1039152052644880435';
 
-export default class Ceraia extends GargoyleCommand {
+export default class Ceraia extends GargoyleModule {
     public override category: string = 'bgn';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

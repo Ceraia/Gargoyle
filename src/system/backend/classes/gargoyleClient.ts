@@ -2,8 +2,8 @@ import { Client, ClientOptions } from 'discord.js';
 import Database from '@src/system/backend/database/database.js';
 import { Logger } from '../tools/logger.js';
 import registerEvents from '../initializers/registerEvents.js';
-import GargoyleCommand from './gargoyleCommand.js';
-import loadCommands from '../initializers/loadCommands.js';
+import GargoyleModule from './gargoyleModule.js';
+import loadModules from '../initializers/loadModukes.js';
 import executeWebRequest from '../tools/web.js';
 /**
  * Represents a client for the Gargoyle system, extending the base Client class.
@@ -29,10 +29,10 @@ class GargoyleClient extends Client {
      */
     prefix: string;
     /**
-     * The list of commands registered with the client.
-     * @type {Array<GargoyleCommand>}
+     * The list of modules registered with the client.
+     * @type {Array<GargoyleModule>}
      */
-    commands: Array<GargoyleCommand>;
+    modules: Array<GargoyleModule>;
 
     /**
      * Creates an instance of GargoyleClient.
@@ -44,7 +44,7 @@ class GargoyleClient extends Client {
         super(options);
         this.startTime = new Date();
         this.prefix = process.env.PREFIX ?? ',';
-        this.commands = [];
+        this.modules = [];
     }
 
     /**
@@ -82,11 +82,11 @@ class GargoyleClient extends Client {
      * @returns {Promise<void>}
      */
     public async loadCommands() {
-        this.logger.log('Loading system commands...');
-        await loadCommands(this, '../../commands');
-        this.logger.log('Loading commands...');
-        await loadCommands(this, '../../../commands');
-        this.logger.log(`Loaded ${this.commands.length} commands!`);
+        this.logger.log('Loading system modules...');
+        await loadModules(this, '../../modules');
+        this.logger.log('Loading modules...');
+        await loadModules(this, '../../../modules');
+        this.logger.log(`Loaded ${this.modules.length} modules!`);
     }
 
     /**

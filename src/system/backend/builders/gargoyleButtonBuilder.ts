@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle } from 'discord.js';
-import GargoyleCommand from '../classes/gargoyleCommand.js';
+import GargoyleModule from '../classes/gargoyleModule.js';
 
 /**
  * A builder class for creating Gargoyle buttons with specific commands and arguments.
@@ -13,10 +13,10 @@ class GargoyleButtonBuilder extends ButtonBuilder {
      * Creates an instance of GargoyleButtonBuilder.
      *
      * @constructor
-     * @param {GargoyleCommand} command - The command associated with the button.
+     * @param {GargoyleModule} command - The command associated with the button.
      * @param {string} argument - The argument to be used for the button label and custom ID.
      */
-    constructor(command: GargoyleCommand, ...argument: string[]) {
+    constructor(command: GargoyleModule, ...argument: string[]) {
         super();
         if (this.data.style !== ButtonStyle.Link) {
             const customId = `cmd-${

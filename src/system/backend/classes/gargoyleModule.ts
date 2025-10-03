@@ -15,11 +15,11 @@ import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js'
 import GargoyleEvent from './gargoyleEvent.js';
 import GargoyleSlashCommandBuilder from '../builders/gargoyleSlashCommandBuilder.js';
 
-abstract class GargoyleCommand {
+abstract class GargoyleModule {
     public abstract category: string;
     /**
-     * Mark a command as deprecated.
-     * This will prevent the command from being registered in the bot.
+     * Mark a module as deprecated.
+     * This will prevent the module from being registered in the bot.
      */
     public deprecated: boolean | null = null;
     public slashCommands: GargoyleSlashCommandBuilder[] = [];
@@ -73,4 +73,4 @@ abstract class GargoyleCommand {
     }
 }
 
-export default GargoyleCommand;
+export default GargoyleModule;

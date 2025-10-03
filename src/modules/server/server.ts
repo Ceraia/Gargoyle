@@ -2,7 +2,7 @@ import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
 import { GargoyleRoleSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import {
@@ -30,7 +30,7 @@ import {
     ThumbnailBuilder
 } from 'discord.js';
 
-export default class Server extends GargoyleCommand {
+export default class Server extends GargoyleModule {
     public override category: string = 'server';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

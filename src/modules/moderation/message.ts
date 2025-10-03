@@ -1,6 +1,6 @@
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import client from '@src/system/botClient.js';
 import {
     ApplicationCommandType,
@@ -14,7 +14,7 @@ import {
     TextChannel
 } from 'discord.js';
 
-export default class Moderation extends GargoyleCommand {
+export default class Moderation extends GargoyleModule {
     public override category: string = 'moderation';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

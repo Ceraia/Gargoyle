@@ -1,5 +1,5 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
-import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
@@ -36,7 +36,7 @@ import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js'
 import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 
-export default class Brads extends GargoyleCommand {
+export default class Brads extends GargoyleModule {
     public override category: string = 'bgn';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

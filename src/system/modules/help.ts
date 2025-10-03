@@ -1,6 +1,6 @@
 import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
@@ -32,7 +32,7 @@ import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashComman
 import GargoyleModalBuilder from '../backend/builders/gargoyleModalBuilder.js';
 import GargoyleButtonBuilder from '../backend/builders/gargoyleButtonBuilder.js';
 
-export default class Help extends GargoyleCommand {
+export default class Help extends GargoyleModule {
     override category: string = 'base';
     override slashCommands = [
         new GargoyleSlashCommandBuilder().setName('help').setDescription('Replies with bot information'),
@@ -256,7 +256,7 @@ export default class Help extends GargoyleCommand {
         container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
 
         let commandText = ``;
-        for (const command of client.commands) {
+        for (const command of client.modules) {
             for (const slashCommand of command.slashCommands) {
                 if (slashCommand.private) continue;
 
@@ -285,7 +285,7 @@ export default class Help extends GargoyleCommand {
         container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
 
         let commandText = ``;
-        for (const command of client.commands) {
+        for (const command of client.modules) {
             for (const textCommand of command.textCommands) {
                 if (textCommand.private) continue;
 

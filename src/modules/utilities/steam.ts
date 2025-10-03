@@ -1,5 +1,5 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
-import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleSlashCommandBuilder from '@builders/gargoyleSlashCommandBuilder.js';
 import {
     ChatInputCommandInteraction,
@@ -13,7 +13,7 @@ import {
 import SteamAPI from 'steamapi';
 import { GargoyleURLButtonBuilder } from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 
-export default class Steam extends GargoyleCommand {
+export default class Steam extends GargoyleModule {
     public override category: string = 'utilities';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

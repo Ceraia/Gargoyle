@@ -1,5 +1,5 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
-import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
 import GargoyleEmbedBuilder from '@builders/gargoyleEmbedBuilder.js';
 import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
@@ -25,7 +25,7 @@ import { getUserVoiceActivity } from '@src/events/voice/voiceActivity.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import client from '@src/system/botClient.js';
 
-export default class Entropy extends GargoyleCommand {
+export default class Entropy extends GargoyleModule {
     public override category: string = 'entropy';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
