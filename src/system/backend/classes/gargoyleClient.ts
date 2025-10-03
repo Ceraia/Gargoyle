@@ -3,7 +3,7 @@ import Database from '@src/system/backend/database/database.js';
 import { Logger } from '../tools/logger.js';
 import registerEvents from '../initializers/registerEvents.js';
 import GargoyleModule from './gargoyleModule.js';
-import loadModules from '../initializers/loadModukes.js';
+import loadModules from '../initializers/loadModules.js';
 import executeWebRequest from '../tools/web.js';
 /**
  * Represents a client for the Gargoyle system, extending the base Client class.
