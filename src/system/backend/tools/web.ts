@@ -8,7 +8,7 @@ export default async function executeWebRequest(client: GargoyleClient, request:
         return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
     }
 
-    const command = client.commands.find((command) => {
+    const command = client.modules.find((command) => {
         return command.slashCommands.find((slashcommand) => {
             return slashcommand.name === commandName;
         });

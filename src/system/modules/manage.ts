@@ -1,6 +1,6 @@
 import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import {
     ChatInputCommandInteraction,
     ContainerBuilder,
@@ -13,7 +13,7 @@ import {
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashCommandBuilder.js';
 
-export default class Manage extends GargoyleCommand {
+export default class Manage extends GargoyleModule {
     override category: string = 'base';
     public override slashCommands: GargoyleSlashCommandBuilder[] = [
         new GargoyleSlashCommandBuilder()

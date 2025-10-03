@@ -3,7 +3,7 @@ import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuil
 import { GargoyleStringSelectMenuBuilder } from '@src/system/backend/builders/gargoyleSelectMenuBuilders.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { createBanner, FontWeight } from '@src/system/backend/tools/banners.js';
 import client from '@src/system/botClient.js';
@@ -45,7 +45,7 @@ import path from 'node:path';
 
 const ceraiaGuild = '1394893354763817040'; // Ceraia guild ID
 
-export default class Ceraia extends GargoyleCommand {
+export default class Ceraia extends GargoyleModule {
     public override category: string = 'ceraia';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

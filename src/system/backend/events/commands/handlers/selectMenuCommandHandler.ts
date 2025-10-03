@@ -10,7 +10,7 @@ export default class SelectCommandHandler extends GargoyleEvent {
 
         const origin = interaction.customId.toLowerCase().split('-')[1];
 
-        const command = client.commands.find((command) => {
+        const command = client.modules.find((command) => {
             return (
                 command.slashCommands.find((slashCommand) => {
                     return slashCommand.name === origin;

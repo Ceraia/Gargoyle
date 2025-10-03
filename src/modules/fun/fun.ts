@@ -1,5 +1,5 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
-import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleContainerBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import { playAudio } from '@src/system/backend/tools/voice.js';
@@ -13,7 +13,7 @@ import {
     VoiceChannel
 } from 'discord.js';
 
-export default class Fun extends GargoyleCommand {
+export default class Fun extends GargoyleModule {
     public override category: string = 'fun';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

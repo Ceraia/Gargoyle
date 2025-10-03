@@ -1,6 +1,6 @@
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import { createCanvas, Image } from 'canvas';
 import {
     ChatInputCommandInteraction,
@@ -11,7 +11,7 @@ import {
     PermissionFlagsBits
 } from 'discord.js';
 
-export default class Ceraia extends GargoyleCommand {
+export default class Ceraia extends GargoyleModule {
     public override category: string = 'ceraia';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

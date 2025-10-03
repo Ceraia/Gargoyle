@@ -3,7 +3,7 @@ import GargoyleEmbedBuilder from '@src/system/backend/builders/gargoyleEmbedBuil
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleCommand from '@src/system/backend/classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import client from '@src/system/botClient.js';
@@ -23,7 +23,7 @@ import {
     TextChannel
 } from 'discord.js';
 
-export default class Crustacean extends GargoyleCommand {
+export default class Crustacean extends GargoyleModule {
     public override category: string = 'server';
     public override deprecated: boolean = true;
     public override slashCommands = [

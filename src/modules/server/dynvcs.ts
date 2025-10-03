@@ -1,6 +1,6 @@
 import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@classes/gargoyleClient.js';
-import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
 import GargoyleModalBuilder from '@builders/gargoyleModalBuilder.js';
 import { GargoyleUserSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
@@ -37,7 +37,7 @@ import {
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 
-export default class VoicechatCommand extends GargoyleCommand {
+export default class VoicechatCommand extends GargoyleModule {
     public override category: string = 'server';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()

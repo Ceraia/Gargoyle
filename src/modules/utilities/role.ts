@@ -1,5 +1,5 @@
 import GargoyleClient from '@classes/gargoyleClient.js';
-import GargoyleCommand from '@classes/gargoyleCommand.js';
+import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
 import { GargoyleRoleSelectMenuBuilder } from '@builders/gargoyleSelectMenuBuilders.js';
 import { sendAsServer } from '@src/system/backend/tools/server.js';
@@ -27,7 +27,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import client from '@src/system/botClient.js';
 
-export default class RoleCommand extends GargoyleCommand {
+export default class RoleCommand extends GargoyleModule {
     public override category: string = 'utilities';
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
