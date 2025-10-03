@@ -1,9 +1,9 @@
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
-import { ActivityType } from 'discord.js';
+import { ActivityType, Events } from 'discord.js';
 
 export default class Ready extends GargoyleEvent {
-    public event = 'ready' as const;
+    public event = Events.ClientReady as const;
     override once = true;
 
     public execute(client: GargoyleClient): void {
