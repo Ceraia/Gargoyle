@@ -1,9 +1,10 @@
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import registerCommands from '@src/system/backend/initializers/registerModules.js';
+import { Events } from 'discord.js';
 
 export default class Ready extends GargoyleEvent {
-    public event = 'ready' as const;
+    public event = Events.ClientReady as const;
 
     public async execute(client: GargoyleClient): Promise<void> {
         client.logger.log('Beginning command registration...');
