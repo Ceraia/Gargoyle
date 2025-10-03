@@ -2,7 +2,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import GargoyleClient from '../classes/gargoyleClient.js';
 import GargoyleModule from '../classes/gargoyleModule.js';
-import GargoyleEvent from '../classes/gargoyleEvent.js';
 
 async function loadModules(client: GargoyleClient, ...dirs: string[]): Promise<void> {
     for (const dir of dirs) {
@@ -20,33 +19,19 @@ async function loadModules(client: GargoyleClient, ...dirs: string[]): Promise<v
             } else if (file.endsWith('.ts') || file.endsWith('.js')) {
                 try {
                     const { default: Module } = await import(path.join(__dirname, dir, file));
-                    const command: GargoyleModule = new Module();
-                    if (!(command instanceof GargoyleModule)) {
+                    const module: GargoyleModule = new Module();
+                    if (!(module instanceof GargoyleModule)) {
                         client.logger.error(`File ${file} does not export a valid GargoyleCommand.`);
                         continue;
                     }
-                    if (command.deprecated) {
+                    if (module.deprecated) {
                         client.logger.info(`Module ${file} is deprecated and will not be registered.`);
                         continue;
                     }
-                    if (command.slashCommands.length > 0 || command.textCommands.length > 0) {
+                    if (module.slashCommands.length > 0 || module.textCommands.length > 0) {
                         client.logger.debug(`Adding commands from ${file}`);
-                        client.modules.push(command);
+                        client.modules.push(module);
                     }
-                    command.events.forEach((event) => {
-                        if (!(event instanceof GargoyleEvent)) {
-                            client.logger.error(`Event in ${file} is not an instance of GargoyleEvent.`);
-                            return;
-                        }
-
-                        if (event.once) {
-                            client.logger.debug(`Registering module event as ${event.event} once: ${file}`);
-                            client.once(event.event, (...args) => event.execute(client, ...args));
-                        } else {
-                            client.logger.debug(`Registering module event as ${event.event} on: ${file}`);
-                            client.on(event.event, (...args) => event.execute(client, ...args));
-                        }
-                    });
                 } catch (err) {
                     client.logger.error(err as string, `Error registering module: ${file}`);
                 }

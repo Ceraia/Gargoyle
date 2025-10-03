@@ -1,17 +1,30 @@
 import { ContextMenuCommandBuilder, ApplicationCommandDataResolvable } from 'discord.js';
 import GargoyleSlashCommandBuilder from '../builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '../classes/gargoyleClient.js';
+import GargoyleEvent from '../classes/gargoyleEvent.js';
 
 async function registerCommands(client: GargoyleClient): Promise<void> {
     const slashCommands: GargoyleSlashCommandBuilder[] = [];
-    client.modules.forEach((command) => {
-        command.slashCommands.forEach((slashCommand) => {
+    const contextCommands: ContextMenuCommandBuilder[] = [];
+    client.modules.forEach((module) => {
+        module.events.forEach((event) => {
+            if (!(event instanceof GargoyleEvent)) {
+                client.logger.error(`Event is not an instance of GargoyleEvent.`);
+                return;
+            }
+
+            if (event.once) {
+                client.logger.debug(`Registering module event as ${event.event} once.`);
+                client.once(event.event, (...args) => event.execute(client, ...args));
+            } else {
+                client.logger.debug(`Registering module event as ${event.event} on.`);
+                client.on(event.event, (...args) => event.execute(client, ...args));
+            }
+        });
+        module.slashCommands.forEach((slashCommand) => {
             slashCommands.push(slashCommand);
         });
-    });
-    const contextCommands: ContextMenuCommandBuilder[] = [];
-    client.modules.forEach((command) => {
-        command.contextCommands?.forEach((contextCommand) => {
+        module.contextCommands?.forEach((contextCommand) => {
             contextCommands.push(contextCommand);
         });
     });
