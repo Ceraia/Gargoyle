@@ -28,10 +28,8 @@ async function loadModules(client: GargoyleClient, ...dirs: string[]): Promise<v
                         client.logger.info(`Module ${file} is deprecated and will not be registered.`);
                         continue;
                     }
-                    if (module.slashCommands.length > 0 || module.textCommands.length > 0) {
-                        client.logger.debug(`Adding commands from ${file}`);
-                        client.modules.push(module);
-                    }
+
+                    client.modules.push(module);
                 } catch (err) {
                     client.logger.error(err as string, `Error registering module: ${file}`);
                 }
