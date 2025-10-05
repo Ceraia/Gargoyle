@@ -1,7 +1,26 @@
+import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
+import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
-import { ChannelType, ChatInputCommandInteraction } from 'discord.js';
+import { sendAsServer } from '@src/system/backend/tools/server.js';
+import {
+    ActionRowBuilder,
+    ButtonStyle,
+    ChannelType,
+    ChatInputCommandInteraction,
+    ContainerBuilder,
+    MessageCreateOptions,
+    MessageFlags,
+    ModalActionRowComponentBuilder,
+    ModalSubmitInteraction,
+    SectionBuilder,
+    TextChannel,
+    TextDisplayBuilder,
+    TextInputBuilder,
+    TextInputStyle
+} from 'discord.js';
+import { model, Schema } from 'mongoose';
 
 export default class Giveaway extends GargoyleModule {
     public override category: string = 'fun';
@@ -28,7 +47,16 @@ export default class Giveaway extends GargoyleModule {
     ];
     public override events = [];
 
-    private giveawaySetups: Map<string, { prize: string; duration: number; winners: number; channelId: string; endTime: number }> = new Map();
+    private giveawaySetups: Map<
+        string,
+        {
+            duration: number;
+            winners: number;
+            channelId: string;
+            endTime: number;
+            prizeMessage: string | null;
+        }
+    > = new Map();
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'giveaway') {
@@ -37,11 +65,10 @@ export default class Giveaway extends GargoyleModule {
                 return;
             }
 
-            const prize = interaction.options.getString('prize', true);
             const duration = interaction.options.getString('duration', true);
             const winners = interaction.options.getInteger('winners') || 1;
             const channel = interaction.options.getChannel('channel') || interaction.channel;
-            if (!prize || !duration || !channel || (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement)) {
+            if (!duration || !channel || (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement)) {
                 await interaction.reply({
                     content:
                         'Invalid giveaway setup. Please provide all required fields, or go to a channel that supports giveaways. (text or announcement channel)',
@@ -78,7 +105,159 @@ export default class Giveaway extends GargoyleModule {
                 return;
             }
 
-            await interaction.reply({ content: 'This command is not yet implemented.', ephemeral: true });
+            const endTime = Date.now() + durationMs;
+
+            this.giveawaySetups.set(interaction.user.id, {
+                duration: durationMs,
+                winners: winners,
+                channelId: channel.id,
+                endTime: endTime,
+                prizeMessage: null
+            });
+
+            await interaction.showModal(
+                new GargoyleModalBuilder(this, 'setup')
+                    .setTitle('Giveaway Setup')
+                    .addComponents(
+                        new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('body')
+                                .setLabel('Prize Message')
+                                .setPlaceholder('The prize message that will be shown in the giveaway')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                                .setMaxLength(1500)
+                        )
+                    )
+            );
+            return;
         }
     }
+
+    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'setup') {
+            const setup = this.giveawaySetups.get(interaction.user.id);
+            if (!setup) {
+                interaction.reply({ content: 'No giveaway setup found. Please run the command again.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const prizeMessage: string | null = interaction.fields.getTextInputValue('body') || null;
+            setup.prizeMessage = prizeMessage;
+
+            const giveaway = new databaseGiveaway({
+                guildId: interaction.guildId,
+                channelId: setup.channelId,
+                messageId: 'temp', // Will be updated later
+                endTime: new Date(setup.endTime),
+                prize: setup.prizeMessage || 'No prize specified'
+            });
+
+            await giveaway.save().catch(async (err: Error) => {
+                client.logger.error(`Failed to save giveaway to database: ${err.stack}`);
+                await interaction.reply({
+                    content: 'Failed to save giveaway to database. Please try again later.',
+                    flags: MessageFlags.Ephemeral
+                });
+                this.giveawaySetups.delete(interaction.user.id);
+                return;
+            });
+
+            this.giveawaySetups.delete(interaction.user.id);
+
+            const giveawayMessage = this.giveawayMessage(interaction.user.id);
+            const message = await sendAsServer(giveawayMessage, client.channels.cache.get(setup.channelId) as TextChannel);
+
+            if (!message) {
+                await interaction.reply({ content: 'Failed to send giveaway message.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            giveaway.messageId = message.id;
+            await giveaway.save().catch((err: Error) => {
+                client.logger.error(`Failed to update giveaway message ID in database: ${err.stack}`);
+                message.delete().catch(() => {});
+            });
+
+            await interaction.reply({ content: `Giveaway started in <#${setup.channelId}>!`, flags: MessageFlags.Ephemeral });
+            this.giveawaySetups.delete(interaction.user.id);
+            return;
+        }
+    }
+
+    private giveawayMessage(userId: string, messageId?: string): MessageCreateOptions {
+        let setup = this.giveawaySetups.get(userId);
+        if (!setup) {
+            databaseGiveaway
+                .findOne({ messageId: messageId })
+                .then((doc) => {
+                    if (doc) {
+                        setup = {
+                            duration: doc.endTime.getTime() - Date.now(),
+                            winners: 1, // Winners are not stored in DB, default to 1
+                            channelId: doc.channelId,
+                            endTime: doc.endTime.getTime(),
+                            prizeMessage: doc.prize
+                        };
+                    }
+                })
+                .catch(() => {});
+
+            if (!setup) {
+                throw new Error('No giveaway setup found for user or message ID.');
+            }
+        }
+
+        return {
+            components: [
+                new ContainerBuilder().addSectionComponents(
+                    new SectionBuilder()
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'enter').setEmoji(this.giveawayEmojis.bookmarks).setStyle(ButtonStyle.Secondary)
+                        )
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `# ${this.giveawayEmojis.confetti} **GIVEAWAY** ${this.giveawayEmojis.confetti}` +
+                                    `\n-# **Ends in:** <t:${Math.floor(setup.endTime / 1000)}:R> &` +
+                                    `**Hosted by:** <@${userId}>` +
+                                    (setup.prizeMessage ? `\n\n${setup.prizeMessage}` : '')
+                            )
+                        )
+                )
+            ],
+            flags: [MessageFlags.IsComponentsV2]
+        };
+    }
+
+    private giveawayEmojis = {
+        confetti: `<:confetti:1424363941768986624>`,
+        bookmarks: `<:bookmarks:1424365082112163852>`
+    };
 }
+
+const giveawaySchema = new Schema({
+    guildId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    channelId: {
+        type: String,
+        required: true
+    },
+    messageId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    endTime: {
+        type: Date,
+        required: true
+    },
+    prize: {
+        type: String,
+        required: true
+    }
+});
+
+const databaseGiveaway = model('Giveaways', giveawaySchema);
