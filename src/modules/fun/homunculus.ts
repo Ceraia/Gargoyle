@@ -64,7 +64,7 @@ class HomunculusMessageInteraction extends GargoyleEvent {
             }
         }
 
-        if (message.mentions.has(client.user!.id)) {
+        if (message.mentions.has(client.user!.id) && message.content.toLowerCase().includes(client.user!.id)) {
             await (message.channel as TextChannel).sendTyping();
             const response = await this.ollama.chat({
                 model: process.env.OLLAMA_MODEL!,
