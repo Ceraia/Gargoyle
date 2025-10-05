@@ -8,26 +8,22 @@ export default class Ready extends GargoyleEvent {
 
     public execute(client: GargoyleClient): void {
         setInterval(() => {
-            let status = 'custom';
-            let state = '🌺 Ceraia (dev)';
-            let type = ActivityType.Watching;
-            if (process.env.ENVIRONMENT === 'prod') state = '🌺 Ceraia <3';
+            let state = `🌺 Ceraia ${process.env.ENVIRONMENT === 'prod' ? '' : '(dev)'}`;
 
             const today = new Date();
             if (today.getMonth() === 9 && today.getDate() === 5) {
                 state = '🎉 Happy birthday Axodouble!';
-                type = ActivityType.Custom;
             }
             if (today.getMonth() === 11 && today.getDate() === 25) {
-                status = '🎄 Merry Christmas!';
+                state = '🎄 Merry Christmas!';
             }
             if (today.getMonth() === 0 && today.getDate() === 1) {
                 state = '🎉 Happy New Year!';
             }
 
             client.user?.setActivity({
-                name: status,
-                type: type,
+                name: 'custom',
+                type: ActivityType.Custom,
                 state: state
             });
         }, 30000);
