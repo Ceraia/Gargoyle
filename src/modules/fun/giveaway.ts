@@ -12,7 +12,6 @@ import {
     ButtonStyle,
     ChannelType,
     ChatInputCommandInteraction,
-    ClientEvents,
     ContainerBuilder,
     Events,
     Message,
@@ -269,7 +268,7 @@ export default class Giveaway extends GargoyleModule {
                                 `# ${giveawayEmojis.confetti} **${giveaway.winners > 1 ? `${giveaway.winners}x GIVEAWAY` : `GIVEAWAY`}** ${giveawayEmojis.confetti}` +
                                     `\n**Hosted by:** <@${userId}>` +
                                     (giveaway.prizeMessage ? `\n\n${giveaway.prizeMessage}` : '') +
-                                    `\n-# **${giveaway.entries.length} Entries | Ends in:** <t:${Math.floor(giveaway.endTime / 1000)}:R>`
+                                    `\n-# **${giveaway.entries.length} Entries | Ends ** <t:${Math.floor(giveaway.endTime / 1000)}:R>`
                             )
                         )
                 )
@@ -291,7 +290,7 @@ class GiveawayDaemon extends GargoyleEvent {
             await endCurrentGiveaways(client).catch((err: Error) => {
                 client.logger.error(`Failed to end current giveaways: ${err.stack}`);
             });
-        }, 15 * 1000);
+        }, 30 * 1000);
     }
 }
 
@@ -348,13 +347,11 @@ async function endCurrentGiveaways(client: GargoyleClient) {
         await editAsServer(
             {
                 components: [
-                    new GargoyleContainerBuilder('Giveaway ended').addSectionComponents(
-                        new SectionBuilder().addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(
-                                `# ${giveawayEmojis.confetti} **GIVEAWAY ENDED** ${giveawayEmojis.confetti}` +
-                                    (event.prize ? `\n\n**Prize:** ${event.prize}` : '') +
-                                    `\n-# **Winners (${winners.length}/${event.winners}):** ${winners.map((w) => `<@${w}>`).join(', ')}`
-                            )
+                    new GargoyleContainerBuilder().addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `# ${giveawayEmojis.confetti} **GIVEAWAY ENDED** ${giveawayEmojis.confetti}` +
+                                `\n**Prize:** \n${event.prize}` +
+                                `\n-# **Winners:** ${winners.map((w) => `<@${w}>`).join(', ')}`
                         )
                     )
                 ],
