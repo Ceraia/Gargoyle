@@ -15,6 +15,7 @@ import {
     ClientEvents,
     ContainerBuilder,
     Events,
+    Message,
     MessageCreateOptions,
     MessageFlags,
     ModalActionRowComponentBuilder,
@@ -164,11 +165,8 @@ export default class Giveaway extends GargoyleModule {
                     content: 'Failed to save giveaway to database. Please try again later.',
                     flags: MessageFlags.Ephemeral
                 });
-                this.giveawaySetups.delete(interaction.user.id);
                 return;
             });
-
-            this.giveawaySetups.delete(interaction.user.id);
 
             const giveawayMessage = await this.giveawayMessage(interaction.user.id);
             const message = await sendAsServer(giveawayMessage, client.channels.cache.get(setup.channelId) as TextChannel);
@@ -269,7 +267,7 @@ export default class Giveaway extends GargoyleModule {
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
                                 `# ${giveawayEmojis.confetti} **${giveaway.winners > 1 ? `${giveaway.winners}x GIVEAWAY` : `GIVEAWAY`}** ${giveawayEmojis.confetti}` +
-                                    `**Hosted by:** <@${userId}>` +
+                                    `\n**Hosted by:** <@${userId}>` +
                                     (giveaway.prizeMessage ? `\n\n${giveaway.prizeMessage}` : '') +
                                     `\n-# **${giveaway.entries.length} Entries | Ends in:** <t:${Math.floor(giveaway.endTime / 1000)}:R>`
                             )
@@ -284,13 +282,13 @@ export default class Giveaway extends GargoyleModule {
 }
 
 class GiveawayDaemon extends GargoyleEvent {
-    public override event = Events.ClientReady as const;
+    public override event = Events.MessageCreate as const;
     public override once = true;
 
-    public override async execute(client: GargoyleClient, ..._args: ClientEvents[typeof Events.ClientReady]): Promise<void> {
-        setInterval(() => {
+    public override async execute(client: GargoyleClient, _message: Message): Promise<void> {
+        setInterval(async () => {
             if (client.db === null) return;
-            endCurrentGiveaways(client).catch((err: Error) => {
+            await endCurrentGiveaways(client).catch((err: Error) => {
                 client.logger.error(`Failed to end current giveaways: ${err.stack}`);
             });
         }, 15 * 1000);
@@ -303,6 +301,7 @@ const giveawayEmojis = {
 };
 
 async function endCurrentGiveaways(client: GargoyleClient) {
+    client.logger.trace('Checking for finished giveaways...');
     const now = Date.now();
     const finishedEvents = await databaseGiveaway.find({ endTime: { $lte: new Date(now) } });
     if (finishedEvents.length === 0) return;
@@ -376,8 +375,7 @@ async function endCurrentGiveaways(client: GargoyleClient) {
 const giveawaySchema = new Schema({
     guildId: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     channelId: {
         type: String,
@@ -385,8 +383,7 @@ const giveawaySchema = new Schema({
     },
     messageId: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     endTime: {
         type: Date,
