@@ -50,7 +50,6 @@ export default class Giveaway extends GargoyleModule {
     private giveawaySetups: Map<
         string,
         {
-            duration: number;
             winners: number;
             channelId: string;
             endTime: number;
@@ -108,7 +107,6 @@ export default class Giveaway extends GargoyleModule {
             const endTime = Date.now() + durationMs;
 
             this.giveawaySetups.set(interaction.user.id, {
-                duration: durationMs,
                 winners: winners,
                 channelId: channel.id,
                 endTime: endTime,
@@ -165,7 +163,7 @@ export default class Giveaway extends GargoyleModule {
 
             this.giveawaySetups.delete(interaction.user.id);
 
-            const giveawayMessage = this.giveawayMessage(interaction.user.id);
+            const giveawayMessage = await this.giveawayMessage(interaction.user.id);
             const message = await sendAsServer(giveawayMessage, client.channels.cache.get(setup.channelId) as TextChannel);
 
             if (!message) {
@@ -185,23 +183,22 @@ export default class Giveaway extends GargoyleModule {
         }
     }
 
-    private giveawayMessage(userId: string, messageId?: string): MessageCreateOptions {
+    private async giveawayMessage(userId: string, messageId?: string): Promise<MessageCreateOptions> {
         let setup = this.giveawaySetups.get(userId);
+
         if (!setup) {
-            databaseGiveaway
-                .findOne({ messageId: messageId })
-                .then((doc) => {
-                    if (doc) {
-                        setup = {
-                            duration: doc.endTime.getTime() - Date.now(),
-                            winners: 1, // Winners are not stored in DB, default to 1
-                            channelId: doc.channelId,
-                            endTime: doc.endTime.getTime(),
-                            prizeMessage: doc.prize
-                        };
-                    }
-                })
-                .catch(() => {});
+            if (!messageId) throw new Error('No giveaway setup found for user ID.');
+
+            let giveawayEntry = await databaseGiveaway.findOne({ messageId: messageId });
+
+            if (giveawayEntry) {
+                setup = {
+                    winners: giveawayEntry.winners,
+                    channelId: giveawayEntry.channelId,
+                    endTime: giveawayEntry.endTime.getTime(),
+                    prizeMessage: giveawayEntry.prize
+                };
+            }
 
             if (!setup) {
                 throw new Error('No giveaway setup found for user or message ID.');
@@ -217,9 +214,8 @@ export default class Giveaway extends GargoyleModule {
                         )
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
-                                `# ${this.giveawayEmojis.confetti} **GIVEAWAY** ${this.giveawayEmojis.confetti}` +
-                                    `\n-# **Ends in:** <t:${Math.floor(setup.endTime / 1000)}:R> &` +
-                                    `**Hosted by:** <@${userId}>` +
+                                `# ${this.giveawayEmojis.confetti} **${setup.winners > 1 ? `${setup.winners}x GIVEAWAY` : `GIVEAWAY`}** ${this.giveawayEmojis.confetti}` +
+                                    `\n-# **Ends in:** <t:${Math.floor(setup.endTime / 1000)}:R> & **Hosted by:** <@${userId}>` +
                                     (setup.prizeMessage ? `\n\n${setup.prizeMessage}` : '')
                             )
                         )
@@ -257,6 +253,10 @@ const giveawaySchema = new Schema({
     prize: {
         type: String,
         required: true
+    },
+    winners: {
+        type: Number,
+        default: 1
     }
 });
 
