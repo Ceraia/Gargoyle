@@ -3,6 +3,7 @@ import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleConta
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
+import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import {
@@ -11,7 +12,9 @@ import {
     ButtonStyle,
     ChannelType,
     ChatInputCommandInteraction,
+    ClientEvents,
     ContainerBuilder,
+    Events,
     MessageCreateOptions,
     MessageFlags,
     ModalActionRowComponentBuilder,
@@ -47,7 +50,6 @@ export default class Giveaway extends GargoyleModule {
             )
             .setDefaultMemberPermissions(0) as GargoyleSlashCommandBuilder
     ];
-    public override events = [];
 
     private giveawaySetups: Map<
         string,
@@ -262,11 +264,11 @@ export default class Giveaway extends GargoyleModule {
                 new ContainerBuilder().addSectionComponents(
                     new SectionBuilder()
                         .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'enter').setEmoji(this.giveawayEmojis.bookmarks).setStyle(ButtonStyle.Secondary)
+                            new GargoyleButtonBuilder(this, 'enter').setEmoji(giveawayEmojis.bookmarks).setStyle(ButtonStyle.Secondary)
                         )
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
-                                `# ${this.giveawayEmojis.confetti} **${giveaway.winners > 1 ? `${giveaway.winners}x GIVEAWAY` : `GIVEAWAY`}** ${this.giveawayEmojis.confetti}` +
+                                `# ${giveawayEmojis.confetti} **${giveaway.winners > 1 ? `${giveaway.winners}x GIVEAWAY` : `GIVEAWAY`}** ${giveawayEmojis.confetti}` +
                                     `**Hosted by:** <@${userId}>` +
                                     (giveaway.prizeMessage ? `\n\n${giveaway.prizeMessage}` : '') +
                                     `\n-# **${giveaway.entries.length} Entries | Ends in:** <t:${Math.floor(giveaway.endTime / 1000)}:R>`
@@ -278,10 +280,97 @@ export default class Giveaway extends GargoyleModule {
         };
     }
 
-    private giveawayEmojis = {
-        confetti: `<:confetti:1424363941768986624>`,
-        bookmarks: `<:bookmarks:1424365082112163852>`
-    };
+    public override events = [new GiveawayDaemon()];
+}
+
+class GiveawayDaemon extends GargoyleEvent {
+    public override event = Events.ClientReady as const;
+    public override once = true;
+
+    public override async execute(client: GargoyleClient, ..._args: ClientEvents[typeof Events.ClientReady]): Promise<void> {
+        setInterval(() => {
+            if (client.db === null) return;
+            endCurrentGiveaways(client).catch((err: Error) => {
+                client.logger.error(`Failed to end current giveaways: ${err.stack}`);
+            });
+        }, 15 * 1000);
+    }
+}
+
+const giveawayEmojis = {
+    confetti: `<:confetti:1424363941768986624>`,
+    bookmarks: `<:bookmarks:1424365082112163852>`
+};
+
+async function endCurrentGiveaways(client: GargoyleClient) {
+    const now = Date.now();
+    const finishedEvents = await databaseGiveaway.find({ endTime: { $lte: new Date(now) } });
+    if (finishedEvents.length === 0) return;
+
+    for (const event of finishedEvents) {
+        if (event.endTime.getTime() > now) break;
+
+        const channel = await client.channels.fetch(event.channelId).catch(() => null);
+        const message = await (channel as TextChannel).messages.fetch(event.messageId).catch(() => null);
+        if (!channel || (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) || !message) {
+            await databaseGiveaway.deleteOne({ _id: event._id }).catch((err: Error) => {
+                client.logger.error(`Failed to delete giveaway from database: ${err.stack}`);
+            });
+            continue;
+        }
+
+        if (event.entries.length === 0) {
+            await editAsServer(
+                {
+                    components: [new GargoyleContainerBuilder('Giveaway ended - No entries')],
+                    flags: MessageFlags.IsComponentsV2
+                },
+                channel as TextChannel,
+                message.id
+            ).catch(() => {
+                message.delete().catch(() => {});
+            });
+
+            await databaseGiveaway.deleteOne({ _id: event._id }).catch((err: Error) => {
+                client.logger.error(`Failed to delete giveaway from database: ${err.stack}`);
+            });
+            continue;
+        }
+
+        const winners: string[] = [];
+        while (winners.length < event.winners && event.entries.length > 0) {
+            const randomIndex = Math.floor(Math.random() * event.entries.length);
+            const winner = event.entries.splice(randomIndex, 1)[0];
+            if (!winners.includes(winner)) {
+                winners.push(winner);
+            }
+        }
+
+        await editAsServer(
+            {
+                components: [
+                    new GargoyleContainerBuilder('Giveaway ended').addSectionComponents(
+                        new SectionBuilder().addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `# ${giveawayEmojis.confetti} **GIVEAWAY ENDED** ${giveawayEmojis.confetti}` +
+                                    (event.prize ? `\n\n**Prize:** ${event.prize}` : '') +
+                                    `\n-# **Winners (${winners.length}/${event.winners}):** ${winners.map((w) => `<@${w}>`).join(', ')}`
+                            )
+                        )
+                    )
+                ],
+                flags: MessageFlags.IsComponentsV2
+            },
+            channel as TextChannel,
+            message.id
+        ).catch(() => {
+            message.delete().catch(() => {});
+        });
+
+        await databaseGiveaway.deleteOne({ _id: event._id }).catch((err: Error) => {
+            client.logger.error(`Failed to delete giveaway from database: ${err.stack}`);
+        });
+    }
 }
 
 const giveawaySchema = new Schema({
