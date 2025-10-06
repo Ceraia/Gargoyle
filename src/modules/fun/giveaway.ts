@@ -34,7 +34,6 @@ export default class Giveaway extends GargoyleModule {
             .setName('giveaway')
             .addGuilds('750209335841390642') // Test server
             .setDescription('Start a giveaway')
-            .addStringOption((option) => option.setName('prize').setDescription('The prize of the giveaway').setRequired(true))
             .addStringOption((option) =>
                 option.setName('duration').setDescription('The duration of the giveaway (e.g. 1h, 30m, 2d)').setRequired(true)
             )
@@ -65,7 +64,7 @@ export default class Giveaway extends GargoyleModule {
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'giveaway') {
             if (!client.db) {
-                await interaction.reply({ content: 'Database connection not established, please try again later.', ephemeral: true });
+                await interaction.reply({ content: 'Database connection not established, please try again later.', flags: MessageFlags.Ephemeral });
                 return;
             }
 
@@ -76,7 +75,7 @@ export default class Giveaway extends GargoyleModule {
                 await interaction.reply({
                     content:
                         'Invalid giveaway setup. Please provide all required fields, or go to a channel that supports giveaways. (text or announcement channel)',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -84,7 +83,7 @@ export default class Giveaway extends GargoyleModule {
             // Parse duration
             const durationMatch = duration.match(/^(\d+)([smhd])$/);
             if (!durationMatch) {
-                await interaction.reply({ content: 'Invalid duration format. Use s, m, h, or d (e.g. 30m, 2h, 1d).', ephemeral: true });
+                await interaction.reply({ content: 'Invalid duration format. Use s, m, h, or d (e.g. 30m, 2h, 1d).', flags: MessageFlags.Ephemeral });
                 return;
             }
             const durationValue = parseInt(durationMatch[1], 10);
@@ -105,7 +104,7 @@ export default class Giveaway extends GargoyleModule {
                     break;
             }
             if (durationMs <= 0) {
-                await interaction.reply({ content: 'Duration must be greater than 0.', ephemeral: true });
+                await interaction.reply({ content: 'Duration must be greater than 0.', flags: MessageFlags.Ephemeral });
                 return;
             }
 
