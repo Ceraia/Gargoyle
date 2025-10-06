@@ -1,11 +1,13 @@
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
+import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleContainerBuilder.js';
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
-import { sendAsServer } from '@src/system/backend/tools/server.js';
+import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
+    ButtonInteraction,
     ButtonStyle,
     ChannelType,
     ChatInputCommandInteraction,
@@ -53,6 +55,7 @@ export default class Giveaway extends GargoyleModule {
             winners: number;
             channelId: string;
             endTime: number;
+            entries: string[];
             prizeMessage: string | null;
         }
     > = new Map();
@@ -110,6 +113,7 @@ export default class Giveaway extends GargoyleModule {
                 winners: winners,
                 channelId: channel.id,
                 endTime: endTime,
+                entries: [],
                 prizeMessage: null
             });
 
@@ -148,6 +152,7 @@ export default class Giveaway extends GargoyleModule {
                 channelId: setup.channelId,
                 messageId: 'temp', // Will be updated later
                 endTime: new Date(setup.endTime),
+                entries: setup.entries,
                 prize: setup.prizeMessage || 'No prize specified'
             });
 
@@ -183,24 +188,71 @@ export default class Giveaway extends GargoyleModule {
         }
     }
 
-    private async giveawayMessage(userId: string, messageId?: string): Promise<MessageCreateOptions> {
-        let setup = this.giveawaySetups.get(userId);
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'enter') {
+            if (client.db === null) {
+                await interaction.reply({ content: 'Database connection not established, please try again later.', flags: MessageFlags.Ephemeral });
+                return;
+            }
 
-        if (!setup) {
+            const giveawayEntry = await databaseGiveaway.findOne({ messageId: interaction.message.id });
+
+            // Check if giveaway has ended
+            if (!giveawayEntry || giveawayEntry.endTime.getTime() < Date.now()) {
+                await interaction.reply({ content: 'This giveaway has already ended.', flags: MessageFlags.Ephemeral });
+
+                await editAsServer(
+                    { components: [new GargoyleContainerBuilder('Giveaway ended')], flags: MessageFlags.IsComponentsV2 },
+                    interaction.message.channel as TextChannel,
+                    interaction.message.id
+                ).catch(() => {
+                    interaction.message.delete().catch(() => {});
+                });
+
+                return;
+            }
+
+            // Check if user has already entered
+            const existingEntry = giveawayEntry.entries.find((entry) => entry === interaction.user.id);
+            if (existingEntry) {
+                giveawayEntry.entries = giveawayEntry.entries.filter((entry) => entry !== interaction.user.id);
+                await giveawayEntry.save().catch((err: Error) => {
+                    client.logger.error(`Failed to remove giveaway entry from database: ${err.stack}`);
+                });
+
+                await interaction.reply({ content: 'You have removed your entry from the giveaway.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            giveawayEntry.entries.push(interaction.user.id);
+            await giveawayEntry.save().catch((err: Error) => {
+                client.logger.error(`Failed to add giveaway entry to database: ${err.stack}`);
+            });
+
+            await interaction.reply({ content: 'You have entered the giveaway!', flags: MessageFlags.Ephemeral });
+            return;
+        }
+    }
+
+    private async giveawayMessage(userId: string, messageId?: string): Promise<MessageCreateOptions> {
+        let giveaway = this.giveawaySetups.get(userId);
+
+        if (!giveaway) {
             if (!messageId) throw new Error('No giveaway setup found for user ID.');
 
             let giveawayEntry = await databaseGiveaway.findOne({ messageId: messageId });
 
             if (giveawayEntry) {
-                setup = {
+                giveaway = {
                     winners: giveawayEntry.winners,
                     channelId: giveawayEntry.channelId,
                     endTime: giveawayEntry.endTime.getTime(),
+                    entries: giveawayEntry.entries,
                     prizeMessage: giveawayEntry.prize
                 };
             }
 
-            if (!setup) {
+            if (!giveaway) {
                 throw new Error('No giveaway setup found for user or message ID.');
             }
         }
@@ -214,9 +266,10 @@ export default class Giveaway extends GargoyleModule {
                         )
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
-                                `# ${this.giveawayEmojis.confetti} **${setup.winners > 1 ? `${setup.winners}x GIVEAWAY` : `GIVEAWAY`}** ${this.giveawayEmojis.confetti}` +
-                                    `\n-# **Ends in:** <t:${Math.floor(setup.endTime / 1000)}:R> & **Hosted by:** <@${userId}>` +
-                                    (setup.prizeMessage ? `\n\n${setup.prizeMessage}` : '')
+                                `# ${this.giveawayEmojis.confetti} **${giveaway.winners > 1 ? `${giveaway.winners}x GIVEAWAY` : `GIVEAWAY`}** ${this.giveawayEmojis.confetti}` +
+                                    `**Hosted by:** <@${userId}>` +
+                                    (giveaway.prizeMessage ? `\n\n${giveaway.prizeMessage}` : '') +
+                                    `\n-# **${giveaway.entries.length} Entries | Ends in:** <t:${Math.floor(giveaway.endTime / 1000)}:R>`
                             )
                         )
                 )
@@ -253,6 +306,10 @@ const giveawaySchema = new Schema({
     prize: {
         type: String,
         required: true
+    },
+    entries: {
+        type: [String],
+        default: []
     },
     winners: {
         type: Number,
