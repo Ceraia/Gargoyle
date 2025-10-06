@@ -32,7 +32,6 @@ export default class Giveaway extends GargoyleModule {
     public override slashCommands = [
         new GargoyleSlashCommandBuilder()
             .setName('giveaway')
-            .addGuilds('750209335841390642') // Test server
             .setDescription('Start a giveaway')
             .addStringOption((option) =>
                 option.setName('duration').setDescription('The duration of the giveaway (e.g. 1h, 30m, 2d)').setRequired(true)
