@@ -3,7 +3,6 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import Emojis from '@src/system/backend/tools/emojis.js';
-import { channel } from 'diagnostics_channel';
 import {
     ActionRowBuilder,
     ButtonInteraction,
@@ -103,6 +102,7 @@ export default class Birthday extends GargoyleModule {
     ];
 
     private birthdaySetups: Map<string, Date> = new Map();
+    private lastChange: Map<string, Date> = new Map();
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'birthday') {
@@ -326,6 +326,22 @@ export default class Birthday extends GargoyleModule {
                 interaction.reply({ content: 'No birthday setup found to confirm.', flags: MessageFlags.Ephemeral });
                 return;
             }
+
+            if (this.lastChange.has(interaction.user.id)) {
+                const lastChange = this.lastChange.get(interaction.user.id)!;
+                const now = new Date();
+                const diff = now.getTime() - lastChange.getTime();
+                if (diff < 48 * 60 * 60 * 1000) {
+                    await interaction.reply({
+                        content: `You can only change your birthday once every 48 hours. Please try again in ${Math.ceil(
+                            (48 * 60 * 60 * 1000 - diff) / 1000
+                        )} seconds.`,
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+            } else this.lastChange.set(interaction.user.id, new Date());
+
             const birthdayData = {
                 userId: interaction.user.id,
                 day: birthday.getUTCDate(),
