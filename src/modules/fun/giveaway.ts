@@ -5,6 +5,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
+import Emojis from '@src/system/backend/tools/emojis.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
 import {
     ActionRowBuilder,
@@ -258,12 +259,10 @@ export default class Giveaway extends GargoyleModule {
             components: [
                 new ContainerBuilder().addSectionComponents(
                     new SectionBuilder()
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'enter').setEmoji(giveawayEmojis.bookmarks).setStyle(ButtonStyle.Secondary)
-                        )
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'enter').setEmoji(Emojis.WhiteBookmarks).setStyle(ButtonStyle.Secondary))
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
-                                `# ${giveawayEmojis.confetti} **${giveaway.winners > 1 ? `${giveaway.winners}x GIVEAWAY` : `GIVEAWAY`}** ${giveawayEmojis.confetti}` +
+                                `# ${Emojis.WhiteConfetti} **${giveaway.winners > 1 ? `${giveaway.winners}x GIVEAWAY` : `GIVEAWAY`}** ${Emojis.WhiteConfetti}` +
                                     `\n**Hosted by:** <@${userId}>` +
                                     (giveaway.prizeMessage ? `\n\n${giveaway.prizeMessage}` : '') +
                                     `\n-# **${giveaway.entries.length} Entries | Ends ** <t:${Math.floor(giveaway.endTime / 1000)}:R>`
@@ -291,11 +290,6 @@ class GiveawayDaemon extends GargoyleEvent {
         }, 30 * 1000);
     }
 }
-
-const giveawayEmojis = {
-    confetti: `<:confetti:1424363941768986624>`,
-    bookmarks: `<:bookmarks:1424365082112163852>`
-};
 
 async function endCurrentGiveaways(client: GargoyleClient) {
     client.logger.trace('Checking for finished giveaways...');
@@ -347,7 +341,7 @@ async function endCurrentGiveaways(client: GargoyleClient) {
                 components: [
                     new GargoyleContainerBuilder().addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
-                            `# ${giveawayEmojis.confetti} **GIVEAWAY ENDED** ${giveawayEmojis.confetti}` +
+                            `# ${Emojis.WhiteConfetti} **GIVEAWAY ENDED** ${Emojis.WhiteConfetti}` +
                                 `\n**Prize:** \n${event.prize}` +
                                 `\n-# **Winners:** ${winners.map((w) => `<@${w}>`).join(', ')}`
                         )

@@ -36,6 +36,7 @@ import {
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
+import Emojis from '@src/system/backend/tools/emojis.js';
 
 export default class VoicechatCommand extends GargoyleModule {
     public override category: string = 'server';
@@ -373,17 +374,6 @@ export default class VoicechatCommand extends GargoyleModule {
         }
     }
 
-    private VCEmojis = {
-        Crown: '<:crown:1422491927806480394>',
-        EyeSlash: '<:eyeslash:1422492247529619566>',
-        UserPlus: '<:userplus:1422492197605081118>',
-        Plus: '<:plus:1422492123776946286>',
-        Minus: '<:minus:1422492095117262848>',
-        Pencil: '<:pencil:1422492000174870572>',
-        Gavel: '<:gavel:1422492059310227547>',
-        Lock: '<:lock:1422492269012844546>'
-    };
-
     private panelMessage: string | InteractionReplyOptions | MessageEditOptions | MessageCreateOptions | MessagePayload = {
         content: null,
         embeds: [],
@@ -394,45 +384,43 @@ export default class VoicechatCommand extends GargoyleModule {
                 .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Lock} Lock/Unlock the VC`))
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'lock').setEmoji(this.VCEmojis.Lock).setStyle(ButtonStyle.Secondary))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${Emojis.WhiteLock} Lock/Unlock the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'lock').setEmoji(Emojis.WhiteLock).setStyle(ButtonStyle.Secondary))
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.EyeSlash} Hide/Show the VC`))
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'hide').setEmoji(this.VCEmojis.EyeSlash).setStyle(ButtonStyle.Secondary))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${Emojis.WhiteEyeSlash} Hide/Show the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'hide').setEmoji(Emojis.WhiteEyeSlash).setStyle(ButtonStyle.Secondary))
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Plus} Increase the VC limit`))
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'increase').setEmoji(this.VCEmojis.Plus).setStyle(ButtonStyle.Secondary))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${Emojis.WhitePlus} Increase the VC limit`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'increase').setEmoji(Emojis.WhitePlus).setStyle(ButtonStyle.Secondary))
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Minus} Decrease the VC limit`))
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'decrease').setEmoji(this.VCEmojis.Minus).setStyle(ButtonStyle.Secondary))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${Emojis.WhiteMinus} Decrease the VC limit`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'decrease').setEmoji(Emojis.WhiteMinus).setStyle(ButtonStyle.Secondary))
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Gavel} Ban from the VC`))
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'ban').setEmoji(this.VCEmojis.Gavel).setStyle(ButtonStyle.Secondary))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${Emojis.WhiteGavel} Ban from the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'ban').setEmoji(Emojis.WhiteGavel).setStyle(ButtonStyle.Secondary))
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.UserPlus} Unban / Invite to the VC`))
-                        .setButtonAccessory(
-                            new GargoyleButtonBuilder(this, 'invite').setEmoji(this.VCEmojis.UserPlus).setStyle(ButtonStyle.Secondary)
-                        )
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${Emojis.WhiteUserPlus} Unban / Invite to the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'invite').setEmoji(Emojis.WhiteUserPlus).setStyle(ButtonStyle.Secondary))
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Pencil} Rename the VC`))
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'rename').setEmoji(this.VCEmojis.Pencil).setStyle(ButtonStyle.Secondary))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${Emojis.WhitePencil} Rename the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'rename').setEmoji(Emojis.WhitePencil).setStyle(ButtonStyle.Secondary))
                 )
                 .addSectionComponents(
                     new SectionBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${this.VCEmojis.Crown} Claim the VC`))
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'claim').setEmoji(this.VCEmojis.Crown).setStyle(ButtonStyle.Secondary))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${Emojis.WhiteCrown} Claim the VC`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'claim').setEmoji(Emojis.WhiteCrown).setStyle(ButtonStyle.Secondary))
                 )
         ]
     };

@@ -42,6 +42,7 @@ import {
 import { model, Schema } from 'mongoose';
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
+import Emojis from '@src/system/backend/tools/emojis.js';
 
 const ceraiaGuild = '1394893354763817040'; // Ceraia guild ID
 
@@ -423,15 +424,15 @@ export default class Ceraia extends GargoyleModule {
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
                                 new GargoyleButtonBuilder(this, 'offer', commissionId)
                                     .setLabel('Offer to do Commission')
-                                    .setEmoji(Emoji.Kaching)
+                                    .setEmoji(Emojis.CyanDollarSign)
                                     .setStyle(ButtonStyle.Secondary),
                                 new GargoyleButtonBuilder(this, 'negotiate', commissionId)
                                     .setLabel('Negotiate Commission')
-                                    .setEmoji(Emoji.Handshake)
+                                    .setEmoji(Emojis.CyanHandshake)
                                     .setStyle(ButtonStyle.Secondary),
                                 new GargoyleButtonBuilder(this, 'viewprofile', interaction.user.id)
                                     .setLabel('View Profile')
-                                    .setEmoji(Emoji.User)
+                                    .setEmoji(Emojis.CyanUser)
                                     .setStyle(ButtonStyle.Secondary)
                             )
                         )
@@ -476,7 +477,7 @@ export default class Ceraia extends GargoyleModule {
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
                                 new GargoyleButtonBuilder(this, 'offerconfirm', args[1])
                                     .setLabel('Confirm Offer')
-                                    .setEmoji(Emoji.Check)
+                                    .setEmoji(Emojis.CyanCheck)
                                     .setStyle(ButtonStyle.Secondary)
                             )
                         )
@@ -525,16 +526,16 @@ export default class Ceraia extends GargoyleModule {
                                 new GargoyleButtonBuilder(this, 'acceptoffer', commissionId)
                                     .setLabel('Accept Offer')
                                     .setStyle(ButtonStyle.Secondary)
-                                    .setEmoji(Emoji.Check)
+                                    .setEmoji(Emojis.CyanCheck)
                                     .setDisabled(true),
                                 new GargoyleButtonBuilder(this, 'viewprofile', interaction.user.id)
                                     .setLabel('View Profile')
                                     .setStyle(ButtonStyle.Secondary)
-                                    .setEmoji(Emoji.User),
+                                    .setEmoji(Emojis.CyanUser),
                                 new GargoyleButtonBuilder(this, 'decline', commissionId)
                                     .setLabel('Decline Offer')
                                     .setStyle(ButtonStyle.Secondary)
-                                    .setEmoji(Emoji.X)
+                                    .setEmoji(Emojis.CyanX)
                             )
                         )
                 ],
@@ -651,7 +652,7 @@ export default class Ceraia extends GargoyleModule {
                             .setButtonAccessory(
                                 new GargoyleButtonBuilder(this, 'support')
                                     .setLabel('Support')
-                                    .setEmoji(Emoji.LifeBuoy)
+                                    .setEmoji(Emojis.CyanLifeBuoy)
                                     .setStyle(ButtonStyle.Secondary)
                             )
                     )
@@ -670,7 +671,7 @@ export default class Ceraia extends GargoyleModule {
                             .setButtonAccessory(
                                 new GargoyleButtonBuilder(this, 'freelancer')
                                     .setLabel('Apply')
-                                    .setEmoji(Emoji.NotePencil)
+                                    .setEmoji(Emojis.CyanNotePencil)
                                     .setStyle(ButtonStyle.Secondary)
                             )
                     )
@@ -779,13 +780,15 @@ export default class Ceraia extends GargoyleModule {
         );
 
         if (commissionaryUser.freelancer && commissionaryUser.showcase) {
-            section.setButtonAccessory(new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji(Emoji.Showcase));
+            section.setButtonAccessory(
+                new GargoyleURLButtonBuilder(commissionaryUser.showcase).setLabel('View Showcase').setEmoji(Emojis.CyanShowcase)
+            );
         } else
             section.setButtonAccessory(
                 new GargoyleButtonBuilder(this)
                     .setStyle(ButtonStyle.Secondary)
                     .setLabel('No Showcase')
-                    .setEmoji(Emoji.ShowcaseSlash)
+                    .setEmoji(Emojis.CyanShowcaseSlash)
                     .setDisabled(true)
             );
 
@@ -1105,19 +1108,6 @@ async function createCommissionaryCommission(commissionData: {
 }) {
     const commission = new databaseCommissionaryCommission(commissionData);
     return await commission.save();
-}
-
-enum Emoji {
-    User = '<:user:1397125429613166614>',
-    Check = '<:check:1397125016314839060>',
-    Checks = '<:checks:1397124261310894145>',
-    X = '<:x_:1397124929274777610>',
-    Kaching = '<:kaching:1397127772727414884>',
-    Handshake = '<:handshake:1397126775699668992>',
-    Showcase = '<:showcase:1397128660984795218>',
-    ShowcaseSlash = '<:showcaseslash:1397128895085416458>',
-    NotePencil = '<:notepencil:1397129365539786753>',
-    LifeBuoy = '<:lifebuoy:1397129939022516346>'
 }
 
 function registerLocalFonts(family: string) {
