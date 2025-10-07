@@ -5,6 +5,7 @@ import {
     ActionRowBuilder,
     AnySelectMenuInteraction,
     ButtonInteraction,
+    ButtonStyle,
     ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
@@ -31,6 +32,7 @@ import { GargoyleStringSelectMenuBuilder } from '@builders/gargoyleSelectMenuBui
 import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleModalBuilder from '../backend/builders/gargoyleModalBuilder.js';
 import GargoyleButtonBuilder from '../backend/builders/gargoyleButtonBuilder.js';
+import Emojis from '../backend/tools/emojis.js';
 
 export default class Help extends GargoyleModule {
     override category: string = 'base';
@@ -66,7 +68,12 @@ export default class Help extends GargoyleModule {
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent('Do you want to suggest a feature? You can do so by clicking the button!')
                         )
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'suggest').setLabel('Make a suggestion').setEmoji('✍️'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'suggest')
+                                .setLabel('Make a suggestion')
+                                .setEmoji(Emojis.WhitePencil)
+                                .setStyle(ButtonStyle.Secondary)
+                        )
                 )
                 .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
                 .addSectionComponents(
@@ -76,7 +83,12 @@ export default class Help extends GargoyleModule {
                                 'Are you having issues with the bot? Is something not working as expected? Press the button for direct support!\n-# This will invite a support member to your server, you can also contact them directly on Discord. [@axodouble]'
                             )
                         )
-                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'support').setLabel('Get Support').setEmoji('🆘'))
+                        .setButtonAccessory(
+                            new GargoyleButtonBuilder(this, 'support')
+                                .setLabel('Get Support')
+                                .setEmoji(Emojis.WhitePlus)
+                                .setStyle(ButtonStyle.Secondary)
+                        )
                 ),
             this.selectMenu
         ],
