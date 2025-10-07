@@ -1,4 +1,4 @@
-import { ContextMenuCommandBuilder, ApplicationCommandDataResolvable } from 'discord.js';
+import { ContextMenuCommandBuilder, ApplicationCommandDataResolvable, Events } from 'discord.js';
 import GargoyleSlashCommandBuilder from '../builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '../classes/gargoyleClient.js';
 import GargoyleEvent from '../classes/gargoyleEvent.js';
@@ -11,6 +11,13 @@ async function registerCommands(client: GargoyleClient): Promise<void> {
             if (!(event instanceof GargoyleEvent)) {
                 client.logger.error(`Event is not an instance of GargoyleEvent.`);
                 return;
+            }
+
+            if (event.event === Events.ClientReady) {
+                client.logger.warning(
+                    `Event ${event.event} is not fully supported in a module. Please use the 'init' function on the module for code that should be executed on client boot. This will still be called once.`
+                );
+                event.execute(client);
             }
 
             if (event.once) {

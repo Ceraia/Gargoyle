@@ -37,6 +37,10 @@ abstract class GargoyleModule {
      */
     public guild: string | null = null;
 
+    public init(_client: GargoyleClient): void {
+        // Optional initialization method for modules.
+    }
+
     public executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): void {
         client.logger.error(`${interaction.commandName} does not have a slash command implementation.`);
         interaction.reply({ content: 'This command does not have a slash command implementation.', flags: MessageFlags.Ephemeral });

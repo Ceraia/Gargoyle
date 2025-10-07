@@ -3,7 +3,6 @@ import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleConta
 import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import GargoyleEvent from '@src/system/backend/classes/gargoyleEvent.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import Emojis from '@src/system/backend/tools/emojis.js';
 import { editAsServer, sendAsServer } from '@src/system/backend/tools/server.js';
@@ -14,8 +13,6 @@ import {
     ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
-    Events,
-    Message,
     MessageCreateOptions,
     MessageFlags,
     ModalActionRowComponentBuilder,
@@ -60,6 +57,15 @@ export default class Giveaway extends GargoyleModule {
             prizeMessage: string | null;
         }
     > = new Map();
+
+    public override init(client: GargoyleClient): void {
+        setInterval(async () => {
+            if (client.db === null) return;
+            await endCurrentGiveaways(client).catch((err: Error) => {
+                client.logger.error(`Failed to end current giveaways: ${err.stack}`);
+            });
+        }, 30 * 1000);
+    }
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'giveaway') {
@@ -272,22 +278,6 @@ export default class Giveaway extends GargoyleModule {
             ],
             flags: [MessageFlags.IsComponentsV2]
         };
-    }
-
-    public override events = [new GiveawayDaemon()];
-}
-
-class GiveawayDaemon extends GargoyleEvent {
-    public override event = Events.MessageCreate as const;
-    public override once = true;
-
-    public override async execute(client: GargoyleClient, _message: Message): Promise<void> {
-        setInterval(async () => {
-            if (client.db === null) return;
-            await endCurrentGiveaways(client).catch((err: Error) => {
-                client.logger.error(`Failed to end current giveaways: ${err.stack}`);
-            });
-        }, 30 * 1000);
     }
 }
 
