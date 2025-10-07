@@ -2,6 +2,7 @@ import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBu
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
+import { createBanner } from '@src/system/backend/tools/banners.js';
 import Emojis from '@src/system/backend/tools/emojis.js';
 import {
     ActionRowBuilder,
@@ -10,11 +11,18 @@ import {
     ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
+    Guild,
+    GuildMember,
     InteractionContextType,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
     MessageActionRowComponentBuilder,
     MessageFlags,
+    NewsChannel,
     PermissionFlagsBits,
+    Role,
     SectionBuilder,
+    TextChannel,
     TextDisplayBuilder
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
@@ -86,12 +94,12 @@ export default class Birthday extends GargoyleModule {
                                     .addChannelTypes(ChannelType.GuildAnnouncement, ChannelType.GuildText)
                             )
                     )
-                    .addSubcommand((subcommand) =>
-                        subcommand
-                            .setName('role')
-                            .setDescription('Set the birthday role')
-                            .addRoleOption((option) => option.setName('role').setDescription('The role to give on birthdays').setRequired(false))
-                    )
+                    // .addSubcommand((subcommand) =>
+                    //     subcommand
+                    //         .setName('role')
+                    //         .setDescription('Set the birthday role')
+                    //         .addRoleOption((option) => option.setName('role').setDescription('The role to give on birthdays').setRequired(false))
+                    // )
                     .addSubcommand((subcommand) =>
                         subcommand
                             .setName('mention-role')
@@ -377,6 +385,132 @@ export default class Birthday extends GargoyleModule {
             return;
         }
     }
+
+    private async getBirthdayUsers(client: GargoyleClient) {
+        return await databaseUserBirthdays
+            .find({
+                month: new Date().getUTCMonth(),
+                day: new Date().getUTCDate()
+            })
+            .catch((err: Error) => {
+                client.logger.error(`Failed to fetch birthday users: ${err.stack}`);
+                return [];
+            });
+    }
+
+    private async getGuildBirthdays(client: GargoyleClient, guild: Guild): Promise<GuildMember[]> {
+        const birthdayUsers = await this.getBirthdayUsers(client);
+        if (!birthdayUsers || birthdayUsers.length === 0) return [];
+
+        const members: GuildMember[] = [];
+        for (const birthdayUser of birthdayUsers) {
+            const member = await guild.members.fetch(birthdayUser.userId).catch(() => null);
+            if (member) members.push(member);
+        }
+        return members;
+    }
+
+    private async checkBirthdays(client: GargoyleClient) {
+        if (client.db === null) return;
+        const guilds = client.guilds.cache;
+        for (const [, guild] of guilds) {
+            let dbGuild = await databaseGuildBirthdays.findOne({ guildId: guild.id }).catch((err: Error) => {
+                client.logger.error(`Failed to fetch guild birthday settings for guild ${guild.id}: ${err.stack}`);
+            });
+
+            if (!dbGuild) {
+                dbGuild = new databaseGuildBirthdays({
+                    guildId: guild.id,
+                    channelId: null,
+                    birthdayRoleId: null,
+                    mentionRoleId: null
+                });
+                await dbGuild.save().catch((err: Error) => {
+                    client.logger.error(`Failed to create guild birthday settings for guild ${guild.id}: ${err.stack}`);
+                });
+            }
+
+            if (dbGuild.lastCheck) {
+                const lastCheck = dbGuild.lastCheck;
+                const now = new Date();
+                if (now.getDay() === lastCheck.getDay()) return;
+            }
+
+            if (!dbGuild.channelId) {
+                dbGuild.lastCheck = new Date();
+                await dbGuild.save().catch((err: Error) => {
+                    client.logger.error(`Failed to update last check for guild ${guild.id}: ${err.stack}`);
+                });
+                return;
+            }
+
+            const birthdayMembers = await this.getGuildBirthdays(client, guild);
+            if (birthdayMembers.length === 0) {
+                dbGuild.lastCheck = new Date();
+                await dbGuild.save().catch((err: Error) => {
+                    client.logger.error(`Failed to update last check for guild ${guild.id}: ${err.stack}`);
+                });
+                return;
+            }
+
+            const channel = guild.channels.cache.get(dbGuild.channelId);
+            if (!channel || !channel.isTextBased()) {
+                dbGuild.channelId = null;
+                dbGuild.lastCheck = new Date();
+                await dbGuild.save().catch((err: Error) => {
+                    client.logger.error(`Failed to update guild birthday channel for guild ${guild.id}: ${err.stack}`);
+                });
+                return;
+            }
+
+            const role = dbGuild.mentionRoleId ? guild.roles.cache.get(dbGuild.mentionRoleId) : undefined;
+
+            for (const member of birthdayMembers) {
+                await this.sendBirthdayMessage(channel as TextChannel | NewsChannel, member, role);
+                // #TODO: Figure out a way to manage roles, as I do not want to fetch every single member to check if they have the role.
+            }
+
+            dbGuild.lastCheck = new Date();
+            await dbGuild.save().catch((err: Error) => {
+                client.logger.error(`Failed to update last check for guild ${guild.id}: ${err.stack}`);
+            });
+        }
+    }
+
+    private async sendBirthdayMessage(channel: TextChannel | NewsChannel, member: GuildMember, role?: Role) {
+        const message = await channel.send({
+            components: [
+                new ContainerBuilder()
+                    .setAccentColor(0xffffff)
+                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://birthday.png')))
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `Happy Birthday, <@${member.id}>! ${Emojis.WhiteConfetti}` + `${role ? `\n-# <@&${role.id}>` : ''}`
+                        )
+                    )
+            ],
+            files: [
+                await createBanner(`${member.user.username}'s birthday!`, {
+                    fillStyle: '#ffffff',
+                    width: 1080,
+                    height: 250,
+                    bannerStyle: 'underline',
+                    fileName: 'birthday.png'
+                })
+            ]
+        });
+        if (message) message.react(Emojis.WhiteConfetti).catch(() => null);
+        return message;
+    }
+
+    public override init(client: GargoyleClient): void {
+        setInterval(
+            async () => {
+                this.checkBirthdays(client);
+            },
+            30 * 60 * 1000
+        );
+    }
 }
 
 const birthdayUserSchema = new Schema({
@@ -404,6 +538,10 @@ const birthdayGuildSchema = new Schema({
         type: String,
         required: true,
         unique: true
+    },
+    lastCheck: {
+        type: Date,
+        required: false
     },
     channelId: {
         type: String,
