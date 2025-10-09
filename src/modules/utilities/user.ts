@@ -294,7 +294,7 @@ async function createBannerWatermark(bannerURL: string): Promise<Buffer> {
     ctx.save();
     ctx.drawImage(banner, 0, 0, canvas.width, canvas.height);
 
-    ctx.drawImage(watermark, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(watermark, 0 - watermark.width / 2, 0, watermark.width / 2, canvas.height);
     ctx.globalCompositeOperation = 'source-in';
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
