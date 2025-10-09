@@ -204,6 +204,35 @@ export default class User extends GargoyleModule {
                     avatarURL = user.displayAvatarURL({ size: 4096, extension: 'png' });
                 }
 
+                if (interaction.options.getString('background')) {
+                    const bg = interaction.options.getString('background')!;
+                    if (!bg.match(/^#([0-9A-F]{3}){1,2}$/i)) {
+                        await interaction.editReply({
+                            content: 'Invalid background color. Please provide a valid hex color code (e.g., #FFFFFF).',
+                            components: [],
+                            flags: [MessageFlags.IsComponentsV2]
+                        });
+                        return;
+                    }
+
+                    await interaction.editReply({
+                        components: [
+                            new ContainerBuilder()
+                                .setAccentColor(0x161616)
+                                .addMediaGalleryComponents(
+                                    new MediaGalleryBuilder().addItems(
+                                        new MediaGalleryItemBuilder()
+                                            .setURL('attachment://watermarked_avatar_custom.png')
+                                            .setDescription(`With custom background (${bg})`)
+                                    )
+                                )
+                        ],
+                        files: [{ attachment: await createAvatarWatermark(avatarURL, bg), name: 'watermarked_avatar_custom.png' }],
+                        flags: [MessageFlags.IsComponentsV2]
+                    });
+                    return;
+                }
+
                 await interaction.editReply({
                     components: [
                         new ContainerBuilder().setAccentColor(0x161616).addMediaGalleryComponents(
@@ -222,7 +251,6 @@ export default class User extends GargoyleModule {
                     files: [
                         { attachment: await createAvatarWatermark(avatarURL, '#ffffff'), name: 'watermarked_avatar_white.png' },
                         { attachment: await createAvatarWatermark(avatarURL), name: 'watermarked_avatar.png' },
-
                         { attachment: await createAvatarWatermark(avatarURL, '#161616'), name: 'watermarked_avatar_grey.png' }
                     ],
                     flags: [MessageFlags.IsComponentsV2]
