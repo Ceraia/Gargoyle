@@ -268,7 +268,7 @@ async function createAvatarWatermark(avatarURL: string, background?: string | Ca
     const ctx = canvas.getContext('2d');
 
     const avatar = await loadImage(avatarURL);
-    const watermark = await loadImage('./media/images/Leaves.png');
+    const watermark = await loadImage('./media/images/petals.png');
 
     ctx.save();
     ctx.drawImage(watermark, 0, 0, canvas.width, canvas.height);
@@ -289,7 +289,7 @@ async function createBannerWatermark(bannerURL: string): Promise<Buffer> {
     const ctx = canvas.getContext('2d');
 
     const banner = await loadImage(bannerURL);
-    const watermark = await loadImage('./media/images/Outline.png');
+    const watermark = await loadImage('./media/images/outline.png');
 
     ctx.save();
     ctx.drawImage(banner, 0, 0, canvas.width, canvas.height);
