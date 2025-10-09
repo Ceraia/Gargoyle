@@ -227,6 +227,37 @@ export default class User extends GargoyleModule {
                     ],
                     flags: [MessageFlags.IsComponentsV2]
                 });
+            } else if (interaction.options.getSubcommand() === 'banner') {
+                await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+                const type = interaction.options.getString('type') ?? 'global';
+                const user = await client.users.fetch(interaction.options.getUser('user', true), { force: true });
+                const member = await interaction.guild?.members.fetch({ user: user.id, force: true });
+                let bannerURL: string;
+                if (type === 'guild' && member?.banner) {
+                    bannerURL = member.bannerURL({ size: 4096, extension: 'png' })!;
+                } else if (user.banner) {
+                    bannerURL = user.bannerURL({ size: 4096, extension: 'png' })!;
+                } else {
+                    await interaction.editReply({
+                        content: 'User has no banner set',
+                        components: [],
+                        flags: [MessageFlags.IsComponentsV2]
+                    });
+                    return;
+                }
+
+                await interaction.editReply({
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0x161616)
+                            .addMediaGalleryComponents(
+                                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://watermarked_banner.png'))
+                            )
+                    ],
+                    files: [{ attachment: await createBannerWatermark(bannerURL), name: 'watermarked_banner.png' }],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
             }
         }
     }
@@ -248,6 +279,32 @@ async function createAvatarWatermark(avatarURL: string, background?: string | Ca
         ctx.fillStyle = background;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+    ctx.restore();
+
+    return canvas.toBuffer();
+}
+
+async function createBannerWatermark(bannerURL: string): Promise<Buffer> {
+    const canvas = new Canvas(600 * 2, 240 * 2);
+    const ctx = canvas.getContext('2d');
+
+    const banner = await loadImage(bannerURL);
+    const watermark = await loadImage('./media/images/Outline.png');
+
+    ctx.save();
+    ctx.drawImage(banner, 0, 0, canvas.width, canvas.height);
+
+    ctx.drawImage(watermark, 0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.globalAlpha = 0.5;
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(watermark, 0, 0, canvas.width / 2, canvas.height);
+
+    ctx.globalAlpha = 1.0;
     ctx.restore();
 
     return canvas.toBuffer();
