@@ -61,7 +61,7 @@ export default class User extends GargoyleModule {
                             .setDescription('Add the Ceraia watermark to a users avatar')
                             .addUserOption((option) => option.setName('user').setDescription('The user to get the avatar of').setRequired(true))
                             .addStringOption((option) =>
-                                option.setName('background').setDescription('The background color of the watermark').setRequired(true)
+                                option.setName('background').setDescription('The background color of the watermark (#FFFFFF)').setRequired(false)
                             )
                             .addStringOption((option) =>
                                 option
@@ -285,27 +285,31 @@ async function createAvatarWatermark(avatarURL: string, background?: string | Ca
 }
 
 async function createBannerWatermark(bannerURL: string): Promise<Buffer> {
-    const canvas = new Canvas(600 * 2, 240 * 2);
+    const banner = await loadImage(bannerURL);
+    const outline = await loadImage('./media/images/outline.png');
+
+    const canvas = new Canvas(banner.width, banner.height);
     const ctx = canvas.getContext('2d');
 
-    const banner = await loadImage(bannerURL);
-    const watermark = await loadImage('./media/images/outline.png');
-
-    ctx.save();
     ctx.drawImage(banner, 0, 0, canvas.width, canvas.height);
 
-    ctx.drawImage(watermark, 0 - watermark.width / 2, 0, watermark.width / 2, canvas.height);
-    ctx.globalCompositeOperation = 'source-in';
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const outlineAspect = outline.width / outline.height;
+    let outlineDrawHeight = Math.min(outline.height, banner.height);
+    let outlineDrawWidth = outlineDrawHeight * outlineAspect;
 
-    ctx.globalAlpha = 0.5;
+    const outlineY = (canvas.height - outlineDrawHeight) / 2;
 
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(watermark, 0, 0, canvas.width / 2, canvas.height);
+    const maskCanvas = new Canvas(outlineDrawWidth * 1.3, outlineDrawHeight * 1.3);
+    const maskCtx = maskCanvas.getContext('2d');
 
-    ctx.globalAlpha = 1.0;
-    ctx.restore();
+    maskCtx.drawImage(outline, 0, 0, outlineDrawWidth * 1.3, outlineDrawHeight * 1.3);
+
+    maskCtx.globalCompositeOperation = 'source-in';
+    maskCtx.fillStyle = '#000000';
+    maskCtx.globalAlpha = 0.5;
+    maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+
+    ctx.drawImage(maskCanvas, 0, outlineY);
 
     return canvas.toBuffer();
 }
