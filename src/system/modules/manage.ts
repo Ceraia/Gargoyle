@@ -260,7 +260,8 @@ export default class Manage extends GargoyleModule {
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(`Message sent to ${user.tag} (ID: ${user.id})`))
                         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(message))
-                ]
+                ],
+                flags: [MessageFlags.IsComponentsV2]
             });
         }
     }
