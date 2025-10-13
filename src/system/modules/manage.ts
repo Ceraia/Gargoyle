@@ -187,7 +187,7 @@ export default class Manage extends GargoyleModule {
                     }
 
                     await interaction.editReply({
-                        content: `(Support thread)[https://discord.com/channels/${message.channelId}/${message.id}] created successfully.`
+                        content: `[Support thread](https://discord.com/channels/${message.channelId}/${message.id}) created successfully.`
                     });
                 }
             }
@@ -252,7 +252,14 @@ export default class Manage extends GargoyleModule {
                     return;
                 });
 
-            await interaction.reply({ content: 'Message sent successfully.', flags: [MessageFlags.Ephemeral] });
+            await interaction.reply({
+                components: [
+                    new ContainerBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`Message sent to ${user.tag} (ID: ${user.id})`))
+                        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(message))
+                ]
+            });
         }
     }
 
