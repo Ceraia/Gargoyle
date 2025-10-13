@@ -13,6 +13,7 @@ import {
     ContainerBuilder,
     HexColorString,
     InteractionContextType,
+    LabelBuilder,
     Message,
     MessageCreateOptions,
     MessageEditOptions,
@@ -21,11 +22,14 @@ import {
     RoleSelectMenuBuilder,
     SectionBuilder,
     TextChannel,
-    TextDisplayBuilder
+    TextDisplayBuilder,
+    TextInputBuilder,
+    TextInputStyle
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleTextCommandBuilder from '@src/system/backend/builders/gargoyleTextCommandBuilder.js';
 import client from '@src/system/botClient.js';
+import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 
 export default class RoleCommand extends GargoyleModule {
     public override category: string = 'utilities';
@@ -56,6 +60,12 @@ export default class RoleCommand extends GargoyleModule {
                     .setDescription('Delete a role')
                     .addRoleOption((option) => option.setRequired(true).setName('role').setDescription('The role to delete'))
             )
+            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder,
+        new GargoyleSlashCommandBuilder()
+            .setName('role-beta')
+            .setDescription('Role related commands (beta)')
+            .addGuild('750209335841390642')
+            .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Create a role panel'))
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
 
@@ -70,7 +80,51 @@ export default class RoleCommand extends GargoyleModule {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        if (interaction.options.getSubcommandGroup(false) == null) {
+        if (interaction.options.getSubcommandGroup() === 'create') {
+            if (interaction.options.getSubcommand() === 'color') {
+                if (!interaction.memberPermissions?.has('ManageRoles')) {
+                    await interaction.reply({
+                        content: 'You do not have the required permissions to use this command.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                // Check with regex if the color is a valid hex color
+                const color = interaction.options.getString('color', false);
+                if (color && !/^#[0-9A-F]{6}$/i.test(color)) {
+                    await interaction.reply({
+                        content: 'The color you provided is not a valid hex color.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                const response = await fetch('https://www.thecolorapi.com/id?hex=' + color?.substring(1));
+                const data = (await response.json()) as ColorApiResponse;
+                const colorName = data.name.value;
+
+                const role = await interaction.guild?.roles.create({
+                    name: `Color - ${colorName}`,
+                    color: color as HexColorString,
+                    reason: `Color role created by ${interaction.user.tag}`,
+                    permissions: [],
+                    mentionable: false
+                });
+
+                if (!role) {
+                    await interaction.reply({
+                        content: 'Failed to create role.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+                await interaction.reply({
+                    content: `Created role ${role} with color ${colorName}`,
+                    flags: MessageFlags.Ephemeral
+                });
+            }
+        } else if (interaction.options.getSubcommandGroup(false) == null) {
             if (interaction.options.getSubcommand() === 'button') {
                 if (!interaction.memberPermissions?.has('ManageRoles')) {
                     await interaction.reply({
@@ -120,9 +174,7 @@ export default class RoleCommand extends GargoyleModule {
                     content: `Deleted role ${role.name}`,
                     flags: MessageFlags.Ephemeral
                 });
-            }
-        } else if (interaction.options.getSubcommandGroup() === 'create') {
-            if (interaction.options.getSubcommand() === 'color') {
+            } else if (interaction.options.getSubcommand() === 'panel') {
                 if (!interaction.memberPermissions?.has('ManageRoles')) {
                     await interaction.reply({
                         content: 'You do not have the required permissions to use this command.',
@@ -131,39 +183,53 @@ export default class RoleCommand extends GargoyleModule {
                     return;
                 }
 
-                // Check with regex if the color is a valid hex color
-                const color = interaction.options.getString('color', false);
-                if (color && !/^#[0-9A-F]{6}$/i.test(color)) {
-                    await interaction.reply({
-                        content: 'The color you provided is not a valid hex color.',
-                        flags: MessageFlags.Ephemeral
+                await interaction
+                    .showModal(
+                        new GargoyleModalBuilder(this, 'panel')
+                            .setTitle('Make a Role Panel')
+                            .addLabelComponents(
+                                new LabelBuilder()
+                                    .setLabel('Panel Image URL')
+                                    .setDescription('The image URL to display on the role panel (optional, and also needs to be a direct image link)')
+                                    .setTextInputComponent(
+                                        new TextInputBuilder()
+                                            .setMaxLength(1000)
+                                            .setStyle(TextInputStyle.Short)
+                                            .setRequired(false)
+                                            .setCustomId('image')
+                                    ),
+                                new LabelBuilder()
+                                    .setLabel('Panel Text')
+                                    .setDescription('The text to show above the role select menu (optional)')
+                                    .setTextInputComponent(
+                                        new TextInputBuilder()
+                                            .setMaxLength(1000)
+                                            .setStyle(TextInputStyle.Paragraph)
+                                            .setRequired(false)
+                                            .setCustomId('text')
+                                    ),
+                                new LabelBuilder()
+                                    .setLabel('Roles')
+                                    .setDescription('The roles to include in the panel (max 25)')
+                                    .setRoleSelectMenuComponent(
+                                        new RoleSelectMenuBuilder().setMaxValues(25).setMinValues(1).setRequired(true).setCustomId('roles')
+                                    ),
+                                new LabelBuilder()
+                                    .setLabel('Panel Color')
+                                    .setDescription('The accent color of the panel (optional, hex color, e.g. #ff0000)')
+                                    .setTextInputComponent(
+                                        new TextInputBuilder()
+                                            .setMinLength(7)
+                                            .setMaxLength(7)
+                                            .setStyle(TextInputStyle.Short)
+                                            .setRequired(false)
+                                            .setCustomId('color')
+                                    )
+                            )
+                    )
+                    .catch((error: Error) => {
+                        client.logger.error('Failed to show role panel modal', error.stack || error.message);
                     });
-                    return;
-                }
-
-                const response = await fetch('https://www.thecolorapi.com/id?hex=' + color?.substring(1));
-                const data = (await response.json()) as ColorApiResponse;
-                const colorName = data.name.value;
-
-                const role = await interaction.guild?.roles.create({
-                    name: `Color - ${colorName}`,
-                    color: color as HexColorString,
-                    reason: `Color role created by ${interaction.user.tag}`,
-                    permissions: [],
-                    mentionable: false
-                });
-
-                if (!role) {
-                    await interaction.reply({
-                        content: 'Failed to create role.',
-                        flags: MessageFlags.Ephemeral
-                    });
-                    return;
-                }
-                await interaction.reply({
-                    content: `Created role ${role} with color ${colorName}`,
-                    flags: MessageFlags.Ephemeral
-                });
             }
         }
     }
