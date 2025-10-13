@@ -2,20 +2,35 @@ import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js'
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import {
+    ActionRowBuilder,
+    ButtonInteraction,
+    ButtonStyle,
     ChannelType,
     ChatInputCommandInteraction,
     ContainerBuilder,
     Events,
+    LabelBuilder,
     Message,
+    MessageActionRowComponentBuilder,
     MessageFlags,
+    ModalSubmitInteraction,
     PermissionFlagsBits,
     SectionBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
     TextChannel,
     TextDisplayBuilder,
+    TextInputBuilder,
+    TextInputStyle,
     ThumbnailBuilder
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleEvent from '../backend/classes/gargoyleEvent.js';
+import { model, Schema } from 'mongoose';
+import GargoyleContainerBuilder from '../backend/builders/gargoyleContainerBuilder.js';
+import GargoyleButtonBuilder from '../backend/builders/gargoyleButtonBuilder.js';
+import Emojis from '../backend/tools/emojis.js';
+import GargoyleModalBuilder from '../backend/builders/gargoyleModalBuilder.js';
 
 export default class Manage extends GargoyleModule {
     override category: string = 'base';
@@ -53,9 +68,6 @@ export default class Manage extends GargoyleModule {
                             .setName('contact')
                             .setDescription('Contact a user for proactive support')
                             .addStringOption((option) => option.setName('id').setDescription('The user ID').setRequired(true))
-                            .addStringOption((option) =>
-                                option.setName('message').setDescription('The message to send to the user').setRequired(true)
-                            )
                     )
             ) as GargoyleSlashCommandBuilder
     ];
@@ -137,8 +149,20 @@ export default class Manage extends GargoyleModule {
                         await interaction.reply({ content: `User: ${user.tag}\nID: ${user.id}`, flags: [MessageFlags.Ephemeral] });
                     }
                 } else if (interaction.options.getSubcommand() === 'contact') {
+                    if (!client.db) {
+                        await interaction.reply({ content: 'Database not initialized.', flags: [MessageFlags.Ephemeral] });
+                        return;
+                    }
                     const userId = interaction.options.getString('id', true);
                     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+                    const existingMessage = await hasSupportMessage(client, userId);
+                    if (existingMessage) {
+                        await interaction.editReply({
+                            content: `There is already an open support message with this user: <https://discord.com/channels/${existingMessage.guildId}/${existingMessage.channelId}/${existingMessage.id}>`
+                        });
+                        return;
+                    }
 
                     const user = await client.users.fetch(userId).catch(async (err) => {
                         await interaction.editReply({ content: `Error trying to find user: \`${err.message}\`` });
@@ -154,20 +178,126 @@ export default class Manage extends GargoyleModule {
 
                     if (!dm) return;
 
-                    dm.send(
-                        `Hello ${user.username}, ${interaction.user.tag} has contacted you for support:\n\n${interaction.options.getString('message', true)}`
-                    )
-                        .catch(async (err) => {
-                            await interaction.editReply({ content: `Error trying to send message to user: \`${err.message}\`` });
-                            return;
+                    const message = await (interaction.channel as TextChannel)
+                        .send({
+                            components: [new GargoyleContainerBuilder(`# Support: ${user.tag} (ID: ${user.id})`)],
+                            flags: [MessageFlags.IsComponentsV2]
                         })
-                        .then(async () => {
-                            await interaction.editReply({ content: `Message sent to ${user.tag}.` });
+                        .catch(async (err) => {
+                            await interaction.editReply({ content: `Error trying to send message in support channel: \`${err.message}\`` });
+                            return null;
                         });
+
+                    if (!message) return;
+
+                    const thread = await message.startThread({
+                        name: `Support: ${user.tag}`,
+                        autoArchiveDuration: 4320,
+                        reason: `Support thread for ${user.tag}`
+                    });
+
+                    if (!thread) {
+                        await interaction.editReply({ content: 'Failed to create support thread.' });
+                        return;
+                    }
+
+                    const support = await databaseUserSupport
+                        .create({ channelId: message.channelId, threadId: thread.id, messageId: message.id, userId: user.id })
+                        .catch(async (err) => {
+                            await interaction.editReply({ content: `Error trying to create database entry: \`${err.message}\`` });
+                            thread.delete('Failed to create database entry').catch(() => null);
+                            return;
+                        });
+
+                    if (!support) return;
+
+                    await thread.send({
+                        components: [
+                            new ContainerBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(
+                                        `Support thread created for ${user.tag} (ID: ${user.id}). Please assist the user as needed.`
+                                    )
+                                )
+                                .addActionRowComponents(
+                                    new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
+                                        new GargoyleButtonBuilder(this, 'send', user.id)
+                                            .setLabel('Send Message')
+                                            .setStyle(ButtonStyle.Secondary)
+                                            .setEmoji(Emojis.WhitePencil)
+                                    )
+                                )
+                        ],
+                        flags: [MessageFlags.IsComponentsV2]
+                    });
+
+                    await interaction.editReply({
+                        content: `(Support thread)[https://discord.com/channels/${support.channelId}/${support.messageId}] created successfully.`
+                    });
                 }
             }
         } else {
             await interaction.reply({ content: 'Unknown command.', flags: [MessageFlags.Ephemeral] });
+        }
+    }
+
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'send') {
+            const username =
+                client.users.cache.get(args[1])?.tag ||
+                (await client.users
+                    .fetch(args[1])
+                    .then((u) => u.tag)
+                    .catch(() => 'Unknown User'));
+            await interaction.showModal(
+                new GargoyleModalBuilder(this, 'send', args[1]).setTitle(`Send Message to ${username}`).addLabelComponents(
+                    new LabelBuilder()
+
+                        .setLabel('Message')
+                        .setTextInputComponent(
+                            new TextInputBuilder()
+                                .setCustomId('message')
+                                .setMaxLength(1500)
+                                .setRequired(true)
+                                .setPlaceholder('Enter your message here')
+                                .setStyle(TextInputStyle.Paragraph)
+                        )
+                )
+            );
+        }
+    }
+
+    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'send') {
+            const user = client.users.cache.get(args[1]) || (await client.users.fetch(args[1]).catch(() => null));
+            if (!user) {
+                await interaction.reply({ content: 'User not found.', flags: [MessageFlags.Ephemeral] });
+                return;
+            }
+
+            const message = interaction.fields.getTextInputValue('message');
+            const dmChannel = await user.createDM().catch(() => null);
+            if (!dmChannel) {
+                await interaction.reply({ content: 'Failed to create DM channel with user.', flags: [MessageFlags.Ephemeral] });
+                return;
+            }
+
+            await dmChannel
+                .send({
+                    components: [
+                        new ContainerBuilder()
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('You have a new message from Ceraia support:'))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(message))
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                })
+                .catch(async (err) => {
+                    await interaction.reply({ content: `Failed to send message to user: \`${err.message}\``, flags: [MessageFlags.Ephemeral] });
+                    return;
+                });
+
+            await interaction.reply({ content: 'Message sent successfully.', flags: [MessageFlags.Ephemeral] });
         }
     }
 
@@ -208,4 +338,43 @@ class SupportMessage extends GargoyleEvent {
         const channel = (await client.channels.fetch('1386544585391607858')) as TextChannel;
         channel?.send(`Message from ${message.author.tag} (ID: ${message.author.id}):\n${message.content}`);
     }
+}
+
+const supportSchema = new Schema({
+    channelId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    messageId: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    threadId: {
+        type: String,
+        required: true
+    },
+    userId: {
+        type: String,
+        required: true
+    }
+});
+
+const databaseUserSupport = model('Support', supportSchema);
+
+async function hasSupportMessage(client: GargoyleClient, userId: string): Promise<Message | null> {
+    const support = await databaseUserSupport.findOne({ userId: userId }).exec();
+    if (!support) return null;
+    const channel = (await client.channels.fetch(support.channelId)) as TextChannel;
+    if (!channel) {
+        await databaseUserSupport.deleteOne({ userId: userId }).exec();
+        return null;
+    }
+    const message = await channel.messages.fetch(support.messageId).catch(() => null);
+    if (!message) {
+        await databaseUserSupport.deleteOne({ userId: userId }).exec();
+        return null;
+    }
+    return message;
 }
