@@ -74,6 +74,6 @@ export async function editAsServer(
     }
 }
 
-function sanitizeNameString(str: string): string {
+export function sanitizeNameString(str: string): string {
     return str.replaceAll(/discord/gi, 'DC').replaceAll('1488', 'Numbers');
 }
