@@ -390,7 +390,7 @@ class SupportMessage extends GargoyleEvent {
             await webhook.send({
                 avatarURL: message.author.displayAvatarURL() || undefined,
                 username: sanitizeNameString(message.author.tag),
-                threadId: newSupportMessage.channel.isThread() ? newSupportMessage.channel.id : undefined,
+                threadId: newSupportMessage.thread ? newSupportMessage.thread.id : undefined,
                 content: message.content
             });
         } else if (supportMessage) {
@@ -408,7 +408,7 @@ class SupportMessage extends GargoyleEvent {
             await webhook.send({
                 avatarURL: message.author.displayAvatarURL() || undefined,
                 username: sanitizeNameString(message.author.tag),
-                threadId: supportMessage.channel.isThread() ? supportMessage.channel.id : undefined,
+                threadId: supportMessage.thread ? supportMessage.thread.id : undefined,
                 content: message.content
             });
         }
