@@ -9,6 +9,7 @@ import {
     ChatInputCommandInteraction,
     ContainerBuilder,
     Events,
+    Guild,
     LabelBuilder,
     Message,
     MessageActionRowComponentBuilder,
@@ -32,6 +33,7 @@ import GargoyleContainerBuilder from '../backend/builders/gargoyleContainerBuild
 import GargoyleButtonBuilder from '../backend/builders/gargoyleButtonBuilder.js';
 import Emojis from '../backend/tools/emojis.js';
 import GargoyleModalBuilder from '../backend/builders/gargoyleModalBuilder.js';
+import { sanitizeNameString } from '../backend/tools/server.js';
 
 export default class Manage extends GargoyleModule {
     override category: string = 'base';
@@ -373,13 +375,41 @@ class SupportMessage extends GargoyleEvent {
                 client.logger.error('Failed to find thread in new support message.');
             }
 
-            await newSupportMessage.thread
-                ?.send({ content: message.content })
-                .catch(() => client.logger.error('Failed to send message in new support thread.'));
+            const webhooks = await (newSupportMessage.guild as Guild).fetchWebhooks();
+
+            let webhook = webhooks.find((webhook) => webhook.owner && webhook.owner.id === client.user!.id);
+
+            if (!webhook) {
+                webhook = await (newSupportMessage.channel as TextChannel).createWebhook({
+                    name: sanitizeNameString(newSupportMessage.guild!.name),
+                    reason: 'Server Message'
+                });
+            }
+
+            await webhook.send({
+                avatarURL: message.author.displayAvatarURL() || undefined,
+                username: sanitizeNameString(message.author.tag),
+                threadId: newSupportMessage.channel.isThread() ? newSupportMessage.channel.id : undefined,
+                content: message.content
+            });
         } else if (supportMessage) {
-            await supportMessage.thread
-                ?.send({ content: message.content })
-                .catch(() => client.logger.error('Failed to send message in existing support thread.'));
+            const webhooks = await (supportMessage.guild as Guild).fetchWebhooks();
+
+            let webhook = webhooks.find((webhook) => webhook.owner && webhook.owner.id === client.user!.id);
+
+            if (!webhook) {
+                webhook = await (supportMessage.channel as TextChannel).createWebhook({
+                    name: sanitizeNameString(supportMessage.guild!.name),
+                    reason: 'Server Message'
+                });
+            }
+
+            await webhook.send({
+                avatarURL: message.author.displayAvatarURL() || undefined,
+                username: sanitizeNameString(message.author.tag),
+                threadId: supportMessage.channel.isThread() ? supportMessage.channel.id : undefined,
+                content: message.content
+            });
         }
     }
 }
