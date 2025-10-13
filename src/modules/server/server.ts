@@ -37,11 +37,32 @@ export default class Server extends GargoyleModule {
             .setName('server')
             .setDescription('Server / community commands')
             .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
-            .addSubcommand((subcommand) =>
-                subcommand
-                    .setName('prefix')
-                    .setDescription('Set the server prefix')
-                    .addStringOption((option) => option.setName('prefix').setDescription('Prefix to set').setRequired(true))
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('bot')
+                    .setDescription('Bot related commands')
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('customize')
+                            .setDescription('Customize the bot for this server')
+                            .addStringOption((option) =>
+                                option
+                                    .setName('username')
+                                    .setDescription('Set a custom username for the bot in this server (default: guild name)')
+                                    .setRequired(false)
+                            )
+                            .addAttachmentOption((option) =>
+                                option.setName('avatar').setDescription('Set a custom avatar for the bot in this server').setRequired(false)
+                            )
+                    )
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('disguise')
+                            .setDescription('Make the bot appear as a custom bot in this server')
+                            .addBooleanOption((option) =>
+                                option.setName('enabled').setDescription('Enable or disable the disguise (default: false)').setRequired(true)
+                            )
+                    )
             )
             .addSubcommandGroup((subcommandGroup) =>
                 subcommandGroup
@@ -146,23 +167,6 @@ export default class Server extends GargoyleModule {
                 },
                 interaction.channel as TextChannel
             );
-        } else if (interaction.options.getSubcommand() === 'prefix') {
-            const prefix = interaction.options.getString('prefix');
-            if (!prefix) return;
-
-            if (!client.db) return interaction.reply({ content: 'Database not available, please try again later', flags: MessageFlags.Ephemeral });
-
-            let guildDb = await client.db.getGuild(interaction.guildId!);
-
-            guildDb.prefix = prefix;
-            await guildDb
-                .save()
-                .catch(() => {
-                    interaction.reply({ content: 'Failed to set prefix.', flags: MessageFlags.Ephemeral }).catch(() => {});
-                })
-                .then(() => {
-                    interaction.reply({ content: `Server prefix set to \`${prefix}\``, flags: MessageFlags.Ephemeral }).catch(() => {});
-                });
         } else if (interaction.options.getSubcommandGroup() === 'role') {
             const user = interaction.options.getUser('user');
 
@@ -241,6 +245,78 @@ export default class Server extends GargoyleModule {
                 ],
                 flags: [MessageFlags.IsComponentsV2]
             });
+        } else if (interaction.options.getSubcommandGroup() === 'bot') {
+            if (interaction.options.getSubcommand() === 'customize') {
+                if (!interaction.guild) return;
+                const username = interaction.options.getString('username');
+                const avatar = interaction.options.getAttachment('avatar');
+
+                if (username && username.length > 32) {
+                    return interaction.reply({ content: 'Username cannot be longer than 32 characters.', flags: MessageFlags.Ephemeral });
+                }
+
+                if (avatar && !avatar.contentType?.startsWith('image/')) {
+                    return interaction.reply({ content: 'Avatar must be an image.', flags: MessageFlags.Ephemeral });
+                }
+
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+                await interaction.guild.members
+                    .editMe({
+                        avatar: avatar ? avatar.url : undefined,
+                        nick: username ? username : undefined,
+                        reason: `Customized by ${interaction.user.tag} (${interaction.user.id})`
+                    })
+                    .catch(() => {
+                        return interaction.followUp({
+                            content: 'Failed to update bot customization. Ensure the bot has the necessary permissions.',
+                            flags: MessageFlags.Ephemeral
+                        });
+                    });
+
+                return interaction.followUp({ content: 'Bot customization updated.', flags: MessageFlags.Ephemeral });
+            } else if (interaction.options.getSubcommand() === 'disguise') {
+                if (!interaction.guild) return;
+                const enabled = interaction.options.getBoolean('enabled', true);
+
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+                if (enabled) {
+                    if (!interaction.guild.members.me?.permissions.has(PermissionFlagsBits.ChangeNickname)) {
+                        return interaction.followUp({
+                            content: 'Cannot enable disguise mode. Missing permission to change nickname.',
+                            flags: MessageFlags.Ephemeral
+                        });
+                    }
+                    await interaction.guild.members
+                        .editMe({
+                            nick: interaction.guild.name,
+                            avatar: interaction.guild.iconURL(),
+                            reason: `Disguise enabled by ${interaction.user.tag} (${interaction.user.id})`
+                        })
+                        .catch(() => {
+                            return interaction.followUp({
+                                content: 'Failed to enable disguise mode. Ensure the bot has the necessary permissions.',
+                                flags: MessageFlags.Ephemeral
+                            });
+                        });
+                    return interaction.followUp({ content: 'Disguise mode enabled.', flags: MessageFlags.Ephemeral });
+                } else {
+                    await interaction.guild.members
+                        .editMe({
+                            nick: null,
+                            avatar: null,
+                            reason: `Disguise disabled by ${interaction.user.tag} (${interaction.user.id})`
+                        })
+                        .catch(() => {
+                            return interaction.followUp({
+                                content: 'Failed to disable disguise mode. Ensure the bot has the necessary permissions.',
+                                flags: MessageFlags.Ephemeral
+                            });
+                        });
+                    return interaction.followUp({ content: 'Disguise mode disabled.', flags: MessageFlags.Ephemeral });
+                }
+            }
         }
     }
 
