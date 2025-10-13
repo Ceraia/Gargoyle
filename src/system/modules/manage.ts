@@ -22,7 +22,8 @@ import {
     TextDisplayBuilder,
     TextInputBuilder,
     TextInputStyle,
-    ThumbnailBuilder
+    ThumbnailBuilder,
+    User
 } from 'discord.js';
 import GargoyleSlashCommandBuilder from '../backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleEvent from '../backend/classes/gargoyleEvent.js';
@@ -178,61 +179,15 @@ export default class Manage extends GargoyleModule {
 
                     if (!dm) return;
 
-                    const message = await (interaction.channel as TextChannel)
-                        .send({
-                            components: [new GargoyleContainerBuilder(`# Support: ${user.tag} (ID: ${user.id})`)],
-                            flags: [MessageFlags.IsComponentsV2]
-                        })
-                        .catch(async (err) => {
-                            await interaction.editReply({ content: `Error trying to send message in support channel: \`${err.message}\`` });
-                            return null;
-                        });
+                    const message = await this.createSupportMessage(client, interaction.channel as TextChannel, user);
 
-                    if (!message) return;
-
-                    const thread = await message.startThread({
-                        name: `Support: ${user.tag}`,
-                        autoArchiveDuration: 4320,
-                        reason: `Support thread for ${user.tag}`
-                    });
-
-                    if (!thread) {
-                        await interaction.editReply({ content: 'Failed to create support thread.' });
+                    if (!message) {
+                        await interaction.editReply({ content: 'Failed to create support message.' });
                         return;
                     }
 
-                    const support = await databaseUserSupport
-                        .create({ channelId: message.channelId, threadId: thread.id, messageId: message.id, userId: user.id })
-                        .catch(async (err) => {
-                            await interaction.editReply({ content: `Error trying to create database entry: \`${err.message}\`` });
-                            thread.delete('Failed to create database entry').catch(() => null);
-                            return;
-                        });
-
-                    if (!support) return;
-
-                    await thread.send({
-                        components: [
-                            new ContainerBuilder()
-                                .addTextDisplayComponents(
-                                    new TextDisplayBuilder().setContent(
-                                        `Support thread created for ${user.tag} (ID: ${user.id}). Please assist the user as needed.`
-                                    )
-                                )
-                                .addActionRowComponents(
-                                    new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
-                                        new GargoyleButtonBuilder(this, 'send', user.id)
-                                            .setLabel('Send Message')
-                                            .setStyle(ButtonStyle.Secondary)
-                                            .setEmoji(Emojis.WhitePencil)
-                                    )
-                                )
-                        ],
-                        flags: [MessageFlags.IsComponentsV2]
-                    });
-
                     await interaction.editReply({
-                        content: `(Support thread)[https://discord.com/channels/${support.channelId}/${support.messageId}] created successfully.`
+                        content: `(Support thread)[https://discord.com/channels/${message.channelId}/${message.id}] created successfully.`
                     });
                 }
             }
@@ -325,18 +280,100 @@ export default class Manage extends GargoyleModule {
         }
     }
 
-    public override events: GargoyleEvent[] = [new SupportMessage()];
+    public override events: GargoyleEvent[] = [new SupportMessage(this)];
+
+    public async createSupportMessage(client: GargoyleClient, channel: TextChannel, user: User): Promise<Message | null> {
+        const message = await channel
+            .send({
+                components: [new GargoyleContainerBuilder(`# Support: ${user.tag} (ID: ${user.id})`)],
+                flags: [MessageFlags.IsComponentsV2]
+            })
+            .catch(async (err) => {
+                client.logger.error(`Error trying to send message in support channel: ${err.message}`);
+                return undefined;
+            });
+
+        if (!message) return null;
+
+        const thread = await message.startThread({
+            name: `Support: ${user.tag}`,
+            autoArchiveDuration: 4320,
+            reason: `Support thread for ${user.tag}`
+        });
+
+        if (!thread) {
+            client.logger.error('Failed to create support thread.');
+            return null;
+        }
+
+        const support = await databaseUserSupport
+            .create({ channelId: message.channelId, threadId: thread.id, messageId: message.id, userId: user.id })
+            .catch(async (err) => {
+                client.logger.error(`Error trying to create database entry: ${err.message}`);
+                thread.delete('Failed to create database entry').catch(() => null);
+                return null;
+            });
+
+        if (!support) return null;
+
+        await thread.send({
+            components: [
+                new ContainerBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `Support thread created for ${user.tag} (ID: ${user.id}). Please assist the user as needed.`
+                        )
+                    )
+                    .addActionRowComponents(
+                        new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents(
+                            new GargoyleButtonBuilder(this, 'send', user.id)
+                                .setLabel('Send Message')
+                                .setStyle(ButtonStyle.Secondary)
+                                .setEmoji(Emojis.WhitePencil)
+                        )
+                    )
+            ],
+            flags: [MessageFlags.IsComponentsV2]
+        });
+
+        return message;
+    }
 }
 
 class SupportMessage extends GargoyleEvent {
     public event = Events.MessageCreate as const;
+    private module: Manage;
+
+    constructor(module: Manage) {
+        super();
+        this.module = module;
+    }
 
     public async execute(client: GargoyleClient, message: Message): Promise<void> {
         if (message.author.bot) return;
+        if (!client.db) return;
         if (message.channel.type !== ChannelType.DM) return;
 
-        const channel = (await client.channels.fetch('1386544585391607858')) as TextChannel;
-        channel?.send(`Message from ${message.author.tag} (ID: ${message.author.id}):\n${message.content}`);
+        const supportMessage = await hasSupportMessage(client, message.author.id);
+        if (!supportMessage && process.env.SUPPORT_CHANNEL_ID) {
+            const supportChannel = (await client.channels.fetch(process.env.SUPPORT_CHANNEL_ID)) as TextChannel;
+            if (!supportChannel) return;
+
+            const newSupportMessage = await this.module.createSupportMessage(client, supportChannel, message.author);
+            if (!newSupportMessage) return;
+
+            if (!newSupportMessage.thread) {
+                client.logger.error('Failed to find thread in new support message.');
+            }
+
+            await newSupportMessage.thread
+                ?.send({ content: message.content })
+                .catch(() => client.logger.error('Failed to send message in new support thread.'));
+        } else if (supportMessage) {
+            await supportMessage.thread
+                ?.send({ content: message.content })
+                .catch(() => client.logger.error('Failed to send message in existing support thread.'));
+        }
     }
 }
 
