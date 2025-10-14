@@ -64,11 +64,6 @@ export default class RoleCommand extends GargoyleModule {
                     .setDescription('Delete a role')
                     .addRoleOption((option) => option.setRequired(true).setName('role').setDescription('The role to delete'))
             )
-            .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder,
-        new GargoyleSlashCommandBuilder()
-            .setName('role-beta')
-            .setDescription('Role related commands (beta)')
-            .addGuild('750209335841390642')
             .addSubcommand((subcommand) => subcommand.setName('panel').setDescription('Create a role panel'))
             .setContexts([InteractionContextType.Guild]) as GargoyleSlashCommandBuilder
     ];
