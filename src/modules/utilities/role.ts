@@ -24,6 +24,7 @@ import {
     Role,
     RoleSelectMenuBuilder,
     SectionBuilder,
+    SendableChannels,
     TextChannel,
     TextDisplayBuilder,
     TextInputBuilder,
@@ -429,7 +430,7 @@ export default class RoleCommand extends GargoyleModule {
         }
     }
 
-    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
+    public override async executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
         if (args[0] === 'panel') {
             if (!interaction.guild) {
                 await interaction.reply({ content: 'An unexpected error occured, are you in a guild?', flags: MessageFlags.Ephemeral });
@@ -448,6 +449,18 @@ export default class RoleCommand extends GargoyleModule {
             const fetchedRoles: Role[] = [];
             for (const role of roles) {
                 if (role[1] instanceof Role) fetchedRoles.push(role[1]);
+            }
+
+            const highestRole = (await interaction.guild!.members.fetch(interaction.user.id)).roles.highest.position;
+
+            for (const role of fetchedRoles) {
+                if (role.position >= highestRole) {
+                    await interaction.reply({
+                        content: `You cannot include the role ${role.name} as it is higher than your highest role.`,
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
             }
 
             if (!color) {
@@ -480,11 +493,25 @@ export default class RoleCommand extends GargoyleModule {
                 );
             }
 
-            const message: MessageCreateOptions = {
-                components: [container],
-                flags: [MessageFlags.IsComponentsV2],
-                allowedMentions: { parse: [] }
-            };
+            const message = (interaction.channel as SendableChannels)
+                .send({ components: [container], flags: [MessageFlags.IsComponentsV2], allowedMentions: { parse: [] } })
+                .catch(() => {
+                    return undefined;
+                });
+
+            if (!message) {
+                await interaction.reply({
+                    content: 'I do not appear to have permissions to send messages in this channel.',
+                    flags: [MessageFlags.Ephemeral]
+                });
+                return;
+            }
+
+            interaction.reply({
+                content:
+                    'Sent new role panel!\n-# If you want to disguise the message as a message sent by your server, use the `/server bot disguise` command!',
+                flags: [MessageFlags.Ephemeral]
+            });
         }
     }
 }
