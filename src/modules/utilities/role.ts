@@ -18,6 +18,7 @@ import {
     MessageCreateOptions,
     MessageEditOptions,
     MessageFlags,
+    ModalSubmitInteraction,
     Role,
     RoleSelectMenuBuilder,
     SectionBuilder,
@@ -423,6 +424,42 @@ export default class RoleCommand extends GargoyleModule {
                     ]
                 });
             }
+        }
+    }
+
+    public override async executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): Promise<void> {
+        if (args[0] === 'panel') {
+            if (!interaction.guild) {
+                await interaction.reply({ content: 'An unexpected error occured, are you in a guild?', flags: MessageFlags.Ephemeral });
+                return;
+            }
+            const image = interaction.fields.getTextInputValue('image');
+            const text = interaction.fields.getTextInputValue('text');
+            const roles = interaction.fields.getSelectedRoles('roles', true);
+            let color = interaction.fields.getTextInputValue('color');
+
+            if (color && !/^#[0-9A-F]{6}$/i.test(color)) {
+                await interaction.reply({ content: 'The color you provided is not a valid hex color.', flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            const fetchedRoles: Role[] = [];
+            for (const role of roles) {
+                if (role[1] instanceof Role) fetchedRoles.push(role[1]);
+            }
+
+            if (!color) {
+                color = averageRoleColor(fetchedRoles).toString(16);
+            }
+
+            const newColor = parseInt(color.replace('#', ''), 16);
+            if (isNaN(newColor) || newColor < 0 || newColor > 0xffffff) {
+                color = '2b2d31'; // Discord default color
+            } else {
+                color = color.replace('#', '');
+            }
+
+            const container = new ContainerBuilder().setAccentColor(newColor);
         }
     }
 }
