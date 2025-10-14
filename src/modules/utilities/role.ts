@@ -14,6 +14,8 @@ import {
     HexColorString,
     InteractionContextType,
     LabelBuilder,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
     Message,
     MessageCreateOptions,
     MessageEditOptions,
@@ -460,6 +462,29 @@ export default class RoleCommand extends GargoyleModule {
             }
 
             const container = new ContainerBuilder().setAccentColor(newColor);
+
+            // Check if image is a valid image url
+            if (image && /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)$/.test(image)) {
+                container.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(image)));
+            }
+
+            if (text) {
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
+            }
+
+            for (const role of fetchedRoles) {
+                container.addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`<@&${role.id}>`))
+                        .setButtonAccessory(new GargoyleButtonBuilder(this, 'addrole', role.id).setLabel('Add Role').setStyle(ButtonStyle.Secondary))
+                );
+            }
+
+            const message: MessageCreateOptions = {
+                components: [container],
+                flags: [MessageFlags.IsComponentsV2],
+                allowedMentions: { parse: [] }
+            };
         }
     }
 }
