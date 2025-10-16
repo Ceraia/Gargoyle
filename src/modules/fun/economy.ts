@@ -1,8 +1,22 @@
+import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleContainerBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
-import { ApplicationIntegrationType, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
+import Emojis from '@src/system/backend/tools/emojis.js';
+import {
+    ActionRowBuilder,
+    ApplicationIntegrationType,
+    ButtonStyle,
+    ChatInputCommandInteraction,
+    ContainerBuilder,
+    MessageActionRowComponentBuilder,
+    MessageFlags,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    TextBasedChannel,
+    TextDisplayBuilder
+} from 'discord.js';
 import { model, Schema } from 'mongoose';
 
 export default class Economy extends GargoyleModule {
@@ -130,17 +144,67 @@ export default class Economy extends GargoyleModule {
             }
 
             let game = this.cardMap.get(interaction.user.id);
+
             if (game) {
-                await interaction.reply({
-                    components: [
-                        new GargoyleContainerBuilder(
-                            `(You already have an ongoing game!)[https://discord.com/channels/${game.channelId}/${game.messageId}] Finish it before starting a new one.`
-                        )
-                    ],
-                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
-                });
-                return;
+                const message = await ((await client.channels.fetch(game.channelId)) as TextBasedChannel)?.messages.fetch(game.messageId);
+                if (message) {
+                    await interaction.reply({
+                        components: [
+                            new GargoyleContainerBuilder(
+                                `(You already have an ongoing game!)[https://discord.com/channels/${game.channelId}/${game.messageId}] Finish it before starting a new one.`
+                            )
+                        ],
+                        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                    });
+                    return;
+                } else {
+                    this.cardMap.delete(interaction.user.id);
+                }
             }
+
+            const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
+            const message = await interaction
+                .reply({
+                    components: [new GargoyleContainerBuilder('Starting a game of blackjack...')],
+                    flags: [MessageFlags.IsComponentsV2]
+                })
+                .catch(async () => {
+                    await interaction.followUp({
+                        content: 'Failed to start a game of blackjack, please try again later.',
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return null;
+                });
+            if (!message) return;
+
+            this.cardMap.set(interaction.user.id, {
+                messageId: message.id,
+                channelId: interaction.channelId,
+                cards: shuffledCards,
+                playerHand: [],
+                dealerHand: []
+            });
+
+            await message.edit({
+                components: [
+                    new ContainerBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack'))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`No dealer cards yet.`))
+                        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`You have no cards yet.`))
+                        .addActionRowComponents(
+                            new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                                new GargoyleButtonBuilder(this, 'hit').setEmoji(Emojis.WhitePlus).setLabel('Hit').setStyle(ButtonStyle.Secondary),
+                                new GargoyleButtonBuilder(this, 'stand').setEmoji(Emojis.WhiteGavel).setLabel('Stand').setStyle(ButtonStyle.Success),
+                                new GargoyleButtonBuilder(this, 'forfeit')
+                                    .setEmoji(Emojis.WhiteMinus)
+                                    .setLabel('Forfeit')
+                                    .setStyle(ButtonStyle.Danger)
+                            )
+                        )
+                ],
+                flags: [MessageFlags.IsComponentsV2]
+            });
         } else {
             await interaction.reply({
                 components: [new GargoyleContainerBuilder('Unknown subcommand!')],
@@ -155,6 +219,14 @@ export default class Economy extends GargoyleModule {
      * Value: Object containing the message id, channel id, deck of cards, player hand, and dealer hand
      */
     private cardMap = new Map<string, { messageId: string; channelId: string; cards: Card[]; playerHand: Card[]; dealerHand: Card[] }>();
+}
+
+function cardToString(card: Card): string {
+    return `${card.value}${card.suit}`;
+}
+
+function cardsToString(cards: Card[]): string {
+    return cards.map(cardToString).join(', ');
 }
 
 enum Suit {
