@@ -194,8 +194,11 @@ export default class Economy extends GargoyleModule {
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(`You have no cards yet.`))
                         .addActionRowComponents(
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                                new GargoyleButtonBuilder(this, 'hit').setEmoji(Emojis.WhitePlus).setLabel('Hit').setStyle(ButtonStyle.Secondary),
-                                new GargoyleButtonBuilder(this, 'stand').setEmoji(Emojis.WhiteGavel).setLabel('Stand').setStyle(ButtonStyle.Success),
+                                new GargoyleButtonBuilder(this, 'hit').setEmoji(Emojis.WhitePlus).setLabel('Hit').setStyle(ButtonStyle.Success),
+                                new GargoyleButtonBuilder(this, 'stand')
+                                    .setEmoji(Emojis.WhiteGavel)
+                                    .setLabel('Stand')
+                                    .setStyle(ButtonStyle.Secondary),
                                 new GargoyleButtonBuilder(this, 'forfeit')
                                     .setEmoji(Emojis.WhiteMinus)
                                     .setLabel('Forfeit')
