@@ -23,7 +23,14 @@ export default class Economy extends GargoyleModule {
             ) as GargoyleSlashCommandBuilder
     ];
 
-    public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
+    public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
+        if (!client.db) {
+            await interaction.reply({
+                components: [new GargoyleContainerBuilder('Database connection not established, please try again later.')],
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
+            return;
+        }
         const economyUser = await getEconomyUser(interaction.user.id);
         if (interaction.options.getSubcommand() === 'balance') {
             await interaction.reply({
