@@ -92,10 +92,11 @@ export default class Economy extends GargoyleModule {
             await interaction.reply({
                 components: [
                     new GargoyleContainerBuilder(
-                        `You have paid $${amount.toLocaleString()} to ${user.username}! Your new balance is $${economyUser.balance.toLocaleString()}.`
+                        `You have paid $${amount.toLocaleString()} to <@!${user.id}>! Your new balance is $${economyUser.balance.toLocaleString()}.`
                     )
                 ],
-                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+                allowedMentions: { users: [] }
             });
         } else {
             await interaction.reply({
