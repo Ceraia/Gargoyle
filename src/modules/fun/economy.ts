@@ -7,10 +7,12 @@ import Emojis from '@src/system/backend/tools/emojis.js';
 import {
     ActionRowBuilder,
     ApplicationIntegrationType,
+    ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
     ContainerBuilder,
     MessageActionRowComponentBuilder,
+    MessageEditOptions,
     MessageFlags,
     SeparatorBuilder,
     SeparatorSpacingSize,
@@ -182,7 +184,8 @@ export default class Economy extends GargoyleModule {
                 channelId: interaction.channelId,
                 cards: shuffledCards,
                 playerHand: [],
-                dealerHand: []
+                dealerHand: [],
+                wager: bet
             });
 
             await message.edit({
@@ -194,12 +197,15 @@ export default class Economy extends GargoyleModule {
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(`You have no cards yet.`))
                         .addActionRowComponents(
                             new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                                new GargoyleButtonBuilder(this, 'hit').setEmoji(Emojis.WhitePlus).setLabel('Hit').setStyle(ButtonStyle.Success),
-                                new GargoyleButtonBuilder(this, 'stand')
+                                new GargoyleButtonBuilder(this, 'hit', interaction.user.id)
+                                    .setEmoji(Emojis.WhitePlus)
+                                    .setLabel('Hit')
+                                    .setStyle(ButtonStyle.Success),
+                                new GargoyleButtonBuilder(this, 'stand', interaction.user.id)
                                     .setEmoji(Emojis.WhiteGavel)
                                     .setLabel('Stand')
                                     .setStyle(ButtonStyle.Secondary),
-                                new GargoyleButtonBuilder(this, 'forfeit')
+                                new GargoyleButtonBuilder(this, 'forfeit', interaction.user.id)
                                     .setEmoji(Emojis.WhiteMinus)
                                     .setLabel('Forfeit')
                                     .setStyle(ButtonStyle.Danger)
@@ -216,12 +222,115 @@ export default class Economy extends GargoyleModule {
         }
     }
 
+    public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (args[1] !== interaction.user.id) {
+            await interaction.reply({
+                components: [new GargoyleContainerBuilder('This button is not for you!')],
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
+            return;
+        }
+        if (args[0] === 'hit') {
+            const game = this.cardMap.get(interaction.user.id);
+            if (!game) {
+                await interaction.reply({
+                    components: [new GargoyleContainerBuilder('You do not have an ongoing game!')],
+                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                });
+                return;
+            }
+            const card = game.cards.pop();
+            if (card) {
+                game.playerHand.push(card);
+            }
+            const playerTotal = game.playerHand.reduce((acc, card) => acc + card.value, 0);
+            if (playerTotal > 21) {
+                const economyUser = await getEconomyUser(interaction.user.id);
+                economyUser.balance -= game.wager;
+                await economyUser.save();
+                this.cardMap.delete(interaction.user.id);
+                await interaction.update({
+                    components: [
+                        new ContainerBuilder()
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Busted!'))
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    `Your cards: ${cardsToString(game.playerHand)} (Total: ${playerTotal})\nYou lost $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`
+                                )
+                            )
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+                return;
+            }
+            const edit = this.drawGame(interaction.user.id, { dealerTurn: false });
+            if (edit) {
+                await interaction.update(edit);
+            } else {
+                await interaction.reply({
+                    components: [new GargoyleContainerBuilder('Failed to update game, please try again later.')],
+                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                });
+            }
+        }
+    }
+
+    private drawGame(
+        userId: string,
+        options: {
+            dealerTurn?: boolean;
+        }
+    ): MessageEditOptions | null {
+        const game = this.cardMap.get(userId);
+        if (!game) return null;
+
+        const playerTotal = game.playerHand.reduce((acc, card) => acc + card.value, 0);
+        const dealerTotal = game.dealerHand.reduce((acc, card) => acc + card.value, 0);
+
+        return {
+            components: [
+                new ContainerBuilder()
+                    .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack'))
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`Dealer's cards: ${cardsToString(game.dealerHand)} (Total: ${dealerTotal})`)
+                    )
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`Your cards: ${cardsToString(game.playerHand)} (Total: ${playerTotal})`)
+                    )
+                    .addActionRowComponents(
+                        new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                            new GargoyleButtonBuilder(this, 'hit', userId)
+                                .setEmoji(Emojis.WhitePlus)
+                                .setLabel('Hit')
+                                .setStyle(ButtonStyle.Success)
+                                .setDisabled(options.dealerTurn),
+                            new GargoyleButtonBuilder(this, 'stand', userId)
+                                .setEmoji(Emojis.WhiteGavel)
+                                .setLabel('Stand')
+                                .setStyle(ButtonStyle.Secondary)
+                                .setDisabled(options.dealerTurn),
+                            new GargoyleButtonBuilder(this, 'forfeit', userId)
+                                .setEmoji(Emojis.WhiteMinus)
+                                .setLabel('Forfeit')
+                                .setStyle(ButtonStyle.Danger)
+                                .setDisabled(options.dealerTurn)
+                        )
+                    )
+            ],
+            flags: [MessageFlags.IsComponentsV2]
+        };
+    }
+
     /**
      * Map to store the cards for each user playing blackjack
      * Key: User ID
      * Value: Object containing the message id, channel id, deck of cards, player hand, and dealer hand
      */
-    private cardMap = new Map<string, { messageId: string; channelId: string; cards: Card[]; playerHand: Card[]; dealerHand: Card[] }>();
+    private cardMap = new Map<
+        string,
+        { messageId: string; channelId: string; wager: number; cards: Card[]; playerHand: Card[]; dealerHand: Card[] }
+    >();
 }
 
 function cardToString(card: Card): string {
