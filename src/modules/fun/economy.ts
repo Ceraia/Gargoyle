@@ -54,6 +54,7 @@ export default class Economy extends GargoyleModule {
             });
             return;
         }
+        
         const economyUser = await getEconomyUser(interaction.user.id);
         if (interaction.options.getSubcommand() === 'balance') {
             await interaction.reply({
@@ -272,7 +273,7 @@ export default class Economy extends GargoyleModule {
                 });
                 return;
             }
-            const edit = this.drawGame(interaction.user.id);
+            const edit = this.drawGame(interaction.user.id, { dealerTurn: false });
             if (edit) {
                 await interaction.update(edit);
             } else {
@@ -290,12 +291,13 @@ export default class Economy extends GargoyleModule {
                 });
                 return;
             }
+            await interaction.deferUpdate();
             const edit = this.drawGame(interaction.user.id, { dealerTurn: true });
             if (edit) {
                 await interaction.message.edit(edit);
                 let userTotal = game.playerHand.reduce((acc, card) => acc + card.value, 0);
                 let dealerTotal = game.dealerHand.reduce((acc, card) => acc + card.value, 0);
-                while (dealerTotal < userTotal) {
+                while (dealerTotal < userTotal && dealerTotal <= 21) {
                     client.logger.trace('Dealer drawing a card...');
                     sleepSync(1500);
                     const card = game.cards.pop();
@@ -321,7 +323,7 @@ export default class Economy extends GargoyleModule {
                 }
                 await economyUser.save();
                 this.cardMap.delete(interaction.user.id);
-                await interaction.update({
+                await interaction.message.edit({
                     components: [
                         new ContainerBuilder()
                             .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - Game Over'))
@@ -379,7 +381,7 @@ export default class Economy extends GargoyleModule {
 
     private drawGame(
         userId: string,
-        options?: {
+        options: {
             dealerTurn?: boolean;
         }
     ): MessageEditOptions | null {
