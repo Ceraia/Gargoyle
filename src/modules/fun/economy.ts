@@ -81,12 +81,13 @@ export default class Economy extends GargoyleModule {
             }
             const dailyAmount = 50 + economyUser.dailyStreak * 10;
             economyUser.balance += dailyAmount;
+            client.logger.trace(`User ${interaction.user.id} claimed daily reward of $${dailyAmount} with a streak of ${economyUser.dailyStreak}.`);
             economyUser.lastDaily = now;
             await economyUser.save();
             await interaction.reply({
                 components: [
                     new GargoyleContainerBuilder(
-                        `You have claimed your daily reward of $${dailyAmount.toLocaleString()}! Your current streak is ${economyUser.dailyStreak} days.`
+                        `You have claimed your daily reward of $${dailyAmount.toLocaleString()}! Your current streak is ${economyUser.dailyStreak + 1} days.`
                     )
                 ],
                 flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
@@ -440,7 +441,7 @@ export default class Economy extends GargoyleModule {
 }
 
 function cardToString(card: Card): string {
-    return `${card.value}${card.suit}`;
+    return `\`${card.value}${card.suit}\``;
 }
 
 function cardsToString(cards: Card[]): string {
