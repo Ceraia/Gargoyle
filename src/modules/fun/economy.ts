@@ -271,7 +271,7 @@ export default class Economy extends GargoyleModule {
                 });
                 return;
             }
-            const edit = this.drawGame(interaction.user.id, { dealerTurn: false });
+            const edit = this.drawGame(interaction.user.id);
             if (edit) {
                 await interaction.update(edit);
             } else {
@@ -376,7 +376,7 @@ export default class Economy extends GargoyleModule {
 
     private drawGame(
         userId: string,
-        options: {
+        options?: {
             dealerTurn?: boolean;
         }
     ): MessageEditOptions | null {
@@ -403,17 +403,17 @@ export default class Economy extends GargoyleModule {
                                 .setEmoji(Emojis.WhitePlus)
                                 .setLabel('Hit')
                                 .setStyle(ButtonStyle.Success)
-                                .setDisabled(options.dealerTurn),
+                                .setDisabled(options?.dealerTurn),
                             new GargoyleButtonBuilder(this, 'stand', userId)
                                 .setEmoji(Emojis.WhiteGavel)
                                 .setLabel('Stand')
                                 .setStyle(ButtonStyle.Secondary)
-                                .setDisabled(options.dealerTurn),
+                                .setDisabled(options?.dealerTurn),
                             new GargoyleButtonBuilder(this, 'forfeit', userId)
                                 .setEmoji(Emojis.WhiteMinus)
                                 .setLabel('Forfeit')
                                 .setStyle(ButtonStyle.Danger)
-                                .setDisabled(options.dealerTurn)
+                                .setDisabled(options?.dealerTurn)
                         )
                     )
             ],
