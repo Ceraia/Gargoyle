@@ -272,6 +272,47 @@ export default class Economy extends GargoyleModule {
                     flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
                 });
             }
+        } else if (args[0] === 'stand') {
+            const game = this.cardMap.get(interaction.user.id);
+            if (!game) {
+                await interaction.reply({
+                    components: [new GargoyleContainerBuilder('You do not have an ongoing game!')],
+                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                });
+                return;
+            }
+            // #TODO
+        } else if (args[0] === 'forfeit') {
+            const game = this.cardMap.get(interaction.user.id);
+            if (!game) {
+                await interaction.reply({
+                    components: [new GargoyleContainerBuilder('You do not have an ongoing game!')],
+                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                });
+                return;
+            }
+            const economyUser = await getEconomyUser(interaction.user.id);
+            const forfeitAmount = Math.floor(game.wager / 2);
+            economyUser.balance -= forfeitAmount;
+            await economyUser.save();
+            this.cardMap.delete(interaction.user.id);
+            await interaction.update({
+                components: [
+                    new ContainerBuilder()
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Forfeited!'))
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(
+                                `You forfeited the game and lost $${forfeitAmount.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`
+                            )
+                        )
+                ],
+                flags: [MessageFlags.IsComponentsV2]
+            });
+        } else {
+            await interaction.reply({
+                components: [new GargoyleContainerBuilder('Unknown button action!')],
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
         }
     }
 
