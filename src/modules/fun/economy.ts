@@ -4,6 +4,7 @@ import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSl
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import Emojis from '@src/system/backend/tools/emojis.js';
+import { sleepSync } from 'bun';
 import {
     ActionRowBuilder,
     ApplicationIntegrationType,
@@ -223,6 +224,13 @@ export default class Economy extends GargoyleModule {
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
+        if (!client.db) {
+            await interaction.reply({
+                components: [new GargoyleContainerBuilder('Database connection not established, please try again later.')],
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
+            return;
+        }
         if (args[1] !== interaction.user.id) {
             await interaction.reply({
                 components: [new GargoyleContainerBuilder('This button is not for you!')],
@@ -281,7 +289,57 @@ export default class Economy extends GargoyleModule {
                 });
                 return;
             }
-            // #TODO
+            const edit = this.drawGame(interaction.user.id, { dealerTurn: true });
+            if (edit) {
+                await interaction.message.edit(edit);
+                let userTotal = game.playerHand.reduce((acc, card) => acc + card.value, 0);
+                let dealerTotal = game.dealerHand.reduce((acc, card) => acc + card.value, 0);
+                while (dealerTotal < userTotal) {
+                    client.logger.trace('Dealer drawing a card...');
+                    sleepSync(2500);
+                    const card = game.cards.pop();
+                    if (card) {
+                        game.dealerHand.push(card);
+                    }
+                    dealerTotal = game.dealerHand.reduce((acc, card) => acc + card.value, 0);
+                    const edit = this.drawGame(interaction.user.id, { dealerTurn: true });
+                    if (edit) {
+                        await interaction.message.edit(edit);
+                    }
+                }
+                const economyUser = await getEconomyUser(interaction.user.id);
+                let resultMessage = '';
+                if (dealerTotal > 21 || userTotal > dealerTotal) {
+                    economyUser.balance += game.wager;
+                    resultMessage = `You win! You gained $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`;
+                } else if (dealerTotal === userTotal) {
+                    resultMessage = `It's a tie! Your balance remains $${economyUser.balance.toLocaleString()}.`;
+                } else {
+                    economyUser.balance -= game.wager;
+                    resultMessage = `You lose! You lost $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`;
+                }
+                await economyUser.save();
+                this.cardMap.delete(interaction.user.id);
+                await interaction.update({
+                    components: [
+                        new ContainerBuilder()
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - Game Over'))
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    `Dealer's cards: ${cardsToString(game.dealerHand)} (Total: ${dealerTotal})\nYour cards: ${cardsToString(
+                                        game.playerHand
+                                    )} (Total: ${userTotal})\n${resultMessage}`
+                                )
+                            )
+                    ],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+            } else {
+                await interaction.reply({
+                    components: [new GargoyleContainerBuilder('Failed to update game, please try again later.')],
+                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                });
+            }
         } else if (args[0] === 'forfeit') {
             const game = this.cardMap.get(interaction.user.id);
             if (!game) {
