@@ -261,6 +261,7 @@ export default class Economy extends GargoyleModule {
                     components: [
                         new ContainerBuilder()
                             .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Busted!'))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
                                     `Your cards: ${cardsToString(game.playerHand)} (Total: ${playerTotal})\nYou lost $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`
@@ -296,7 +297,7 @@ export default class Economy extends GargoyleModule {
                 let dealerTotal = game.dealerHand.reduce((acc, card) => acc + card.value, 0);
                 while (dealerTotal < userTotal) {
                     client.logger.trace('Dealer drawing a card...');
-                    sleepSync(2500);
+                    sleepSync(1500);
                     const card = game.cards.pop();
                     if (card) {
                         game.dealerHand.push(card);
@@ -324,6 +325,7 @@ export default class Economy extends GargoyleModule {
                     components: [
                         new ContainerBuilder()
                             .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - Game Over'))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(
                                     `Dealer's cards: ${cardsToString(game.dealerHand)} (Total: ${dealerTotal})\nYour cards: ${cardsToString(
@@ -358,6 +360,7 @@ export default class Economy extends GargoyleModule {
                 components: [
                     new ContainerBuilder()
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Forfeited!'))
+                        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
                                 `You forfeited the game and lost $${forfeitAmount.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`
@@ -389,7 +392,9 @@ export default class Economy extends GargoyleModule {
         return {
             components: [
                 new ContainerBuilder()
-                    .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack'))
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`# Blackjack ${options?.dealerTurn ? "- Dealer's Turn" : '- Your Turn'}`)
+                    )
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`Dealer's cards: ${cardsToString(game.dealerHand)} (Total: ${dealerTotal})`)
                     )
