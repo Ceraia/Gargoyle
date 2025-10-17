@@ -191,32 +191,20 @@ export default class Economy extends GargoyleModule {
                 wager: bet
             });
 
-            await message.edit({
-                components: [
-                    new ContainerBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack'))
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`No dealer cards yet.`))
-                        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`You have no cards yet.`))
-                        .addActionRowComponents(
-                            new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                                new GargoyleButtonBuilder(this, 'hit', interaction.user.id)
-                                    .setEmoji(Emojis.WhitePlus)
-                                    .setLabel('Hit')
-                                    .setStyle(ButtonStyle.Success),
-                                new GargoyleButtonBuilder(this, 'stand', interaction.user.id)
-                                    .setEmoji(Emojis.WhiteGavel)
-                                    .setLabel('Stand')
-                                    .setStyle(ButtonStyle.Secondary),
-                                new GargoyleButtonBuilder(this, 'forfeit', interaction.user.id)
-                                    .setEmoji(Emojis.WhiteMinus)
-                                    .setLabel('Forfeit')
-                                    .setStyle(ButtonStyle.Danger)
-                            )
-                        )
-                ],
-                flags: [MessageFlags.IsComponentsV2]
-            });
+            economyUser.balance -= bet;
+            await economyUser.save();
+
+            const edit = this.drawGame(interaction.user.id, {dealerTurn: false})
+            if (!edit) {
+                await interaction.followUp({
+                    components: [new GargoyleContainerBuilder('Failed to start a game of blackjack, please try again later.')],
+                })
+                economyUser.balance += bet;
+                await economyUser.save();
+                this.cardMap.delete(interaction.user.id);
+                return
+            }
+            await message.edit(edit);
         } else {
             await interaction.reply({
                 components: [new GargoyleContainerBuilder('Unknown subcommand!')],
