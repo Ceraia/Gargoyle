@@ -29,7 +29,6 @@ import { model, Schema } from 'mongoose';
 export default class Economy extends GargoyleModule {
     public override category: string = 'fun';
     public override slashCommands: GargoyleSlashCommandBuilder[] = [
-        new GargoyleSlashCommandBuilder().addGuild('750209335841390642').setName('carddraw').setDescription('Draw a card image'),
         new GargoyleSlashCommandBuilder()
             .setName('economy')
             .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
@@ -237,7 +236,7 @@ export default class Economy extends GargoyleModule {
             gameData.playerHand.push(gameData.cards.pop()!);
             gameData.dealerHand.push(gameData.cards.pop()!);
 
-            const edit = this.drawGame(interaction.user.id, { dealerTurn: false });
+            const edit = await this.drawGame(interaction.user.id, { dealerTurn: false });
             if (!edit) {
                 await interaction.followUp({
                     components: [new GargoyleContainerBuilder('Failed to start a game of blackjack, please try again later.')]
@@ -294,17 +293,26 @@ export default class Economy extends GargoyleModule {
                         new ContainerBuilder()
                             .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Busted!'))
                             .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                            .addMediaGalleryComponents(
+                                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://blackjack.png`))
+                            )
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                             .addTextDisplayComponents(
-                                new TextDisplayBuilder().setContent(
-                                    `Your cards: ${cardsToString(game.playerHand)} (Total: ${playerTotal})\nYou lost $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`
+                                new TextDisplayBuilder().setContent(`You lost $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`
                                 )
                             )
                     ],
-                    flags: [MessageFlags.IsComponentsV2]
+                    flags: [MessageFlags.IsComponentsV2],
+                    files: [
+                        {
+                            attachment: await drawGame({ dealerTurn: true, userCards: game.playerHand, dealerCards: game.dealerHand }),
+                            name: 'blackjack.png'
+                        }
+                    ]
                 });
                 return;
             }
-            const edit = this.drawGame(interaction.user.id, { dealerTurn: false });
+            const edit = await this.drawGame(interaction.user.id, { dealerTurn: false });
             if (edit) {
                 await interaction.update(edit);
             } else {
@@ -323,7 +331,7 @@ export default class Economy extends GargoyleModule {
                 return;
             }
             await interaction.deferUpdate();
-            const edit = this.drawGame(interaction.user.id, { dealerTurn: true });
+            const edit = await this.drawGame(interaction.user.id, { dealerTurn: true });
             if (edit) {
                 await interaction.message.edit(edit);
                 let userTotal = calculateHandTotal(game.playerHand);
@@ -336,7 +344,7 @@ export default class Economy extends GargoyleModule {
                         game.dealerHand.push(card);
                     }
                     dealerTotal = calculateHandTotal(game.dealerHand);
-                    const edit = this.drawGame(interaction.user.id, { dealerTurn: true });
+                    const edit = await this.drawGame(interaction.user.id, { dealerTurn: true });
                     if (edit) {
                         await interaction.message.edit(edit);
                     }
@@ -358,16 +366,18 @@ export default class Economy extends GargoyleModule {
                     components: [
                         new ContainerBuilder()
                             .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - Game Over'))
+                                                        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                            .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://blackjack.png`)))
                             .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                            .addTextDisplayComponents(
-                                new TextDisplayBuilder().setContent(
-                                    `Dealer's cards: ${cardsToString(game.dealerHand)} (Total: ${dealerTotal})\nYour cards: ${cardsToString(
-                                        game.playerHand
-                                    )} (Total: ${userTotal})\n${resultMessage}`
-                                )
-                            )
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(resultMessage))
                     ],
-                    flags: [MessageFlags.IsComponentsV2]
+                    flags: [MessageFlags.IsComponentsV2],
+                                    files: [
+                    {
+                        attachment: await drawGame({ dealerTurn: true, userCards: game.playerHand, dealerCards: game.dealerHand }),
+                        name: 'blackjack.png'
+                    }
+                ]
                 });
             } else {
                 await interaction.reply({
@@ -392,7 +402,10 @@ export default class Economy extends GargoyleModule {
             await interaction.update({
                 components: [
                     new ContainerBuilder()
-                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Forfeited!'))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Forfeited!'))                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
+                        .addMediaGalleryComponents(
+                            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://blackjack.png`))
+                        )
                         .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(
@@ -400,7 +413,13 @@ export default class Economy extends GargoyleModule {
                             )
                         )
                 ],
-                flags: [MessageFlags.IsComponentsV2]
+                flags: [MessageFlags.IsComponentsV2],
+                files: [
+                    {
+                        attachment: await drawGame({ dealerTurn: true, userCards: game.playerHand, dealerCards: game.dealerHand }),
+                        name: 'blackjack.png'
+                    }
+                ]
             });
         } else {
             await interaction.reply({
@@ -410,19 +429,14 @@ export default class Economy extends GargoyleModule {
         }
     }
 
-    private drawGame(
+    private async drawGame(
         userId: string,
         options: {
             dealerTurn?: boolean;
         }
-    ): MessageEditOptions | null {
+    ): Promise<MessageEditOptions | null> {
         const game = this.cardMap.get(userId);
         if (!game) return null;
-
-        const dealerCardsVisible = options?.dealerTurn ? game.dealerHand : [game.dealerHand[0]];
-
-        const playerTotal = calculateHandTotal(game.playerHand);
-        const dealerTotal = calculateHandTotal(dealerCardsVisible);
 
         return {
             components: [
@@ -430,15 +444,9 @@ export default class Economy extends GargoyleModule {
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`# Blackjack ${options?.dealerTurn ? "- Dealer's Turn" : '- Your Turn'}`)
                     )
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            `Dealer's cards: ${cardsToString(dealerCardsVisible) + (options?.dealerTurn ? '' : ' `(Hidden)`')} (Total: ${dealerTotal})`
-                        )
-                    )
                     .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`Your cards: ${cardsToString(game.playerHand)} (Total: ${playerTotal})`)
-                    )
+                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://blackjack.png`)))
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                     .addActionRowComponents(
                         new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
                             new GargoyleButtonBuilder(this, 'hit', userId)
@@ -459,7 +467,13 @@ export default class Economy extends GargoyleModule {
                         )
                     )
             ],
-            flags: [MessageFlags.IsComponentsV2]
+            flags: [MessageFlags.IsComponentsV2],
+            files: [
+                {
+                    attachment: await drawGame({ dealerTurn: options?.dealerTurn, userCards: game.playerHand, dealerCards: game.dealerHand }),
+                    name: 'blackjack.png'
+                }
+            ]
         };
     }
 
@@ -493,14 +507,6 @@ function calculateHandTotal(hand: Card[]): number {
     return total;
 }
 
-function cardToString(card: Card): string {
-    return `\`${card.value.name}${card.suit}\``;
-}
-
-function cardsToString(cards: Card[]): string {
-    return cards.map(cardToString).join(', ');
-}
-
 enum Suit {
     Hearts = 'Hearts',
     Diamonds = 'Diamonds',
@@ -522,15 +528,47 @@ const CardValue = {
     Jack: { name: 'Jack', shortName: 'J', value: 10 },
     Queen: { name: 'Queen', shortName: 'Q', value: 10 },
     King: { name: 'King', shortName: 'K', value: 10 }
-}
+};
 
 type Card = {
     suit: Suit;
-    value: typeof CardValue[keyof typeof CardValue];
+    value: (typeof CardValue)[keyof typeof CardValue];
 };
 
-async function drawCard(card: Card) {
-    const width = 75, height = 105;
+async function drawGame(options: { dealerTurn?: boolean; userCards: Card[]; dealerCards: Card[] }) {
+    const canvas = new Canvas(400, 300);
+    const ctx = canvas.getContext('2d');
+
+    // Dealer's cards
+    for (let i = 0; i < options.dealerCards.length; i++) {
+        const card = options.dealerCards[i];
+        const cardBuffer = await drawCard(card, i > 0 && !options.dealerTurn);
+        const cardImg = await loadImage(cardBuffer);
+        ctx.clearRect(10 + i * 20, 10, 75, 105);
+        ctx.drawImage(cardImg, 10 + i * 20, 10, 75, 105);
+    }
+
+    // Player's cards
+    for (let i = 0; i < options.userCards.length; i++) {
+        const card = options.userCards[i];
+        const cardBuffer = await drawCard(card);
+        const cardImg = await loadImage(cardBuffer);
+        ctx.clearRect(10 + i * 20, canvas.height - 115, 75, 105);
+        ctx.drawImage(cardImg, 10 + i * 20, canvas.height - 115, 75, 105);
+    }
+
+    // Game border
+    ctx.roundRect(0, 0, canvas.width, canvas.height, 16);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    return canvas.toBuffer();
+}
+
+async function drawCard(card: Card, hidden?: boolean): Promise<Buffer> {
+    const width = 75;
+    const height = 105;
     const canvas = new Canvas(width, height);
     const ctx = canvas.getContext('2d');
 
@@ -539,19 +577,30 @@ async function drawCard(card: Card) {
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
     ctx.roundRect(0, 0, width, height, 8);
-    ctx.fill();
+    //ctx.fill();
     ctx.stroke();
 
     // Card value
+    if (hidden) {
+        const backImg = await loadImage(`./media/images/outline.png`);
+        const aspectRatio = backImg.width / backImg.height;
+        const drawWidth = (width - 10) / 2;
+        const drawHeight = drawWidth / aspectRatio;
+        const x = (width - drawWidth) / 2;
+        const y = (height - drawHeight) / 2;
+        ctx.drawImage(backImg, x, y, drawWidth, drawHeight);
+        return canvas.toBuffer();
+    }
     ctx.fillStyle = 'white';
     ctx.font = `${FontWeight.ExtraLight} 16px Montserrat`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
-    const iconW = 16, iconH = 16; // 80% of 20x20
+
+    const iconW = 16,
+        iconH = 16; // 80% of 20x20
     const textX = 4 + iconW / 2;
     const textY = 8 + 16 / 2; // 16 is font size
-    
+
     ctx.fillText(card.value.shortName.toString(), textX, textY);
 
     // Suit icon (draw to offscreen canvas, recolor, then draw to main canvas)
