@@ -3,8 +3,10 @@ import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleConta
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
+import { FontWeight } from '@src/system/backend/tools/banners.js';
 import Emojis from '@src/system/backend/tools/emojis.js';
 import { sleepSync } from 'bun';
+import { Canvas, loadImage } from 'canvas';
 import {
     ActionRowBuilder,
     ApplicationIntegrationType,
@@ -12,6 +14,8 @@ import {
     ButtonStyle,
     ChatInputCommandInteraction,
     ContainerBuilder,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
     MessageActionRowComponentBuilder,
     MessageEditOptions,
     MessageFlags,
@@ -25,6 +29,7 @@ import { model, Schema } from 'mongoose';
 export default class Economy extends GargoyleModule {
     public override category: string = 'fun';
     public override slashCommands: GargoyleSlashCommandBuilder[] = [
+        new GargoyleSlashCommandBuilder().addGuild('750209335841390642').setName('carddraw').setDescription('Draw a card image'),
         new GargoyleSlashCommandBuilder()
             .setName('economy')
             .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
@@ -54,7 +59,22 @@ export default class Economy extends GargoyleModule {
             });
             return;
         }
-        
+
+        if (interaction.commandName === 'carddraw') {
+            const card = cards[Math.floor(Math.random() * cards.length)];
+            const buffer = await drawCard(card);
+            await interaction.reply({
+                files: [{ attachment: buffer, name: 'card.png' }],
+                components: [
+                    new GargoyleContainerBuilder(`You drew a ${card.value.name} of ${card.suit}!`).addMediaGalleryComponents(
+                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://card.png'))
+                    )
+                ],
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
+            return;
+        }
+
         const economyUser = await getEconomyUser(interaction.user.id);
         if (interaction.options.getSubcommand() === 'balance') {
             await interaction.reply({
@@ -65,13 +85,21 @@ export default class Economy extends GargoyleModule {
             const now = new Date();
             if (economyUser.lastDaily) {
                 const lastDaily = new Date(economyUser.lastDaily);
-                if (lastDaily.getDate() === now.getDate() && lastDaily.getMonth() === now.getMonth() && lastDaily.getFullYear() === now.getFullYear()) {
+                if (
+                    lastDaily.getDate() === now.getDate() &&
+                    lastDaily.getMonth() === now.getMonth() &&
+                    lastDaily.getFullYear() === now.getFullYear()
+                ) {
                     await interaction.reply({
                         components: [new GargoyleContainerBuilder('You have already claimed your daily reward today!')],
                         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
                     });
                     return;
-                } else if (lastDaily.getDate()+1=== now.getDate() &&lastDaily.getMonth() === now.getMonth() && lastDaily.getFullYear() === now.getFullYear()) {
+                } else if (
+                    lastDaily.getDate() + 1 === now.getDate() &&
+                    lastDaily.getMonth() === now.getMonth() &&
+                    lastDaily.getFullYear() === now.getFullYear()
+                ) {
                     economyUser.dailyStreak += 1;
                 } else {
                     economyUser.dailyStreak = 1;
@@ -209,16 +237,15 @@ export default class Economy extends GargoyleModule {
             gameData.playerHand.push(gameData.cards.pop()!);
             gameData.dealerHand.push(gameData.cards.pop()!);
 
-
-            const edit = this.drawGame(interaction.user.id, {dealerTurn: false})
+            const edit = this.drawGame(interaction.user.id, { dealerTurn: false });
             if (!edit) {
                 await interaction.followUp({
-                    components: [new GargoyleContainerBuilder('Failed to start a game of blackjack, please try again later.')],
-                })
+                    components: [new GargoyleContainerBuilder('Failed to start a game of blackjack, please try again later.')]
+                });
                 economyUser.balance += bet;
                 await economyUser.save();
                 this.cardMap.delete(interaction.user.id);
-                return
+                return;
             }
             await message.edit(edit);
         } else {
@@ -317,10 +344,10 @@ export default class Economy extends GargoyleModule {
                 const economyUser = await getEconomyUser(interaction.user.id);
                 let resultMessage = '';
                 if (dealerTotal > 21 || userTotal > dealerTotal) {
-                    economyUser.balance += (game.wager*2);
+                    economyUser.balance += game.wager * 2;
                     resultMessage = `You win! You gained $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`;
                 } else if (dealerTotal === userTotal) {
-                    economyUser.balance += game.wager
+                    economyUser.balance += game.wager;
                     resultMessage = `It's a tie! Your balance remains $${economyUser.balance.toLocaleString()}.`;
                 } else {
                     resultMessage = `You lose! You lost $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`;
@@ -404,7 +431,9 @@ export default class Economy extends GargoyleModule {
                         new TextDisplayBuilder().setContent(`# Blackjack ${options?.dealerTurn ? "- Dealer's Turn" : '- Your Turn'}`)
                     )
                     .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`Dealer's cards: ${cardsToString(dealerCardsVisible) + (options?.dealerTurn ? '' : ' `(Hidden)`')} (Total: ${dealerTotal})`)
+                        new TextDisplayBuilder().setContent(
+                            `Dealer's cards: ${cardsToString(dealerCardsVisible) + (options?.dealerTurn ? '' : ' `(Hidden)`')} (Total: ${dealerTotal})`
+                        )
                     )
                     .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
                     .addTextDisplayComponents(
@@ -450,8 +479,8 @@ function calculateHandTotal(hand: Card[]): number {
     let aces = 0;
 
     for (const card of hand) {
-        total += card.value;
-        if (card.value === CardValue.Ace) {
+        total += card.value.value;
+        if (card.value.value === CardValue.Ace.value) {
             aces += 1;
         }
     }
@@ -465,7 +494,7 @@ function calculateHandTotal(hand: Card[]): number {
 }
 
 function cardToString(card: Card): string {
-    return `\`${card.value}${card.suit}\``;
+    return `\`${card.value.name}${card.suit}\``;
 }
 
 function cardsToString(cards: Card[]): string {
@@ -479,26 +508,66 @@ enum Suit {
     Spades = 'Spades'
 }
 
-enum CardValue {
-    Two = 2,
-    Three = 3,
-    Four = 4,
-    Five = 5,
-    Six = 6,
-    Seven = 7,
-    Eight = 8,
-    Nine = 9,
-    Ten = 10,
-    Jack = 10,
-    Queen = 10,
-    King = 10,
-    Ace = 11
+const CardValue = {
+    Ace: { name: 'Ace', shortName: 'A', value: 11 },
+    Two: { name: 'Two', shortName: '2', value: 2 },
+    Three: { name: 'Three', shortName: '3', value: 3 },
+    Four: { name: 'Four', shortName: '4', value: 4 },
+    Five: { name: 'Five', shortName: '5', value: 5 },
+    Six: { name: 'Six', shortName: '6', value: 6 },
+    Seven: { name: 'Seven', shortName: '7', value: 7 },
+    Eight: { name: 'Eight', shortName: '8', value: 8 },
+    Nine: { name: 'Nine', shortName: '9', value: 9 },
+    Ten: { name: 'Ten', shortName: '10', value: 10 },
+    Jack: { name: 'Jack', shortName: 'J', value: 10 },
+    Queen: { name: 'Queen', shortName: 'Q', value: 10 },
+    King: { name: 'King', shortName: 'K', value: 10 }
 }
 
 type Card = {
     suit: Suit;
-    value: CardValue;
+    value: typeof CardValue[keyof typeof CardValue];
 };
+
+async function drawCard(card: Card) {
+    const width = 75, height = 105;
+    const canvas = new Canvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Card background
+    ctx.fillStyle = 'black';
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.roundRect(0, 0, width, height, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Card value
+    ctx.fillStyle = 'white';
+    ctx.font = `${FontWeight.ExtraLight} 16px Montserrat`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const iconW = 16, iconH = 16; // 80% of 20x20
+    const textX = 4 + iconW / 2;
+    const textY = 8 + 16 / 2; // 16 is font size
+    
+    ctx.fillText(card.value.shortName.toString(), textX, textY);
+
+    // Suit icon (draw to offscreen canvas, recolor, then draw to main canvas)
+    const suitName = card.suit.toLowerCase();
+    const suitImg = await loadImage(`./media/icons/phosphor/${suitName}.svg`);
+    const suitCanvas = new Canvas(iconW, iconH);
+    const suitCtx = suitCanvas.getContext('2d');
+    suitCtx.drawImage(suitImg, 0, 0, iconW, iconH);
+    suitCtx.globalCompositeOperation = 'source-in';
+    suitCtx.fillStyle = 'white';
+    suitCtx.fillRect(0, 0, iconW, iconH);
+    suitCtx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(suitCanvas, 4, 28, iconW, iconH);
+
+    return canvas.toBuffer();
+}
 
 const cards: Card[] = [
     { suit: Suit.Hearts, value: CardValue.Two },
