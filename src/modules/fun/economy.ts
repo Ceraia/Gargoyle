@@ -196,16 +196,9 @@ export default class Economy extends GargoyleModule {
             let game = this.cardMap.get(interaction.user.id);
 
             if (game) {
-                const message = await ((await client.channels.fetch(game.channelId)) as TextBasedChannel)?.messages.fetch(game.messageId);
-                if (message) {
-                    await interaction.editReply({
-                        components: [
-                            new GargoyleContainerBuilder(
-                                `(You already have an ongoing game!)[https://discord.com/channels/${game.channelId}/${game.messageId}] Finish it before starting a new one.`
-                            )
-                        ],
-                        flags: [MessageFlags.IsComponentsV2]
-                    });
+                const edit = await this.drawGame(interaction.user.id);
+                if (edit) {
+                    await interaction.editReply(edit);
                     return;
                 } else {
                     this.cardMap.delete(interaction.user.id);
@@ -228,9 +221,9 @@ export default class Economy extends GargoyleModule {
             if (!message) return;
 
             this.cardMap.set(interaction.user.id, {
-                messageId: message.id,
-                channelId: interaction.channelId,
+                state: GameState.PlayerTurn,
                 cards: shuffledCards,
+                messageState: 0,
                 playerHand: [],
                 dealerHand: [],
                 wager: bet
@@ -256,7 +249,7 @@ export default class Economy extends GargoyleModule {
             gameData.playerHand.push(gameData.cards.pop()!);
             gameData.dealerHand.push(gameData.cards.pop()!);
 
-            const edit = await this.drawGame(interaction.user.id, { dealerTurn: false });
+            const edit = await this.drawGame(interaction.user.id);
             if (!edit) {
                 await interaction.followUp({
                     components: [new GargoyleContainerBuilder('Failed to start a game of blackjack, please try again later.')]
@@ -290,50 +283,33 @@ export default class Economy extends GargoyleModule {
             });
             return;
         }
+
+        const game = this.cardMap.get(interaction.user.id);
+
+        if (!game) {
+            await interaction.reply({
+                components: [new GargoyleContainerBuilder('You do not have an ongoing game!')],
+                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            });
+            return;
+        }
+
+        if (args[2] !== game.messageState.toString()) {
+            const edit = await this.drawGame(interaction.user.id);
+            if (edit) await interaction.message.edit(edit);
+        }
+
         if (args[0] === 'hit') {
-            const game = this.cardMap.get(interaction.user.id);
-            if (!game) {
-                await interaction.reply({
-                    components: [new GargoyleContainerBuilder('You do not have an ongoing game!')],
-                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
-                });
-                return;
-            }
+            game.messageState += 1;
             const card = game.cards.pop();
             if (card) {
                 game.playerHand.push(card);
             }
             const playerTotal = calculateHandTotal(game.playerHand);
             if (playerTotal > 21) {
-                const economyUser = await getEconomyUser(interaction.user.id);
-                await economyUser.save();
-                this.cardMap.delete(interaction.user.id);
-                await interaction.update({
-                    components: [
-                        new ContainerBuilder()
-                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Busted!'))
-                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                            .addMediaGalleryComponents(
-                                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://blackjack.png`))
-                            )
-                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                            .addTextDisplayComponents(
-                                new TextDisplayBuilder().setContent(
-                                    `You lost $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`
-                                )
-                            )
-                    ],
-                    flags: [MessageFlags.IsComponentsV2],
-                    files: [
-                        {
-                            attachment: await drawGame({ dealerTurn: true, userCards: game.playerHand, dealerCards: game.dealerHand }),
-                            name: 'blackjack.png'
-                        }
-                    ]
-                });
-                return;
+                game.state = GameState.PlayerBust;
             }
-            const edit = await this.drawGame(interaction.user.id, { dealerTurn: false });
+            const edit = await this.drawGame(interaction.user.id);
             if (edit) {
                 await interaction.update(edit);
             } else {
@@ -343,85 +319,51 @@ export default class Economy extends GargoyleModule {
                 });
             }
         } else if (args[0] === 'stand') {
-            const game = this.cardMap.get(interaction.user.id);
-            if (!game) {
-                await interaction.reply({
-                    components: [new GargoyleContainerBuilder('You do not have an ongoing game!')],
-                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
-                });
-                return;
-            }
+            game.state = GameState.DealerTurn;
             await interaction.deferUpdate();
-            const edit = await this.drawGame(interaction.user.id, { dealerTurn: true });
+            let userTotal = calculateHandTotal(game.playerHand);
+            let dealerTotal = calculateHandTotal(game.dealerHand);
+            while (dealerTotal < userTotal && dealerTotal <= 21) {
+                client.logger.trace('Dealer drawing a card...');
+                sleepSync(1500);
+                const card = game.cards.pop();
+                if (card) {
+                    game.dealerHand.push(card);
+                }
+                dealerTotal = calculateHandTotal(game.dealerHand);
+                const edit = await this.drawGame(interaction.user.id);
+                if (edit) {
+                    await interaction.message.edit(edit);
+                }
+                game.messageState += 1;
+            }
+            const economyUser = await getEconomyUser(interaction.user.id);
+
+            if (dealerTotal > 21 || userTotal > dealerTotal) {
+                economyUser.balance += game.wager * 2;
+                game.state = GameState.PlayerWin;
+            } else if (dealerTotal === userTotal) {
+                economyUser.balance += game.wager;
+                game.state = GameState.Tie;
+            } else {
+                game.state = GameState.PlayerLose;
+            }
+            await economyUser.save();
+            const edit = await this.drawGame(interaction.user.id);
             if (edit) {
                 await interaction.message.edit(edit);
-                let userTotal = calculateHandTotal(game.playerHand);
-                let dealerTotal = calculateHandTotal(game.dealerHand);
-                while (dealerTotal < userTotal && dealerTotal <= 21) {
-                    client.logger.trace('Dealer drawing a card...');
-                    sleepSync(1500);
-                    const card = game.cards.pop();
-                    if (card) {
-                        game.dealerHand.push(card);
-                    }
-                    dealerTotal = calculateHandTotal(game.dealerHand);
-                    const edit = await this.drawGame(interaction.user.id, { dealerTurn: true });
-                    if (edit) {
-                        await interaction.message.edit(edit);
-                    }
-                }
-                const economyUser = await getEconomyUser(interaction.user.id);
-                let resultMessage = '';
-                if (dealerTotal > 21 || userTotal > dealerTotal) {
-                    economyUser.balance += game.wager * 2;
-                    resultMessage = `You win! You gained $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`;
-                } else if (dealerTotal === userTotal) {
-                    economyUser.balance += game.wager;
-                    resultMessage = `It's a tie! Your balance remains $${economyUser.balance.toLocaleString()}.`;
-                } else {
-                    resultMessage = `You lose! You lost $${game.wager.toLocaleString()}. Your new balance is $${economyUser.balance.toLocaleString()}.`;
-                }
-                await economyUser.save();
-                this.cardMap.delete(interaction.user.id);
-                await interaction.message.edit({
-                    components: [
-                        new ContainerBuilder()
-                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - Game Over'))
-                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                            .addMediaGalleryComponents(
-                                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://blackjack.png`))
-                            )
-                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(resultMessage))
-                    ],
-                    flags: [MessageFlags.IsComponentsV2],
-                    files: [
-                        {
-                            attachment: await drawGame({ dealerTurn: true, userCards: game.playerHand, dealerCards: game.dealerHand }),
-                            name: 'blackjack.png'
-                        }
-                    ]
-                });
             } else {
-                await interaction.reply({
+                await interaction.followUp({
                     components: [new GargoyleContainerBuilder('Failed to update game, please try again later.')],
                     flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
                 });
             }
         } else if (args[0] === 'forfeit') {
-            const game = this.cardMap.get(interaction.user.id);
-            if (!game) {
-                await interaction.reply({
-                    components: [new GargoyleContainerBuilder('You do not have an ongoing game!')],
-                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
-                });
-                return;
-            }
+            game.messageState += 1;
             const economyUser = await getEconomyUser(interaction.user.id);
             const forfeitAmount = Math.floor(game.wager / 2);
             economyUser.balance += forfeitAmount;
             await economyUser.save();
-            this.cardMap.delete(interaction.user.id);
             await interaction.update({
                 components: [
                     new ContainerBuilder()
@@ -453,48 +395,102 @@ export default class Economy extends GargoyleModule {
         }
     }
 
-    private async drawGame(
-        userId: string,
-        options: {
-            dealerTurn?: boolean;
-        }
-    ): Promise<MessageEditOptions | null> {
+    private async drawGame(userId: string): Promise<MessageEditOptions | null> {
         const game = this.cardMap.get(userId);
         if (!game) return null;
 
+        let container = new ContainerBuilder();
+
+        switch (game.state) {
+            case GameState.DealerTurn:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent("# Blackjack - Dealer's Turn"));
+                break;
+            case GameState.PlayerTurn:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - Your Turn'));
+                break;
+            case GameState.PlayerBust:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Busted!'));
+                break;
+            case GameState.PlayerWin:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Won!'));
+                break;
+            case GameState.PlayerLose:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent('# Blackjack - You Lost!'));
+                break;
+            case GameState.Tie:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent("# Blackjack - It's a Tie!"));
+                break;
+        }
+
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large));
+        container.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://blackjack.png`)));
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large));
+
+        if (game.state === GameState.PlayerTurn || game.state === GameState.DealerTurn) {
+            container.addActionRowComponents(
+                new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                    new GargoyleButtonBuilder(this, 'hit', userId, game.messageState.toString())
+                        .setEmoji(Emojis.WhitePlus)
+                        .setLabel('Hit')
+                        .setStyle(ButtonStyle.Success)
+                        .setDisabled(game.state === GameState.DealerTurn),
+                    new GargoyleButtonBuilder(this, 'stand', userId, game.messageState.toString())
+                        .setEmoji(Emojis.WhiteGavel)
+                        .setLabel('Stand')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(game.state === GameState.DealerTurn),
+                    new GargoyleButtonBuilder(this, 'forfeit', userId, game.messageState.toString())
+                        .setEmoji(Emojis.WhiteMinus)
+                        .setLabel('Forfeit')
+                        .setStyle(ButtonStyle.Danger)
+                        .setDisabled(game.state === GameState.DealerTurn)
+                )
+            );
+        } else {
+            container.addActionRowComponents(
+                new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+                    new GargoyleButtonBuilder(this, 'rematch', userId, game.messageState.toString())
+                        .setEmoji(Emojis.WhitePlus)
+                        .setLabel('Rematch')
+                        .setStyle(ButtonStyle.Success)
+                )
+            );
+        }
+
+        switch (game.state) {
+            case GameState.PlayerBust:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# You lost $${game.wager.toLocaleString()}.`));
+                break;
+            case GameState.PlayerWin:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent('-# You won $' + (game.wager * 2).toLocaleString() + '!'));
+                break;
+            case GameState.PlayerLose:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# You lost $${game.wager.toLocaleString()}.`));
+                break;
+            case GameState.Tie:
+                container.addTextDisplayComponents(new TextDisplayBuilder().setContent("-# It's a tie! Your bet has been returned."));
+                break;
+        }
+
+        if (
+            game.state === GameState.Tie ||
+            game.state === GameState.PlayerBust ||
+            game.state === GameState.PlayerLose ||
+            game.state === GameState.PlayerWin
+        ) {
+            this.cardMap.delete(userId);
+        }
+
         return {
-            components: [
-                new ContainerBuilder()
-                    .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`# Blackjack ${options?.dealerTurn ? "- Dealer's Turn" : '- Your Turn'}`)
-                    )
-                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                    .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(`attachment://blackjack.png`)))
-                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Large))
-                    .addActionRowComponents(
-                        new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                            new GargoyleButtonBuilder(this, 'hit', userId)
-                                .setEmoji(Emojis.WhitePlus)
-                                .setLabel('Hit')
-                                .setStyle(ButtonStyle.Success)
-                                .setDisabled(options?.dealerTurn),
-                            new GargoyleButtonBuilder(this, 'stand', userId)
-                                .setEmoji(Emojis.WhiteGavel)
-                                .setLabel('Stand')
-                                .setStyle(ButtonStyle.Secondary)
-                                .setDisabled(options?.dealerTurn),
-                            new GargoyleButtonBuilder(this, 'forfeit', userId)
-                                .setEmoji(Emojis.WhiteMinus)
-                                .setLabel('Forfeit')
-                                .setStyle(ButtonStyle.Danger)
-                                .setDisabled(options?.dealerTurn)
-                        )
-                    )
-            ],
+            components: [container],
             flags: [MessageFlags.IsComponentsV2],
             files: [
                 {
-                    attachment: await drawGame({ dealerTurn: options?.dealerTurn, userCards: game.playerHand, dealerCards: game.dealerHand }),
+                    attachment: await drawGame({
+                        dealerTurn: game.state === GameState.DealerTurn,
+                        userCards: game.playerHand,
+                        dealerCards: game.dealerHand
+                    }),
                     name: 'blackjack.png'
                 }
             ]
@@ -508,8 +504,17 @@ export default class Economy extends GargoyleModule {
      */
     private cardMap = new Map<
         string,
-        { messageId: string; channelId: string; wager: number; cards: Card[]; playerHand: Card[]; dealerHand: Card[] }
+        { state: GameState; messageState: number; wager: number; cards: Card[]; playerHand: Card[]; dealerHand: Card[] }
     >();
+}
+
+enum GameState {
+    PlayerTurn,
+    DealerTurn,
+    PlayerLose,
+    PlayerBust,
+    PlayerWin,
+    Tie
 }
 
 function calculateHandTotal(hand: Card[]): number {
