@@ -157,18 +157,19 @@ export default class Economy extends GargoyleModule {
             });
         } else if (interaction.options.getSubcommand() === 'blackjack') {
             const bet = interaction.options.getInteger('bet', true);
+            await interaction.deferReply();
             if (bet <= 0) {
-                await interaction.reply({
+                await interaction.editReply({
                     components: [new GargoyleContainerBuilder('The bet must be greater than 0!')],
-                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                    flags: [MessageFlags.IsComponentsV2]
                 });
                 return;
             }
 
             if (economyUser.balance < bet) {
-                await interaction.reply({
+                await interaction.editReply({
                     components: [new GargoyleContainerBuilder('You do not have enough money to make that bet!')],
-                    flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                    flags: [MessageFlags.IsComponentsV2]
                 });
                 return;
             }
@@ -176,7 +177,6 @@ export default class Economy extends GargoyleModule {
             let game = this.cardMap.get(interaction.user.id);
 
             if (game) {
-                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
                 const message = await ((await client.channels.fetch(game.channelId)) as TextBasedChannel)?.messages.fetch(game.messageId);
                 if (message) {
                     await interaction.editReply({
@@ -185,7 +185,7 @@ export default class Economy extends GargoyleModule {
                                 `(You already have an ongoing game!)[https://discord.com/channels/${game.channelId}/${game.messageId}] Finish it before starting a new one.`
                             )
                         ],
-                        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                        flags: [MessageFlags.IsComponentsV2]
                     });
                     return;
                 } else {
@@ -195,7 +195,7 @@ export default class Economy extends GargoyleModule {
 
             const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
             const message = await interaction
-                .reply({
+                .editReply({
                     components: [new GargoyleContainerBuilder('Starting a game of blackjack...')],
                     flags: [MessageFlags.IsComponentsV2]
                 })
@@ -571,6 +571,36 @@ async function drawGame(options: { dealerTurn?: boolean; userCards: Card[]; deal
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 4;
     ctx.stroke();
+
+    return canvas.toBuffer();
+}
+
+async function drawCards(cards: Card[], hiddenIndices: number[] = []): Promise<Buffer> {
+    const width = 150 + (cards.length - 1) * 40;
+    const height = 210;
+    const canvas = new Canvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Card background
+    ctx.fillStyle = 'black';
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 4;
+    ctx.roundRect(0, 0, width, height, 8);
+    //ctx.fill();
+    ctx.stroke();
+
+    for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        ctx.roundRect(i * 40, 0, width, height, 8);
+        ctx.stroke();
+        if (hiddenIndices.includes(i)) {
+            const backImg = await loadImage(`./media/images/outline.png`);
+            const aspectRatio = backImg.width / backImg.height;
+            const drawWidth = (width - 20) / 2;
+            const drawHeight = drawWidth / aspectRatio;
+            ctx.drawImage(backImg, 150 / 2 + i * 40, canvas.height / 2, drawWidth, drawHeight);
+        }
+    }
 
     return canvas.toBuffer();
 }
