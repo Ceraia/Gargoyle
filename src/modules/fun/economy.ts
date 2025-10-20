@@ -30,6 +30,17 @@ export default class Economy extends GargoyleModule {
     public override category: string = 'fun';
     public override slashCommands: GargoyleSlashCommandBuilder[] = [
         new GargoyleSlashCommandBuilder()
+            .setName('carddraw')
+            .addGuild('750209335841390642')
+            .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
+            .setDescription('Draw a random playing card')
+            .addIntegerOption((option) =>
+                option.setName('count').setDescription('Number of cards to draw (1-5)').setMinValue(1).setMaxValue(10).setRequired(false)
+            )
+            .addIntegerOption((option) =>
+                option.setName('hidden').setDescription('Hidden card index (0-4)').setMinValue(0).setMaxValue(4).setRequired(false)
+            ) as GargoyleSlashCommandBuilder,
+        new GargoyleSlashCommandBuilder()
             .setName('economy')
             .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
             .setDescription('Economy commands')
@@ -60,16 +71,24 @@ export default class Economy extends GargoyleModule {
         }
 
         if (interaction.commandName === 'carddraw') {
-            const card = cards[Math.floor(Math.random() * cards.length)];
-            const buffer = await drawCard(card);
-            await interaction.reply({
-                files: [{ attachment: buffer, name: 'card.png' }],
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            const count = interaction.options.getInteger('count') ?? 1;
+            const chosenCards = [];
+            for (let i = 0; i < count; i++) {
+                chosenCards.push(cards[Math.floor(Math.random() * cards.length)]);
+            }
+            const image = await drawCards(
+                chosenCards,
+                interaction.options.getInteger('hidden') !== null ? [interaction.options.getInteger('hidden')!] : []
+            );
+            await interaction.editReply({
+                files: [{ attachment: image, name: 'cards.png' }],
                 components: [
-                    new GargoyleContainerBuilder(`You drew a ${card.value.name} of ${card.suit}!`).addMediaGalleryComponents(
-                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://card.png'))
+                    new ContainerBuilder().addMediaGalleryComponents(
+                        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL('attachment://cards.png'))
                     )
                 ],
-                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+                flags: [MessageFlags.IsComponentsV2]
             });
             return;
         }
@@ -598,7 +617,31 @@ async function drawCards(cards: Card[], hiddenIndices: number[] = []): Promise<B
             const aspectRatio = backImg.width / backImg.height;
             const drawWidth = (width - 20) / 2;
             const drawHeight = drawWidth / aspectRatio;
-            ctx.drawImage(backImg, 150 / 2 + i * 40, canvas.height / 2, drawWidth, drawHeight);
+            ctx.drawImage(backImg, (150 + drawWidth) / 2 + i * 40, (canvas.height + drawHeight) / 2, drawWidth, drawHeight);
+        } else {
+            ctx.fillStyle = 'white';
+            ctx.font = `${FontWeight.ExtraLight} 32px Montserrat`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const iconW = 32;
+            const iconH = 32; // 80% of 40x40
+            const textX = i * 40 + 8 + iconW / 2;
+            const textY = 16 + 32 / 2; // 32 is font size
+
+            ctx.fillText(card.value.shortName.toString(), textX, textY);
+
+            // Suit icon (draw to offscreen canvas, recolor, then draw to main canvas)
+            const suitName = card.suit.toLowerCase();
+            const suitImg = await loadImage(`./media/icons/phosphor/${suitName}.svg`);
+            const suitCanvas = new Canvas(iconW, iconH);
+            const suitCtx = suitCanvas.getContext('2d');
+            suitCtx.drawImage(suitImg, 0, 0, iconW, iconH);
+            suitCtx.globalCompositeOperation = 'source-in';
+            suitCtx.fillStyle = 'white';
+            suitCtx.fillRect(0, 0, iconW, iconH);
+            suitCtx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(suitCanvas, i * 40 + 8, 56, iconW, iconH);
         }
     }
 
