@@ -287,9 +287,9 @@ export default class Economy extends GargoyleModule {
         const game = this.cardMap.get(interaction.user.id);
 
         if (!game) {
-            await interaction.reply({
-                components: [new GargoyleContainerBuilder('You do not have an ongoing game!')],
-                flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+            await interaction.update({
+                components: [new GargoyleContainerBuilder('This game has already ended!')],
+                flags: [MessageFlags.IsComponentsV2]
             });
             return;
         }
