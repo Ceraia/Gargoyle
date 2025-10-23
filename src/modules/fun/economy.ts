@@ -77,10 +77,7 @@ export default class Economy extends GargoyleModule {
             for (let i = 0; i < count; i++) {
                 chosenCards.push(cards[Math.floor(Math.random() * cards.length)]);
             }
-            const image = await drawCards(
-                chosenCards,
-                interaction.options.getInteger('hidden') !== null ? [interaction.options.getInteger('hidden')!] : []
-            );
+            const image = await drawCards(chosenCards, interaction.options.getInteger('hidden') !== null ? 1 : 0);
             await interaction.editReply({
                 files: [{ attachment: image, name: 'cards.png' }],
                 components: [
@@ -497,11 +494,6 @@ export default class Economy extends GargoyleModule {
         };
     }
 
-    /**
-     * Map to store the cards for each user playing blackjack
-     * Key: User ID
-     * Value: Object containing the message id, channel id, deck of cards, player hand, and dealer hand
-     */
     private cardMap = new Map<
         string,
         { state: GameState; messageState: number; wager: number; cards: Card[]; playerHand: Card[]; dealerHand: Card[] }
@@ -569,24 +561,17 @@ async function drawGame(options: { dealerTurn?: boolean; userCards: Card[]; deal
     const ctx = canvas.getContext('2d');
 
     // Dealer's cards
-    for (let i = 0; i < options.dealerCards.length; i++) {
-        const card = options.dealerCards[i];
-        const cardBuffer = await drawCard(card, i > 0 && !options.dealerTurn);
-        const cardImg = await loadImage(cardBuffer);
-        ctx.clearRect(20 + i * 40, 20, 150, 210);
-        ctx.drawImage(cardImg, 20 + i * 40, 20, 150, 210);
-    }
+    const dealerCardsBuffer = await drawCards(options.dealerCards, options.dealerTurn ? 1 : 0);
+    const dealerCards = await loadImage(dealerCardsBuffer);
+    ctx.drawImage(dealerCards, 20, 20, dealerCards.width, dealerCards.height);
 
     // Player's cards
-    for (let i = 0; i < options.userCards.length; i++) {
-        const card = options.userCards[i];
-        const cardBuffer = await drawCard(card);
-        const cardImg = await loadImage(cardBuffer);
-        ctx.clearRect(20 + i * 40, canvas.height - 230, 150, 210);
-        ctx.drawImage(cardImg, 20 + i * 40, canvas.height - 230, 150, 210);
-    }
+    const cardsBuffer = await drawCards(options.userCards);
+    const userCards = await loadImage(cardsBuffer);
+    ctx.drawImage(userCards, 20, canvas.height - 230, userCards.width, userCards.height);
 
-    const cardBuffer = await drawCard(cards[0], true);
+    // Flipped card
+    const cardBuffer = await drawCards([options.userCards[0]], 1);
     const cardImg = await loadImage(cardBuffer);
     ctx.drawImage(cardImg, canvas.width - cardImg.width - 20, (canvas.height - cardImg.height) / 2, cardImg.width, cardImg.height);
 
@@ -599,7 +584,7 @@ async function drawGame(options: { dealerTurn?: boolean; userCards: Card[]; deal
     return canvas.toBuffer();
 }
 
-async function drawCards(cards: Card[], hiddenIndices: number[] = []): Promise<Buffer> {
+async function drawCards(cards: Card[], hiddenCards: number = 0): Promise<Buffer> {
     const width = 150 + (cards.length - 1) * 40;
     const height = 210;
     const canvas = new Canvas(width, height);
@@ -617,12 +602,17 @@ async function drawCards(cards: Card[], hiddenIndices: number[] = []): Promise<B
         const card = cards[i];
         ctx.roundRect(i * 40, 0, width, height, 8);
         ctx.stroke();
-        if (hiddenIndices.includes(i)) {
-            const backImg = await loadImage(`./media/images/outline.png`);
-            const aspectRatio = backImg.width / backImg.height;
-            const drawWidth = (width - 20) / 2;
-            const drawHeight = drawWidth / aspectRatio;
-            ctx.drawImage(backImg, (150 + drawWidth) / 2 + i * 40, (canvas.height + drawHeight) / 2, drawWidth, drawHeight);
+        // 12 cards
+        // 1 hidden
+        // 1 2 3 4 5 6 7 8 9 10 11
+        if (i < i - hiddenCards) {
+            if (i == cards.length - 1 && hiddenCards > 0) {
+                const backImg = await loadImage(`./media/images/outline.png`);
+                const aspectRatio = backImg.width / backImg.height;
+                const drawWidth = (width - 20) / 2;
+                const drawHeight = drawWidth / aspectRatio;
+                ctx.drawImage(backImg, (150 + drawWidth) / 2 + i * 40, (canvas.height + drawHeight) / 2, drawWidth, drawHeight);
+            }
         } else {
             ctx.fillStyle = 'white';
             ctx.font = `${FontWeight.ExtraLight} 32px Montserrat`;
