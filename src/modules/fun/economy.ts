@@ -35,10 +35,10 @@ export default class Economy extends GargoyleModule {
             .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
             .setDescription('Draw a random playing card')
             .addIntegerOption((option) =>
-                option.setName('count').setDescription('Number of cards to draw (1-5)').setMinValue(1).setMaxValue(10).setRequired(false)
+                option.setName('count').setDescription('Number of cards to draw').setMinValue(1).setMaxValue(52).setRequired(false)
             )
             .addIntegerOption((option) =>
-                option.setName('hidden').setDescription('Hidden card index (0-4)').setMinValue(0).setMaxValue(4).setRequired(false)
+                option.setName('hidden').setDescription('Number of hidden cards').setMinValue(0).setMaxValue(51).setRequired(false)
             ) as GargoyleSlashCommandBuilder,
         new GargoyleSlashCommandBuilder()
             .setName('economy')
