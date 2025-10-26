@@ -30,17 +30,6 @@ export default class Economy extends GargoyleModule {
     public override category: string = 'fun';
     public override slashCommands: GargoyleSlashCommandBuilder[] = [
         new GargoyleSlashCommandBuilder()
-            .setName('carddraw')
-            .addGuild('750209335841390642')
-            .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
-            .setDescription('Draw a random playing card')
-            .addIntegerOption((option) =>
-                option.setName('count').setDescription('Number of cards to draw').setMinValue(1).setMaxValue(52).setRequired(false)
-            )
-            .addIntegerOption((option) =>
-                option.setName('hidden').setDescription('Number of hidden cards').setMinValue(0).setMaxValue(51).setRequired(false)
-            ) as GargoyleSlashCommandBuilder,
-        new GargoyleSlashCommandBuilder()
             .setName('economy')
             .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
             .setDescription('Economy commands')
@@ -77,7 +66,7 @@ export default class Economy extends GargoyleModule {
             for (let i = 0; i < count; i++) {
                 chosenCards.push(cards[Math.floor(Math.random() * cards.length)]);
             }
-            const image = await drawCards(chosenCards, interaction.options.getInteger('hidden') !== null ? 1 : 0);
+            const image = await drawCards(chosenCards, interaction.options.getInteger('hidden', true));
             await interaction.editReply({
                 files: [{ attachment: image, name: 'cards.png' }],
                 components: [
@@ -281,6 +270,64 @@ export default class Economy extends GargoyleModule {
             return;
         }
 
+        if (args[0] === 'rematch') {
+            const game = this.cardMap.get(interaction.user.id);
+
+            if (game) {
+                const edit = await this.drawGame(interaction.user.id);
+                if (edit) {
+                    await interaction.update(edit);
+                    return;
+                }
+                return;
+            }
+
+            const economyUser = await getEconomyUser(interaction.user.id);
+            if (economyUser.balance < Number(args[2])) {
+                await interaction.update({
+                    components: [new GargoyleContainerBuilder('You do not have enough money to rematch!')],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+                return;
+            }
+
+            economyUser.balance -= Number(args[2]);
+            await economyUser.save();
+
+            const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
+            this.cardMap.set(interaction.user.id, {
+                state: GameState.PlayerTurn,
+                cards: shuffledCards,
+                messageState: 0,
+                playerHand: [],
+                dealerHand: [],
+                wager: Number(args[2])
+            });
+
+            // Hand out cards
+            const gameData = this.cardMap.get(interaction.user.id);
+            if (!gameData) {
+                await interaction.update({
+                    components: [new GargoyleContainerBuilder('Failed to start a rematch, please try again later.')],
+                    flags: [MessageFlags.IsComponentsV2]
+                });
+                economyUser.balance += Number(args[2]);
+                await economyUser.save();
+                this.cardMap.delete(interaction.user.id);
+                return;
+            }
+            gameData.messageState = 0;
+            gameData.state = GameState.PlayerTurn;
+            gameData.playerHand.push(gameData.cards.pop()!);
+            gameData.dealerHand.push(gameData.cards.pop()!);
+            gameData.playerHand.push(gameData.cards.pop()!);
+            gameData.dealerHand.push(gameData.cards.pop()!);
+
+            const edit = await this.drawGame(interaction.user.id);
+            if (edit) await interaction.update(edit);
+            return;
+        }
+
         const game = this.cardMap.get(interaction.user.id);
 
         if (!game) {
@@ -446,7 +493,7 @@ export default class Economy extends GargoyleModule {
         } else {
             container.addActionRowComponents(
                 new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-                    new GargoyleButtonBuilder(this, 'rematch', userId, game.messageState.toString())
+                    new GargoyleButtonBuilder(this, 'rematch', userId, game.wager.toString())
                         .setEmoji(Emojis.WhitePlus)
                         .setLabel('Rematch')
                         .setStyle(ButtonStyle.Success)
@@ -484,7 +531,7 @@ export default class Economy extends GargoyleModule {
             files: [
                 {
                     attachment: await drawGame({
-                        dealerTurn: game.state === GameState.DealerTurn,
+                        dealerTurn: game.state === GameState.PlayerTurn ? false : true,
                         userCards: game.playerHand,
                         dealerCards: game.dealerHand
                     }),
@@ -561,7 +608,7 @@ async function drawGame(options: { dealerTurn?: boolean; userCards: Card[]; deal
     const ctx = canvas.getContext('2d');
 
     // Dealer's cards
-    const dealerCardsBuffer = await drawCards(options.dealerCards, options.dealerTurn ? 1 : 0);
+    const dealerCardsBuffer = await drawCards(options.dealerCards, options.dealerTurn ? 0 : 1);
     const dealerCards = await loadImage(dealerCardsBuffer);
     ctx.drawImage(dealerCards, 20, 20, dealerCards.width, dealerCards.height);
 
@@ -602,16 +649,15 @@ async function drawCards(cards: Card[], hiddenCards: number = 0): Promise<Buffer
         const card = cards[i];
         ctx.roundRect(i * 40, 0, width, height, 8);
         ctx.stroke();
-        // 12 cards
-        // 1 hidden
-        // 1 2 3 4 5 6 7 8 9 10 11
-        if (i < i - hiddenCards) {
-            if (i == cards.length - 1 && hiddenCards > 0) {
+        if (i >= cards.length - hiddenCards) {
+            if (i === cards.length - 1) {
                 const backImg = await loadImage(`./media/images/outline.png`);
                 const aspectRatio = backImg.width / backImg.height;
-                const drawWidth = (width - 20) / 2;
+                const drawWidth = 150 / 2;
                 const drawHeight = drawWidth / aspectRatio;
-                ctx.drawImage(backImg, (150 + drawWidth) / 2 + i * 40, (canvas.height + drawHeight) / 2, drawWidth, drawHeight);
+                const x = i * 40 + (150 - drawWidth) / 2;
+                const y = (height - drawHeight) / 2;
+                ctx.drawImage(backImg, x, y, drawWidth, drawHeight);
             }
         } else {
             ctx.fillStyle = 'white';
