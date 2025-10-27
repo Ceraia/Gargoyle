@@ -1,11 +1,24 @@
+import GargoyleModalBuilder from '@src/system/backend/builders/gargoyleModalBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
-import { ApplicationIntegrationType, ChatInputCommandInteraction, InteractionContextType } from 'discord.js';
+import {
+    ApplicationIntegrationType,
+    ChatInputCommandInteraction,
+    InteractionContextType,
+    LabelBuilder,
+    ModalBuilder,
+    ModalSubmitInteraction,
+    TextInputStyle
+} from 'discord.js';
 
 export default class Embeds extends GargoyleModule {
     public override category: string = 'fun';
     public override slashCommands: GargoyleSlashCommandBuilder[] = [
+        new GargoyleSlashCommandBuilder()
+            .setName('embed')
+            .setDescription('New embed builder test')
+            .addGuild('1394893354763817040') as GargoyleSlashCommandBuilder,
         new GargoyleSlashCommandBuilder()
             .setName('embeds')
             .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
@@ -24,6 +37,29 @@ export default class Embeds extends GargoyleModule {
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
+        if (interaction.commandName === 'embed') {
+            await interaction.showModal(
+                new GargoyleModalBuilder(this).addLabelComponents(
+                    new LabelBuilder()
+                        .setLabel('Title')
+                        .setTextInputComponent((component) => component.setCustomId('title').setStyle(TextInputStyle.Short).setRequired(false)),
+                    new LabelBuilder()
+                        .setLabel('Description')
+                        .setTextInputComponent((component) =>
+                            component.setCustomId('description').setStyle(TextInputStyle.Paragraph).setRequired(false)
+                        ),
+                    new LabelBuilder()
+                        .setLabel('Color')
+                        .setTextInputComponent((component) =>
+                            component.setCustomId('color').setStyle(TextInputStyle.Short).setRequired(false).setPlaceholder('#ff0000')
+                        ),
+                    new LabelBuilder()
+                        .setLabel('Image')
+                        .setFileUploadComponent((component) => component.setCustomId('image').setMinValues(0).setMaxValues(1).setRequired(false))
+                )
+            );
+            return;
+        }
         const title = interaction.options.getString('title') ?? undefined;
         const description = interaction.options.getString('description') ?? undefined;
         const color = interaction.options.getString('color') ?? undefined;
@@ -62,6 +98,26 @@ export default class Embeds extends GargoyleModule {
             return true;
         } catch {
             return false;
+        }
+    }
+
+    public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
+        if (interaction.customId === 'embed') {
+            const title = interaction.fields.getTextInputValue('title') || undefined;
+            const description = interaction.fields.getTextInputValue('description') || undefined;
+            const color = interaction.fields.getTextInputValue('color') || undefined;
+            const imageAttachment = interaction.fields.getUploadedFiles('image', false);
+            const image = imageAttachment && imageAttachment.size > 0 ? imageAttachment.first()?.url : undefined;
+
+            const params = new URLSearchParams();
+            if (title) params.set('title', title);
+            if (description) params.set('description', description);
+            if (color) params.set('color', color);
+            if (image) params.set('image', image);
+
+            interaction.reply({
+                content: `https://gargoyle.axodouble.com/api/embeds/?${params.toString()}`
+            });
         }
     }
 
