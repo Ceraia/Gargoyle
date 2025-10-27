@@ -7,7 +7,6 @@ import {
     ChatInputCommandInteraction,
     InteractionContextType,
     LabelBuilder,
-    ModalBuilder,
     ModalSubmitInteraction,
     TextInputStyle
 } from 'discord.js';
@@ -87,7 +86,7 @@ export default class Embeds extends GargoyleModule {
         }
     }
 
-    public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
+    public override executeModalCommand(_client: GargoyleClient, interaction: ModalSubmitInteraction, ..._args: string[]): void {
         const title = interaction.fields.getTextInputValue('title') || undefined;
         const description = interaction.fields.getTextInputValue('description') || undefined;
         const color = interaction.fields.getTextInputValue('color') || undefined;
