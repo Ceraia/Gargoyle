@@ -17,29 +17,15 @@ export default class Embeds extends GargoyleModule {
     public override slashCommands: GargoyleSlashCommandBuilder[] = [
         new GargoyleSlashCommandBuilder()
             .setName('embed')
-            .setDescription('New embed builder test')
-            .addGuild('1394893354763817040') as GargoyleSlashCommandBuilder,
-        new GargoyleSlashCommandBuilder()
-            .setName('embeds')
             .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
             .setIntegrationTypes(ApplicationIntegrationType.UserInstall, ApplicationIntegrationType.GuildInstall)
-            .setDescription('Returns a link to an embed you can post')
-            .addStringOption((option) => option.setName('title').setDescription('Title of the embed').setRequired(false))
-            .addStringOption((option) => option.setName('description').setDescription('Description of the embed').setRequired(false))
-            .addStringOption((option) => option.setName('color').setDescription('Color of the embed in hex (e.g. #ff0000)').setRequired(false))
-            .addStringOption((option) => option.setName('url').setDescription('URL of the embed').setRequired(false))
-            .addStringOption((option) => option.setName('footer').setDescription('Footer text of the embed').setRequired(false))
-            .addStringOption((option) => option.setName('image').setDescription('Image URL of the embed').setRequired(false))
-            .addStringOption((option) => option.setName('thumbnail').setDescription('Thumbnail URL of the embed').setRequired(false))
-            .addStringOption((option) =>
-                option.setName('author').setDescription('Author name of the embed').setRequired(false)
-            ) as GargoyleSlashCommandBuilder
+            .setDescription('Returns a link to an embed you can post') as GargoyleSlashCommandBuilder
     ];
 
     public override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
         if (interaction.commandName === 'embed') {
             await interaction.showModal(
-                new GargoyleModalBuilder(this).addLabelComponents(
+                new GargoyleModalBuilder(this).setTitle('Embed Builder').addLabelComponents(
                     new LabelBuilder()
                         .setLabel('Title')
                         .setTextInputComponent((component) => component.setCustomId('title').setStyle(TextInputStyle.Short).setRequired(false)),
@@ -102,23 +88,21 @@ export default class Embeds extends GargoyleModule {
     }
 
     public override executeModalCommand(client: GargoyleClient, interaction: ModalSubmitInteraction, ...args: string[]): void {
-        if (interaction.customId === 'embed') {
-            const title = interaction.fields.getTextInputValue('title') || undefined;
-            const description = interaction.fields.getTextInputValue('description') || undefined;
-            const color = interaction.fields.getTextInputValue('color') || undefined;
-            const imageAttachment = interaction.fields.getUploadedFiles('image', false);
-            const image = imageAttachment && imageAttachment.size > 0 ? imageAttachment.first()?.url : undefined;
+        const title = interaction.fields.getTextInputValue('title') || undefined;
+        const description = interaction.fields.getTextInputValue('description') || undefined;
+        const color = interaction.fields.getTextInputValue('color') || undefined;
+        const imageAttachment = interaction.fields.getUploadedFiles('image', false);
+        const image = imageAttachment && imageAttachment.size > 0 ? imageAttachment.first()?.url : undefined;
 
-            const params = new URLSearchParams();
-            if (title) params.set('title', title);
-            if (description) params.set('description', description);
-            if (color) params.set('color', color);
-            if (image) params.set('image', image);
+        const params = new URLSearchParams();
+        if (title) params.set('title', title);
+        if (description) params.set('description', description);
+        if (color) params.set('color', color);
+        if (image) params.set('image', image);
 
-            interaction.reply({
-                content: `https://gargoyle.axodouble.com/api/embeds/?${params.toString()}`
-            });
-        }
+        interaction.reply({
+            content: `https://gargoyle.axodouble.com/api/embeds/?${params.toString()}`
+        });
     }
 
     public override executeApiRequest(_client: GargoyleClient, request: Request): Promise<Response> {
