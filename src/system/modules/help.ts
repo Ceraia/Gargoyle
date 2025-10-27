@@ -110,11 +110,11 @@ export default class Help extends GargoyleModule {
         );
 
     override async executeSlashCommand(_client: GargoyleClient, interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (interaction.commandName === 'suggest') {
             await interaction.showModal(this.suggestionModal);
             return;
         } else if (interaction.commandName === 'help') {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             await interaction.editReply(this.helpMessage);
             return;
         }
