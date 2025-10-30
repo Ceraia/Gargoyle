@@ -445,7 +445,7 @@ export default class VoicechatCommand extends GargoyleModule {
 class VoiceUpdate extends GargoyleEvent {
     public event = Events.VoiceStateUpdate as const;
 
-    public execute(client: GargoyleClient, oldState: VoiceState, newState: VoiceState): void {
+    public async execute(client: GargoyleClient, oldState: VoiceState, newState: VoiceState): Promise<void> {
         if (!newState.guild) return;
         if (!newState.member) return;
         if (!client.user) return;
@@ -453,101 +453,85 @@ class VoiceUpdate extends GargoyleEvent {
         if (newState.channel) {
             // User joined a channel
             if (
-                newState.channel.permissionOverwrites.resolve(oldState.client.user.id) &&
-                newState.channel.permissionOverwrites.resolve(client.user.id)?.allow.has(PermissionFlagsBits.PrioritySpeaker) // Bot has priority speaker in the channel so it is a lobby
+                newState.channel.permissionOverwrites.resolve(client.user!.id) &&
+                newState.channel.permissionOverwrites.resolve(client.user!.id)?.allow.has(PermissionFlagsBits.PrioritySpeaker) // Bot has priority speaker in the channel so it is a lobby
             ) {
-                const channel = newState.guild.channels.cache.find(
+                const ownedChannel = newState.guild.channels.cache.find(
                     (c) =>
                         c.type === ChannelType.GuildVoice &&
                         newState.member &&
                         c.permissionOverwrites.resolve(newState.member.id) &&
                         c.permissionOverwrites.resolve(newState.member.id)?.allow.has(PermissionFlagsBits.AddReactions) &&
-                        c.permissionOverwrites.resolve(oldState.client.user.id) &&
-                        c.permissionOverwrites.resolve(oldState.client.user.id)?.allow.has(PermissionFlagsBits.AddReactions)
+                        c.permissionOverwrites.resolve(client.user!.id) &&
+                        c.permissionOverwrites.resolve(client.user!.id)?.allow.has(PermissionFlagsBits.AddReactions)
                 ); // Channel has perm overrides for add reactions for the user and bot so the vc is a dynamic vc
 
-                if (channel) {
+                if (ownedChannel) {
                     // Drag the user to the channel they own
-                    newState.member.voice.setChannel(channel as VoiceChannel).catch(() => {});
-                } else {
-                    // Create a new channel for the user with the same permissions as the
-                    // category if the channel they joined has a category
+                    newState.member.voice.setChannel(ownedChannel as VoiceChannel).catch(() => {});
+                    return;
+                }
 
-                    // Make the name the first 25 characters of the next string
+                // Make the name the first 25 characters of the next string
+                let name =
+                    // newState.client.db.guilds.get(newState.guild.id).dynvcs.prefix +
+                    newState.member.nickname || newState.member.user.username;
+                if (name.length > 25) name = name.slice(0, 25);
 
-                    let name =
-                        // newState.client.db.guilds.get(newState.guild.id).dynvcs.prefix +
-                        newState.member.nickname || newState.member.user.username;
-                    if (name.length > 25) name = name.slice(0, 25);
+                const newChannel = await newState.guild.channels
+                    .create({
+                        name: name,
+                        type: ChannelType.GuildVoice,
+                        parent: newState.channel.parent ? newState.channel.parent : null
+                    })
+                    .catch(() => {
+                        newState.member
+                            ?.send(
+                                `<@!${newState.member.id}> I don't have permission to create a channel in the category you are in. Please make sure I have the correct permissions and try again.\nContact your server administrator if you need help.`
+                            )
+                            .catch(() => {});
 
-                    newState.guild.channels
-                        .create({
-                            name: name,
-                            type: ChannelType.GuildVoice,
-                            parent: newState.channel.parent ? newState.channel.parent : null
-                        })
-                        .catch(() => {
-                            newState.member
-                                ?.send(
-                                    `<@!${newState.member.id}> I don't have permission to create a channel in the category you are in. Please make sure I have the correct permissions and try again.\nContact your server administrator if you need help.`
+                        newState.guild.fetchOwner().then((owner) => {
+                            owner
+                                .send(
+                                    `I don't have permission to send messages in any channel in ${newState.guild.name}. Please give me permission to send messages in a channel and try again.`
                                 )
                                 .catch(() => {});
-
-                            newState.guild.fetchOwner().then((owner) => {
-                                owner
-                                    .send(
-                                        `I don't have permission to send messages in any channel in ${newState.guild.name}. Please give me permission to send messages in a channel and try again.`
-                                    )
-                                    .catch(() => {});
-                            });
-
-                            client.logger.warning(`${newState.guild.name}, incorrectly configured permissions.`);
-                        })
-                        .then((channel) => {
-                            if (!channel) return;
-                            // Add the permission overrides for the user
-                            channel
-                                .lockPermissions()
-                                .then((channel) => {
-                                    channel.permissionOverwrites
-                                        .create(newState.member?.id ?? '', {
-                                            AddReactions: true,
-                                            Connect: true
-                                        })
-                                        .catch(() => {});
-                                    channel.permissionOverwrites.create(oldState.client.user.id, { AddReactions: true }).catch(() => {});
-
-                                    // Move the user to the channel
-                                    if (newState.member) newState.member.voice.setChannel(channel).catch(() => {});
-                                })
-                                .catch(() => {
-                                    channel.permissionOverwrites
-                                        .create(newState.member?.id ?? '', {
-                                            AddReactions: true,
-                                            Connect: true
-                                        })
-                                        .catch(() => {});
-                                    channel.permissionOverwrites.create(oldState.client.user.id, { AddReactions: true }).catch(() => {});
-
-                                    // Move the user to the channel
-                                    if (newState.member) newState.member.voice.setChannel(channel).catch(() => {});
-                                });
                         });
-                }
+
+                        client.logger.warning(`${newState.guild.name}, incorrectly configured permissions.`);
+                        return;
+                    });
+
+                if (!newChannel) return;
+
+                // Add parent permissions if there is a parent
+                await newChannel.lockPermissions().catch(() => {});
+
+                // Add the permission overrides for the user
+                newChannel.permissionOverwrites
+                    .create(newState.member?.id ?? '', {
+                        AddReactions: true,
+                        Connect: true
+                    })
+                    .catch(() => {});
+                newChannel.permissionOverwrites.create(oldState.client.user.id, { AddReactions: true }).catch(() => {});
+
+                // Move the user to the channel
+                if (newState.member) newState.member.voice.setChannel(newChannel).catch(() => {});
             }
         }
         if (oldState.channel) {
-            // User left a channel
-            oldState.guild.channels.cache.forEach((channel) => {
-                if (
+            const deadChannels = oldState.guild.channels.cache.filter(
+                (channel) =>
                     channel.type === ChannelType.GuildVoice &&
                     channel.permissionOverwrites.resolve(oldState.client.user.id) &&
                     channel.permissionOverwrites.resolve(oldState.client.user.id)?.allow.has(PermissionFlagsBits.AddReactions) &&
                     channel.members.size === 0
-                ) {
-                    // Delete the channel
-                    channel.delete().catch(() => {});
-                }
+            );
+
+            deadChannels.forEach((channel) => {
+                channel.delete().catch(() => {});
             });
         }
     }
