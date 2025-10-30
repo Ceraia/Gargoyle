@@ -1,4 +1,3 @@
-import GargoyleTextCommandBuilder from '@builders/gargoyleTextCommandBuilder.js';
 import GargoyleClient from '@classes/gargoyleClient.js';
 import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import GargoyleButtonBuilder from '@builders/gargoyleButtonBuilder.js';
@@ -17,7 +16,6 @@ import {
     Events,
     InteractionContextType,
     InteractionReplyOptions,
-    Message,
     MessageCreateOptions,
     MessageEditOptions,
     MessageFlags,
@@ -59,15 +57,6 @@ export default class VoicechatCommand extends GargoyleModule {
                             .addChannelTypes(ChannelType.GuildVoice)
                     )
             ) as GargoyleSlashCommandBuilder
-    ];
-
-    public override textCommands = [
-        new GargoyleTextCommandBuilder()
-            .setName('voice')
-            .setDescription('Get voicechat interaction panel')
-            .addAlias('vc')
-            .addAlias('voicechat')
-            .setContexts([InteractionContextType.Guild])
     ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction) {
@@ -123,10 +112,6 @@ export default class VoicechatCommand extends GargoyleModule {
                     });
                 });
         }
-    }
-
-    public override executeTextCommand(_client: GargoyleClient, message: Message) {
-        (message.channel as TextChannel).send(this.panelMessage as MessageCreateOptions);
     }
 
     public override async executeButtonCommand(client: GargoyleClient, interaction: ButtonInteraction, ...args: string[]): Promise<void> {
