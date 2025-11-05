@@ -85,6 +85,7 @@ class FourthEyeClassification extends GargoyleEvent {
         super();
         this.checkQueue();
     }
+    private client: GargoyleClient | null = null;
     public override event = Events.MessageCreate as const;
     /**
      * A queue to store messages for classification
@@ -92,14 +93,14 @@ class FourthEyeClassification extends GargoyleEvent {
      * Value: Message object
      */
     private messageQueue: Map<string, Message[]> = new Map();
-    public override execute(_client: GargoyleClient, message: Message): void {
+    public override execute(client: GargoyleClient, message: Message): void {
         /**
          * This is a proprietary module and is not fully open source.
          * However, this service is run by Ceraia and does not store any data.
          * It uses the `GPT-OSS:20B` to classify messages to flag a moderator if it believes the message is harmful.
          * This runs only on servers owned by Axodouble, however a similar implementation can be made for other servers upon request.
          */
-
+        this.client = client;
         if (message.author.bot) return;
         if (message.guildId !== '1009048008857493624') return; // Only run on Entropy's Server
         this.messageQueue.set(message.channel.id, [...(this.messageQueue.get(message.channel.id) || []), message]);
@@ -113,10 +114,10 @@ class FourthEyeClassification extends GargoyleEvent {
 
     private checkQueue(): void {
         // Check every 1 minute
-        setInterval(() => {
+        setInterval(async () => {
             for (const [channelId, messages] of this.messageQueue.entries()) {
-                if (messages.length > 0) {
-                    this.checkChannel(channelId);
+                if (messages.length > 0 && this.client) {
+                    this.client.logger.debug((await this.checkChannel(channelId)).category);
                 }
             }
         }, 60000);
