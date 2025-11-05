@@ -23,6 +23,7 @@ export default class FourthEye extends GargoyleModule {
         new GargoyleSlashCommandBuilder()
             .setName('fourtheye')
             .setDescription("Use Entropy's Fourth Eye moderation tools")
+            .addGuild('750209335841390642')
             .addSubcommand((subcommand) => subcommand.setName('rules').setDescription('Get the server rules')) as GargoyleSlashCommandBuilder
     ];
 
@@ -102,7 +103,7 @@ class FourthEyeClassification extends GargoyleEvent {
          */
         this.client = client;
         if (message.author.bot) return;
-        if (message.guildId !== '1009048008857493624') return; // Only run on Entropy's Server
+        if (message.guildId !== '750209335841390642') return; // Only run on Entropy's Server
         this.messageQueue.set(message.channel.id, [...(this.messageQueue.get(message.channel.id) || []), message]);
         // If more than 2000 characters in the queue, check immediately
         const totalLength = (this.messageQueue.get(message.channel.id) || []).reduce((acc, msg) => acc + msg.content.length, 0);
