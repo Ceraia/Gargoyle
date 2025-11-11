@@ -13,6 +13,7 @@ import {
     MessageFlags,
     VoiceChannel
 } from 'discord.js';
+import { Canvas, loadImage } from 'canvas';
 
 export default class Fun extends GargoyleModule {
     public override category: string = 'fun';
@@ -67,6 +68,32 @@ export default class Fun extends GargoyleModule {
                             )
                     )
             )
+            .addSubcommandGroup((subcommandGroup) =>
+                subcommandGroup
+                    .setName('create')
+                    .setDescription('Create fun stuff.')
+                    .addSubcommand((subcommand) =>
+                        subcommand
+                            .setName('meme')
+                            .setDescription('Create a meme')
+                            .addAttachmentOption((option) =>
+                                option.setName('image').setDescription('The image to create a meme from.').setRequired(true)
+                            )
+                            .addStringOption((option) =>
+                                option.setName('top-text').setDescription('The top text of the meme.').setRequired(false).setMaxLength(200)
+                            )
+                            .addStringOption((option) =>
+                                option.setName('bottom-text').setDescription('The bottom text of the meme.').setRequired(false).setMaxLength(200)
+                            )
+                            .addStringOption((option) =>
+                                option
+                                    .setName('style')
+                                    .setDescription('The style of meme to create.')
+                                    .setRequired(false)
+                                    .addChoices({ name: 'White Top', value: 'white' }, { name: 'Overlay Text', value: 'overlay' })
+                            )
+                    )
+            )
             .addSubcommand((subcommand) => subcommand.setName('truth-or-dare').setDescription('Truth or dare related commands.'))
             .addSubcommand((subcommand) =>
                 subcommand
@@ -95,6 +122,10 @@ export default class Fun extends GargoyleModule {
 
         if (subcommandGroup === 'text') {
             return textReplace(interaction);
+        }
+
+        if (subcommandGroup === 'create') {
+            return await memeCreate(interaction);
         }
 
         if (subcommand === 'truth-or-dare') {
@@ -133,6 +164,73 @@ export default class Fun extends GargoyleModule {
 
         return null;
     }
+}
+
+async function memeCreate(interaction: ChatInputCommandInteraction): Promise<InteractionResponse<boolean>> {
+    const attachment = interaction.options.getAttachment('image', true);
+    const topText = interaction.options.getString('top-text');
+    const bottomText = interaction.options.getString('bottom-text');
+    const style = interaction.options.getString('style') as 'white' | 'overlay' | null;
+
+    if (attachment.contentType?.startsWith('image/') !== true) {
+        return interaction.reply({
+            content: 'The attachment must be an image.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    if (topText && !bottomText) style === 'white';
+    if (topText && bottomText) style === 'overlay';
+    if (!topText && bottomText) style === 'overlay';
+    if (!topText && !bottomText) {
+        return interaction.reply({
+            content: 'You must provide at least one of top-text or bottom-text to create a meme.',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    let height = attachment.height!;
+    if (style === 'white') {
+        height = height + (topText?.split('\n').length || 1) * 54;
+    }
+
+    const canvas = new Canvas(attachment.width || 500, height);
+    const context = canvas.getContext('2d');
+
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const image = await loadImage(attachment.url);
+
+    context.drawImage(image, 0, canvas.height - height);
+
+    context.fillStyle = 'black';
+    context.textAlign = 'center';
+    context.font = '48px Impact';
+    context.strokeStyle = 'white';
+    context.lineWidth = 8;
+    context.lineJoin = 'round';
+
+    if (topText) {
+        const topLines = topText.toUpperCase().split('\n');
+        topLines.forEach((line, index) => {
+            const y = 54 + index * 54;
+            context.fillText(line, canvas.width / 2, y);
+            context.strokeText(line, canvas.width / 2, y);
+        });
+    }
+    if (bottomText) {
+        const bottomLines = bottomText.toUpperCase().split('\n');
+        bottomLines.forEach((line, index) => {
+            const y = canvas.height - 20 - (bottomLines.length - 1 - index) * 54;
+            context.fillText(line, canvas.width / 2, y);
+            context.strokeText(line, canvas.width / 2, y);
+        });
+    }
+
+    return interaction.reply({
+        files: [{ attachment: canvas.toBuffer(), name: 'meme.png' }]
+    });
 }
 
 function textReplace(interaction: ChatInputCommandInteraction): Promise<InteractionResponse<boolean>> {
