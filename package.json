@@ -9,7 +9,7 @@
         "colorette": "^2.0.20",
         "discord.js": "^14.24.0",
         "fs": "^0.0.2",
-        "mongoose": "^8.19.2",
+        "mongoose": "^9.0.0",
         "ollama": "^0.6.0",
         "opusscript": "^0.1.1",
         "path": "^0.12.7",
