@@ -26,7 +26,7 @@
         "@types/pg": "^8.20.0",
         "@types/ws": "^8.18.1",
         "drizzle-kit": "^0.31.10",
-        "eslint": "10.2.0",
+        "eslint": "10.3.0",
         "globals": "^17.6.0",
         "prettier": "^3.8.3",
         "typescript": "6.0.3",
