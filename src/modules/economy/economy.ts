@@ -1,3 +1,4 @@
+import ChattoCommandBuilder from '@src/system/backend/builders/chattoCommandBuilder';
 import GargoyleButtonBuilder from '@src/system/backend/builders/gargoyleButtonBuilder.js';
 import GargoyleContainerBuilder from '@src/system/backend/builders/gargoyleContainerBuilder.js';
 import GargoyleSlashCommandBuilder from '@src/system/backend/builders/gargoyleSlashCommandBuilder.js';
@@ -7,6 +8,8 @@ import GargoyleModule from '@src/system/backend/classes/gargoyleModule.js';
 import { FontWeight } from '@src/system/backend/tools/banners.js';
 import Emojis from '@src/system/backend/tools/emojis.js';
 import { sleepSync } from 'bun';
+import type { FileInput } from 'chatto.ts';
+import { Message as ChattoMessage } from 'chatto.ts';
 import { Canvas, loadImage } from 'canvas';
 import {
     ActionRowBuilder,
@@ -35,13 +38,6 @@ export default class Economy extends GargoyleModule {
     public override name: string = 'economy';
     public override category: string = 'economy';
     public override slashCommands: GargoyleSlashCommandBuilder[] = [
-        new GargoyleSlashCommandBuilder()
-            .setName('pay')
-            .setDescription('Pay another user')
-            .addUserOption((option) => option.setName('user').setDescription('The user to pay').setRequired(true))
-            .addNumberOption((option) =>
-                option.setName('amount').setDescription('The amount to pay').setRequired(true)
-            ) as GargoyleSlashCommandBuilder,
         new GargoyleSlashCommandBuilder()
             .setName('economy')
             .setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
@@ -97,6 +93,9 @@ export default class Economy extends GargoyleModule {
                     .setDescription('Play a game of blackjack')
                     .addIntegerOption((option) => option.setName('bet').setDescription('The amount to bet').setMinValue(1).setRequired(true))
             ) as GargoyleSlashCommandBuilder
+    ];
+    public override chattoCommands: ChattoCommandBuilder[] = [
+        new ChattoCommandBuilder().setName('blackjack').setDescription('Play blackjack and earn some cash.').setUsage('blackjack <wager>')
     ];
 
     public override async executeSlashCommand(client: GargoyleClient, interaction: ChatInputCommandInteraction): Promise<void> {
@@ -518,6 +517,125 @@ export default class Economy extends GargoyleModule {
         }
     }
 
+    public override async executeChattoCommand(client: GargoyleClient, message: ChattoMessage, ...args: string[]): Promise<void> {
+        if (!client.db) {
+            await message.reply({ content: 'Database not connected. Please try again later.' });
+            return;
+        }
+        if (!client.chatto) return;
+
+        const wager = parseInt(args[1] ?? '', 10);
+        if (!Number.isInteger(wager) || wager <= 0) {
+            await message.reply({ content: 'Invalid wager! Usage: `/blackjack <wager>`' });
+            return;
+        }
+
+        if (this.cardMap.has(message.author.id)) {
+            await message.reply({ content: 'You already have a blackjack game in progress! Finish it first.' });
+            return;
+        }
+
+        const user = await client.db.getUser(message.author.id, { exists: true });
+        if (user.balance < wager) {
+            await message.reply({ content: 'You do not have enough money to make that bet!' });
+            return;
+        }
+
+        // Deduct the wager and set up the game.
+        user.balance -= wager;
+        await client.db.setUser(message.author.id, { balance: user.balance });
+
+        const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
+        this.cardMap.set(message.author.id, {
+            state: GameState.PlayerTurn,
+            cards: shuffledCards,
+            messageState: 0,
+            playerHand: [],
+            dealerHand: [],
+            wager
+        });
+
+        const game = this.cardMap.get(message.author.id);
+        if (!game) {
+            user.balance += wager;
+            await client.db.setUser(message.author.id, { balance: user.balance });
+            await message.reply({ content: 'Failed to start a game of blackjack, please try again later.' });
+            this.cardMap.delete(message.author.id);
+            return;
+        }
+
+        // Deal.
+        game.playerHand.push(game.cards.pop()!);
+        game.dealerHand.push(game.cards.pop()!);
+        game.playerHand.push(game.cards.pop()!);
+        game.dealerHand.push(game.cards.pop()!);
+
+        let gameMessage: ChattoMessage;
+        try {
+            gameMessage = await message.reply(await renderChattoGame(game));
+        } catch {
+            user.balance += wager;
+            await client.db.setUser(message.author.id, { balance: user.balance });
+            this.cardMap.delete(message.author.id);
+            return;
+        }
+
+        // Move loop.
+        try {
+            while (game.state === GameState.PlayerTurn) {
+                const move = (await awaitMove(client, message.channelId, message.author.id, 60_000)) ?? 'fold';
+
+                if (move === 'hit') {
+                    const card = game.cards.pop();
+                    if (card) game.playerHand.push(card);
+                    if (calculateHandTotal(game.playerHand) > 21) {
+                        game.state = GameState.PlayerBust;
+                    }
+                    await gameMessage.edit(await renderChattoGame(game));
+                    if (game.state === GameState.PlayerBust) break;
+                } else if (move === 'stand') {
+                    game.state = GameState.DealerTurn;
+                    await gameMessage.edit(await renderChattoGame(game));
+
+                    const userTotal = calculateHandTotal(game.playerHand);
+                    let dealerTotal = calculateHandTotal(game.dealerHand);
+                    while (dealerTotal < userTotal && dealerTotal <= 21) {
+                        await new Promise((resolve) => setTimeout(resolve, 1500));
+                        const card = game.cards.pop();
+                        if (card) game.dealerHand.push(card);
+                        dealerTotal = calculateHandTotal(game.dealerHand);
+                        await gameMessage.edit(await renderChattoGame(game));
+                    }
+
+                    const freshUser = await client.db.getUser(message.author.id, { exists: true });
+                    if (dealerTotal > 21 || userTotal > dealerTotal) {
+                        freshUser.balance += wager * 2;
+                        game.state = GameState.PlayerWin;
+                    } else if (dealerTotal === userTotal) {
+                        freshUser.balance += wager;
+                        game.state = GameState.Tie;
+                    } else {
+                        game.state = GameState.PlayerLose;
+                    }
+                    await client.db.setUser(message.author.id, { balance: freshUser.balance });
+                    await gameMessage.edit(await renderChattoGame(game));
+                    break;
+                } else {
+                    // fold / timeout
+                    const freshUser = await client.db.getUser(message.author.id, { exists: true });
+                    freshUser.balance += Math.floor(wager / 2);
+                    await client.db.setUser(message.author.id, { balance: freshUser.balance });
+                    await gameMessage.edit(await renderChattoGame(game, true));
+                    break;
+                }
+            }
+        } catch (error) {
+            client.logger.error(`Chatto blackjack game errored: ${error}`);
+        } finally {
+            this.cardMap.delete(message.author.id);
+        }
+    }
+
     private async drawGame(userId: string): Promise<MessageEditOptions | null> {
         const game = this.cardMap.get(userId);
         if (!game) return null;
@@ -762,6 +880,48 @@ function calculateHandTotal(hand: Card[]): number {
     return total;
 }
 
+export type ChattoMove = 'hit' | 'stand' | 'fold';
+
+export function normalizeMove(content: string): ChattoMove | null {
+    const c = content.trim().toLowerCase();
+    if (c === 'hit' || c === 'h') return 'hit';
+    if (c === 'stand' || c === 's') return 'stand';
+    if (c === 'fold' || c === 'f' || c === 'forfeit') return 'fold';
+    return null;
+}
+
+export function awaitMove(client: GargoyleClient, channelId: string, userId: string, ms: number): Promise<ChattoMove | null> {
+    return new Promise((resolve) => {
+        const chatto = client.chatto;
+        if (!chatto) {
+            resolve(null);
+            return;
+        }
+
+        let timer: ReturnType<typeof setTimeout>;
+
+        const cleanup = () => {
+            clearTimeout(timer);
+            chatto.off('messageCreate', listener);
+        };
+
+        const listener = (message: ChattoMessage) => {
+            if (message.channelId !== channelId || message.author.id !== userId) return;
+            const move = normalizeMove(message.content ?? '');
+            if (!move) return;
+            cleanup();
+            resolve(move);
+        };
+
+        timer = setTimeout(() => {
+            cleanup();
+            resolve(null);
+        }, ms);
+
+        chatto.on('messageCreate', listener);
+    });
+}
+
 enum Suit {
     Hearts = 'Hearts',
     Diamonds = 'Diamonds',
@@ -816,6 +976,61 @@ async function drawGame(options: { dealerTurn?: boolean; userCards: Card[]; deal
     ctx.stroke();
 
     return canvas.toBuffer();
+}
+
+export async function renderChattoGame(
+    game: { state: GameState; wager: number; playerHand: Card[]; dealerHand: Card[] },
+    folded: boolean = false
+): Promise<{ content: string; files: FileInput[] }> {
+    let title: string;
+    let footer = '';
+
+    if (folded) {
+        title = '# Blackjack — You Folded!';
+        footer = `\n-# You folded and got back $${Math.floor(game.wager / 2).toLocaleString()}.`;
+    } else {
+        switch (game.state) {
+            case GameState.PlayerTurn:
+                title = '# Blackjack — Your Turn';
+                footer = '\nType **hit**, **stand**, or **fold**.';
+                break;
+            case GameState.DealerTurn:
+                title = "# Blackjack — Dealer's Turn";
+                break;
+            case GameState.PlayerBust:
+                title = '# Blackjack — You Busted!';
+                footer = `\n-# You lost $${game.wager.toLocaleString()}.`;
+                break;
+            case GameState.PlayerWin:
+                title = '# Blackjack — You Won!';
+                footer = `\n-# You won $${(game.wager * 2).toLocaleString()}!`;
+                break;
+            case GameState.PlayerLose:
+                title = '# Blackjack — You Lost!';
+                footer = `\n-# You lost $${game.wager.toLocaleString()}.`;
+                break;
+            case GameState.Tie:
+                title = "# Blackjack — It's a Tie!";
+                footer = "\n-# It's a tie! Your bet has been returned.";
+                break;
+            default:
+                title = '# Blackjack';
+        }
+    }
+
+    const inProgress = !folded && (game.state === GameState.PlayerTurn || game.state === GameState.DealerTurn);
+    if (!inProgress) footer += '\n-# Run `/blackjack <wager>` to play again.';
+
+    const buffer = await drawGame({
+        dealerTurn: !(game.state === GameState.PlayerTurn) || folded,
+        userCards: game.playerHand,
+        dealerCards: game.dealerHand
+    });
+
+    return {
+        content: `${title}${footer}`,
+        files: [{ data: buffer, filename: 'blackjack.png', contentType: 'image/png' }]
+    };
 }
 
 async function drawCards(cards: Card[], hiddenCards: number = 0): Promise<Buffer> {

@@ -37,17 +37,23 @@ export default class TextCommandHandler extends ChattoEvent {
             });
         } else {
             if (message.content.toLowerCase().startsWith('/')) {
-                command.executeChattoCommand(client, message, ...message.content.slice(1).trim().split(' '));
+                Promise.resolve(command.executeChattoCommand(client, message, ...message.content.slice(1).trim().split(' '))).catch((error) => {
+                    client.logger.error(`Error executing chatto command ${command.name}: ${error}`);
+                });
             }
             if (message.content.toLowerCase().startsWith(this.mentionPrefix)) {
-                command.executeChattoCommand(
-                    client,
-                    message,
-                    ...message.content
-                        .slice(this.mentionPrefix.length + 1)
-                        .trim()
-                        .split(' ')
-                );
+                Promise.resolve(
+                    command.executeChattoCommand(
+                        client,
+                        message,
+                        ...message.content
+                            .slice(this.mentionPrefix.length + 1)
+                            .trim()
+                            .split(' ')
+                    )
+                ).catch((error) => {
+                    client.logger.error(`Error executing chatto command ${command.name}: ${error}`);
+                });
             }
 
             client.logger.trace(`${message.author.username} used the ${command.name} chatto command.`);

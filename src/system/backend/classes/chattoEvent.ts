@@ -1,5 +1,5 @@
 import GargoyleClient from '@src/system/backend/classes/gargoyleClient.js';
-import { ClientEventMap } from 'chatto.ts/dist/client';
+import { ClientEventMap } from 'chatto.ts';
 
 abstract class ChattoEvent {
     public abstract event: keyof ClientEventMap;
