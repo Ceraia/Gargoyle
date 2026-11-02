@@ -4,7 +4,7 @@
     "type": "module",
     "dependencies": {
         "@discordjs/voice": "^0.19.2",
-        "@snazzah/davey": "^0.1.12",
+        "@snazzah/davey": "^0.2.0",
         "canvas": "^3.2.3",
         "chatto.ts": "^0.4.11",
         "discord.js": "^14.27.0",
